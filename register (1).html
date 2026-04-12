@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de usuario</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>
+        <section>
+            <a href="home.html" class="brand-centered" aria-label="Soundly - inicio">
+                <img src="img/logo-marca.png" alt="" class="brand-logo" width="56" height="56">
+                <span class="brand-title">Soundly</span>
+            </a>
+
+            <h2>Crear cuenta</h2>
+    
+        
+    
+            <form action="#" method="POST">
+    
+                <!-- EMAIL -->
+                <label>Correo electrónico</label><br>
+                <input type="email" name="email" placeholder="Ingrese su correo" required>
+                <br><br>
+    
+                <!-- USUARIO -->
+                <label>Nombre de usuario</label><br>
+                <input type="text" name="username" placeholder="Ingrese su usuario" required>
+                <br><br>
+    
+                <!-- CONTRASEÑA -->
+                <label>Contraseña</label><br>
+                <input type="password" name="password" placeholder="Ingrese su contraseña" required>
+                <br><br>
+    
+                <!-- CONFIRMAR CONTRASEÑA -->
+                <label>Confirmar contraseña</label><br>
+                <input type="password" name="confirmPassword" placeholder="Repita su contraseña" required>
+                <br><br>
+    
+                <!-- FECHA DE NACIMIENTO -->
+                <label>Fecha de nacimiento</label><br>
+                <input type="date" name="birthdate" required>
+                <br><br>
+    
+                <!-- GENERO -->
+                <label>Género</label><br>
+                <select name="gender">
+                    <option value="">Seleccionar</option>
+                    <option value="male">Masculino</option>
+                    <option value="female">Femenino</option>
+                    <option value="other">Otro</option>
+                </select>
+                <br><br>
+    
+                <!-- TERMINOS -->
+                <input type="checkbox" required>
+                <label>Acepto los términos y condiciones</label>
+                <br><br>
+    
+                <!-- BOTON -->
+                <button type="submit">Registrarse</button>
+    
+            </form>
+    
+            <p>
+                ¿Ya tenés cuenta? <a href="login.html">Iniciá sesión</a>
+            </p>
+    
+        </section>
+    </main>
+</body>
+</html>
+
+
+

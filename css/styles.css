@@ -1,0 +1,171 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* BODY */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #b508e0;
+    color:#efb810;
+}
+
+/* NAVBAR */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background-color: black;
+}
+
+header h2 {
+    color: #1db954;
+}
+
+/* Logo en navbar y formularios */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.brand-logo {
+    height: 40px;
+    width: auto;
+    display: block;
+    /* El PNG trae negro opaco en vez de transparencia: el negro deja verse el fondo (violeta u otro). */
+    mix-blend-mode: screen;
+}
+
+.brand-title {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+header .brand-title {
+    color: #1db954;
+}
+
+/* Logo centrado en login/registro */
+.brand-centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.brand-centered .brand-logo {
+    height: 56px;
+}
+
+nav a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: white;
+    font-size: 14px;
+}
+
+nav a:hover {
+    color: #1db954;
+}
+
+/* SEPARADOR */
+hr {
+    border: 1px solid #222;
+}
+
+/* HOME */
+main section {
+    text-align: center;
+    padding: 100px 20px;
+}
+
+main h1 {
+    font-size: 50px;
+    margin-bottom: 20px;
+}
+
+main p {
+    color: #aaa;
+    max-width: 600px;
+    margin: auto;
+}
+
+/* BOTONES */
+button {
+    margin: 15px 10px;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:first-of-type {
+    background-color: lightblue;
+    color: rgb(255, 255, 255);
+}
+
+button:last-of-type {
+    background-color: #5f0972;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+/* FORM (LOGIN + REGISTER) */
+section form {
+    width: 300px;
+    margin: 40px auto;
+    padding: 25px;
+    background-color: #111;
+    border-radius: 10px;
+}
+
+section h2, section h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    background-color: #5f0972;
+    border: none;
+    border-radius: 5px;
+    color: white;
+}
+
+/* CHECKBOX */
+input[type="checkbox"] {
+    width: auto;
+    margin-right: 5px;
+}
+
+/* LINKS */
+p {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+p a {
+    color: #1db954;
+    text-decoration: none;
+}
+
+p a:hover {
+    text-decoration: underline;
+}
