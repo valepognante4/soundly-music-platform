@@ -1,31 +1,27 @@
-/* RESET */
+/* --- RESET --- */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* BODY */
+/* --- ESTILOS GLOBALES --- */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #b508e0;
-    color:#efb810;
+    font-family: 'Arial', sans-serif;
+    background-color: #121212; /* Fondo oscuro tipo streaming */
+    color: #ffffff;
+    line-height: 1.6;
 }
 
-/* NAVBAR */
+/* --- NAVBAR --- */
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 40px;
-    background-color: black;
+    padding: 20px 50px;
+    background-color: #000000;
 }
 
-header h2 {
-    color: #1db954;
-}
-
-/* Logo en navbar y formularios */
 .brand {
     display: flex;
     align-items: center;
@@ -34,138 +30,143 @@ header h2 {
     color: inherit;
 }
 
-.brand-logo {
-    height: 40px;
-    width: auto;
-    display: block;
-    /* El PNG trae negro opaco en vez de transparencia: el negro deja verse el fondo (violeta u otro). */
-    mix-blend-mode: screen;
-}
-
 .brand-title {
-    margin: 0;
     font-size: 1.5rem;
-}
-
-header .brand-title {
-    color: #1db954;
-}
-
-/* Logo centrado en login/registro */
-.brand-centered {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    text-decoration: none;
-    color: inherit;
-}
-
-.brand-centered .brand-logo {
-    height: 56px;
+    font-weight: bold;
+    color: #8A2BE2; /* Violeta del logo */
 }
 
 nav a {
     margin-left: 20px;
     text-decoration: none;
-    color: white;
+    color: #ffffff;
     font-size: 14px;
 }
 
 nav a:hover {
-    color: #1db954;
+    color: #8A2BE2;
 }
 
-/* SEPARADOR */
-hr {
-    border: 1px solid #222;
-}
-
-/* HOME */
+/* --- HOME (CONTENIDO PRINCIPAL) --- */
 main section {
-    text-align: center;
-    padding: 100px 20px;
+    text-align: left; /* Alineado a la izquierda */
+    padding: 100px 50px;
+    max-width: 800px;
 }
 
-main h1 {
-    font-size: 50px;
+main h2 {
+    font-size: 3.5rem;
     margin-bottom: 20px;
+    line-height: 1.1;
 }
 
 main p {
-    color: #aaa;
-    max-width: 600px;
-    margin: auto;
+    color: #b3b3b3; /* Gris suave */
+    font-size: 1.2rem;
+    margin-bottom: 30px;
 }
 
-/* BOTONES */
+/* --- BOTONES --- */
 button {
-    margin: 15px 10px;
-    padding: 12px 25px;
+    padding: 15px 30px;
     border: none;
-    border-radius: 25px;
+    border-radius: 50px; /* Muy redondeado */
     cursor: pointer;
     font-weight: bold;
-}
-
-button:first-of-type {
-    background-color: lightblue;
-    color: rgb(255, 255, 255);
-}
-
-button:last-of-type {
-    background-color: #5f0972;
+    font-size: 1rem;
+    transition: 0.3s;
+    background-color: #8A2BE2; /* Violeta principal */
     color: white;
 }
 
 button:hover {
-    opacity: 0.8;
+    transform: scale(1.05);
+    background-color: #9b4de0;
 }
 
-/* FORM (LOGIN + REGISTER) */
+/* --- FORMULARIOS (LOGIN/REGISTER) --- */
+/* Eliminamos el 'auto' para que se peguen a la izquierda si quieres */
 section form {
-    width: 300px;
-    margin: 40px auto;
-    padding: 25px;
-    background-color: #111;
+    width: 350px;
+    margin: 40px 50px; 
+    padding: 30px;
+    background-color: #181818; /* Gris muy oscuro */
     border-radius: 10px;
 }
 
-section h2, section h1 {
-    text-align: center;
+section h2 {
+    text-align: left;
     margin-bottom: 20px;
 }
 
 input, select {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin-top: 5px;
     margin-bottom: 15px;
-    background-color: #5f0972;
+    background-color: #2a2a2a;
     border: none;
     border-radius: 5px;
     color: white;
 }
 
-/* CHECKBOX */
-input[type="checkbox"] {
-    width: auto;
-    margin-right: 5px;
-}
-
-/* LINKS */
-p {
-    text-align: center;
-    margin-top: 10px;
-    font-size: 14px;
-}
-
+/* --- LINKS --- */
 p a {
-    color: #1db954;
+    color: #8A2BE2;
     text-decoration: none;
 }
 
 p a:hover {
     text-decoration: underline;
+}
+
+/* --- SEPARADOR --- */
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #333;
+}
+
+/* --- CONTENEDOR DE CENTRADO ESPECIAL PARA LOGIN/REGISTRO --- */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    width: 100%;
+    padding: 20px;
+}
+
+/* ESTILOS UNIFICADOS PARA LOS FORMULARIOS */
+.login-container form {
+    width: 450px;
+    padding: 40px;
+    background-color: #181818;
+    border-radius: 15px;
+    /* Eliminamos margin: 40px auto; porque el flexbox del padre ya los centra */
+}
+
+/* Títulos dentro de los formularios */
+.login-container form h2 {
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 30px;
+    line-height: 1.2;
+    color: #ffffff;
+}
+
+/* Etiquetas (labels) */
+.login-container form label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+/* Botones dentro de los formularios */
+.login-container form button {
+    display: block;
+    margin: 25px auto 0 auto;
+    width: 100%;
+    max-width: 300px;
 }
