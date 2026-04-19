@@ -2,15 +2,87 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Soundly - La Música Te Mueve</title>
+    <title>Home - Soundly</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/script.js"></script>
 </head>
 
-<link rel="stylesheet" href="css/styles.css">
-<script src="js/script.js"></script>
-
 <body>
-    <include src="navbar.html"></include>
-    <include src="home.html"></include>
-    <include src="login.html"></include>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <!-- NAVBAR -->
+    <header>
+        <a href="index.html" class="brand" aria-label="Soundly - inicio">
+            <img src="images/soundly-logo-2048px.png" alt="Logo" class="brand-logo" width="40">
+            <span class="brand-title">Soundly</span>
+        </a>
+
+        <nav>
+           <a href="login.html">Iniciar sesión</a>
+           <a href="register.html" class="nav-btn-register">Registrarse</a>
+        </nav>
+    </header>
+
+    <hr>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="hero-container">
+      <section class="hero">
+        <div class="hero-text">
+            <h1>Siente la música <br> <span>como nunca antes</span></h1>
+            <p>
+                Reproduce millones de canciones en streaming, descubre nuevos artistas y crea el ambiente perfecto para cada momento.
+            </p>
+            <a href="register.html" class="btn-main">Empieza a escuchar gratis</a>
+            <p class="sub-text">No se requiere tarjeta de crédito • Cancela en cualquier momento</p>
+        </div>
+        
+        <div class="hero-image">
+        <img src="images/Imagen Inicio.jpg" alt="Personas en un concierto">
+    
+        <div class="info-badge">
+        <div class="badge-text">
+            <strong>100M+ Canciones</strong>
+            <span>Disponibles al instante</span>
+        </div>
+       </div>
+       </div>
+      </section>
+   </main>
+    <section class="features">
+      <h2 class="features-title">Tu música, a tu manera</h2>
+      <p class="features-subtitle">Todo lo que necesitas para la experiencia de escucha definitiva</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+            <h3>Saltos ilimitados</h3>
+            <p>Sáltate tantas canciones como quieras, cuando quieras</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Listas de reproducción</h3>
+            <p>Creá tus propias playlists y disfrutá tu música a tu manera</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Audio de alta calidad</h3>
+            <p>Experimenta un sonido nítido de hasta 320 kbps</p>
+        </div>
+      </div>
+    </section>
+    <section class="cta-section">
+      <div class="cta-content">
+          <h2>¿Listo para comenzar<br><span class="purple-gradient">tu viaje musical?</span></h2>
+          <p>Únete a millones de oyentes descubriendo su banda sonora</p>
+          <a href="register.html" class="btn-main">Comienza gratis</a>
+       </div>
+    
+       <footer>
+         <p>&copy; 2026 Soundly. Todos los derechos reservados.</p>
+      </footer>
+   </section>
+   
+
 </body>
 </html>
