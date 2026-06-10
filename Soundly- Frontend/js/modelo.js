@@ -1,0 +1,311 @@
+/**
+ * modelo.js — Soundly
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CAPA DE MODELO (MVC)
+ *
+ * Responsabilidades:
+ *   - Comunicación HTTP con el backend Spring Boot
+ *   - Adaptación de DTOs del backend a objetos internos consistentes
+ *   - Gestión de usuarios, canciones, artistas y playlists
+ *
+ * Campos internos normalizados (independiente del backend):
+ *   cancion.id        ← CancionDTO.id
+ *   cancion.titulo    ← CancionDTO.titulo
+ *   cancion.artista   ← CancionDTO.nombreArtista
+ *   cancion.img       ← CancionDTO.imagenUrl
+ *   cancion.src       ← CancionDTO.archivoUrl
+ *   cancion.duracion  ← CancionDTO.duracion
+ *   cancion.genero    ← (si el backend lo agrega)
+ *
+ *   artista.id        ← ArtistaDTO.id
+ *   artista.nombre    ← ArtistaDTO.nombre
+ *   artista.foto      ← ArtistaDTO.fotoUrl
+ *   artista.bio       ← ArtistaDTO.biografia
+ *   artista.genero    ← ArtistaDTO.genero
+ *   artista.canciones ← ArtistaDTO.titulosCanciones
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+// ─── UTILIDADES BASE ─────────────────────────────────────────────────────────
+
+const API = window.SoundlyConfig.API_BASE_URL;
+
+/**
+ * Wrapper genérico para fetch con manejo de errores centralizado.
+ * @param {string} endpoint  - Ruta relativa (e.g. '/canciones')
+ * @param {object} opciones  - Opciones de fetch (method, body, headers...)
+ * @returns {Promise<any>}
+ */
+async function apiFetch(endpoint, opciones = {}) {
+    const url = `${API}${endpoint}`;
+    const config = {
+        headers: { 'Content-Type': 'application/json' },
+        ...opciones,
+    };
+    if (config.body && typeof config.body === 'object') {
+        config.body = JSON.stringify(config.body);
+    }
+    const response = await fetch(url, config);
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => `HTTP ${response.status}`);
+        throw new Error(`[API] ${response.status} ${response.statusText} — ${errorText}`);
+    }
+    // 204 No Content: no hay body que parsear
+    if (response.status === 204) return null;
+    return response.json();
+}
+
+// ─── ADAPTADORES ─────────────────────────────────────────────────────────────
+
+/**
+ * Convierte un CancionDTO del backend al objeto interno cancion.
+ * Cualquier controlador usa c.img, c.src, c.artista — nunca .imagenUrl directamente.
+ */
+function adaptarCancion(dto) {
+    if (!dto) return null;
+    return {
+        id:       dto.id,
+        titulo:   dto.titulo              || 'Sin título',
+        artista:  dto.nombreArtista       || dto.artista || 'Artista desconocido',
+        genero:   dto.genero              || '',
+        duracion: dto.duracion            || 0,
+        img:      dto.imagenUrl           || dto.img || 'https://placehold.co/300x300/1a1a2e/a78bfa?text=♪',
+        src:      dto.archivoUrl          || dto.src || '',
+        reproducciones: dto.contadorReproducciones || 0,
+    };
+}
+
+/**
+ * Convierte un ArtistaDTO del backend al objeto interno artista.
+ */
+function adaptarArtista(dto) {
+    if (!dto) return null;
+    return {
+        id:       dto.id,
+        nombre:   dto.nombre    || 'Artista desconocido',
+        foto:     dto.fotoUrl   || dto.foto || 'https://placehold.co/300x300/1a1a2e/a78bfa?text=🎤',
+        bio:      dto.biografia || '',
+        genero:   dto.genero    || '',
+        canciones: dto.titulosCanciones || [],
+    };
+}
+
+/**
+ * Convierte un PlaylistDTO del backend al objeto interno playlist.
+ */
+function adaptarPlaylist(dto) {
+    if (!dto) return null;
+    return {
+        id:          dto.id,
+        nombre:      dto.nombre         || 'Mi Playlist',
+        descripcion: dto.descripcion    || '',
+        creador:     dto.nombreCreador  || '',
+        canciones:   (dto.canciones     || []).map(adaptarCancion),
+    };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GestorUsuarios — Autenticación y sesión
+// ═════════════════════════════════════════════════════════════════════════════
+const GestorUsuarios = {
+    /**
+     * Registra un nuevo usuario. POST /api/auth/registrar
+     */
+    async registrar(usuario) {
+        return apiFetch('/auth/registrar', {
+            method: 'POST',
+            body: {
+                nombreUsuario:   usuario.apodo,
+                email:           usuario.correo,
+                password:        usuario.clave,
+                fechaNacimiento: usuario.nacimiento,
+            },
+        });
+    },
+
+    /**
+     * Valida las credenciales y guarda el usuario en localStorage. POST /api/auth/login
+     * @returns {{ exito: boolean, motivo?: string }}
+     */
+    async validarLogin(correo, clave) {
+        try {
+            const usuario = await apiFetch('/auth/login', {
+                method: 'POST',
+                body: { email: correo, password: clave },
+            });
+            localStorage.setItem('usuario_activo', JSON.stringify(usuario));
+            return { exito: true };
+        } catch (error) {
+            if (error.message.includes('401')) return { exito: false, motivo: 'credenciales' };
+            if (error.message.includes('Failed to fetch')) return { exito: false, motivo: 'red' };
+            return { exito: false, motivo: 'servidor' };
+        }
+    },
+
+    /** Obtiene el usuario del localStorage. Devuelve null si no hay sesión. */
+    obtenerActivo() {
+        try {
+            return JSON.parse(localStorage.getItem('usuario_activo')) || null;
+        } catch {
+            return null;
+        }
+    },
+
+    /** Cierra sesión limpiando localStorage. */
+    cerrarSesion() {
+        localStorage.removeItem('usuario_activo');
+        sessionStorage.removeItem('soundly_player_state');
+        window.location.href = 'login.html';
+    },
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GestorCanciones — Canciones, favoritos y búsqueda
+// ═════════════════════════════════════════════════════════════════════════════
+const GestorCanciones = {
+    /** Obtiene todas las canciones. GET /api/canciones */
+    async obtenerTodas() {
+        const data = await apiFetch('/canciones').catch(() => []);
+        return (Array.isArray(data) ? data : []).map(adaptarCancion);
+    },
+
+    /** Obtiene canciones recomendadas/destacadas. GET /api/canciones/recomendados */
+    async obtenerRecomendadas() {
+        const data = await apiFetch('/canciones/recomendados').catch(() => []);
+        return (Array.isArray(data) ? data : []).map(adaptarCancion);
+    },
+
+    /**
+     * Busca canciones por título, artista o género con debounce natural del llamador.
+     * GET /api/canciones/buscar?titulo=X&artista=Y&genero=Z
+     * @param {{ titulo?: string, artista?: string, genero?: string }} filtros
+     */
+    async buscar(filtros = {}) {
+        const params = new URLSearchParams();
+        if (filtros.titulo)  params.set('titulo',  filtros.titulo);
+        if (filtros.artista) params.set('artista', filtros.artista);
+        if (filtros.genero)  params.set('genero',  filtros.genero);
+        const query = params.toString() ? `?${params}` : '';
+        const data = await apiFetch(`/canciones/buscar${query}`).catch(() => []);
+        return (Array.isArray(data) ? data : []).map(adaptarCancion);
+    },
+
+    /**
+     * Obtiene los favoritos de un usuario. GET /api/usuarios/{userId}/favoritos
+     */
+    async obtenerFavoritos(userId) {
+        const data = await apiFetch(`/usuarios/${userId}/favoritos`).catch(() => []);
+        return (Array.isArray(data) ? data : []).map(adaptarCancion);
+    },
+
+    /**
+     * Alterna favorito (un solo endpoint que agrega o quita según el estado del backend).
+     * POST /api/canciones/{id}/favorito/usuario/{usuarioId}
+     * @returns {Promise<string>} Mensaje del backend ("Canción añadida" / "Canción eliminada")
+     */
+    async toggleFavorito(cancionId, userId) {
+        return apiFetch(`/canciones/${cancionId}/favorito/usuario/${userId}`, { method: 'POST' });
+    },
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GestorArtistas — Artistas
+// ═════════════════════════════════════════════════════════════════════════════
+const GestorArtistas = {
+    /** Obtiene todos los artistas. GET /api/artistas */
+    async obtenerTodos() {
+        const data = await apiFetch('/artistas').catch(() => []);
+        return (Array.isArray(data) ? data : []).map(adaptarArtista);
+    },
+
+    /** Obtiene un artista por ID. GET /api/artistas/{id} */
+    async obtenerPorId(id) {
+        const data = await apiFetch(`/artistas/${id}`).catch(() => null);
+        return adaptarArtista(data);
+    },
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GestorPlaylists — Crear, modificar, eliminar y listar playlists
+// ═════════════════════════════════════════════════════════════════════════════
+const GestorPlaylists = {
+    /**
+     * Crea una nueva playlist. POST /api/playlists
+     * El body debe incluir nombre y, si el backend lo requiere, el creadorId.
+     */
+    async crear(nombre, usuarioId) {
+        const data = await apiFetch('/playlists', {
+            method: 'POST',
+            body: {
+                nombre,
+                nombreCreador: GestorUsuarios.obtenerActivo()?.apodo || '',
+                // Si PlaylistService necesita el ID del usuario, agrega aquí:
+                // creadorId: usuarioId,
+            },
+        });
+        return adaptarPlaylist(data);
+    },
+
+    /** Obtiene el detalle de una playlist. GET /api/playlists/{id} */
+    async obtenerDetalle(id) {
+        const data = await apiFetch(`/playlists/${id}`).catch(() => null);
+        return adaptarPlaylist(data);
+    },
+
+    /** Lista las playlists de un usuario. GET /api/playlists/usuario/{usuarioId} */
+    async listarPorUsuario(usuarioId) {
+        const data = await apiFetch(`/playlists/usuario/${usuarioId}`).catch(() => []);
+        return (Array.isArray(data) ? data : []).map(adaptarPlaylist);
+    },
+
+    /**
+     * Actualiza el nombre y/o descripción de una playlist. PUT /api/playlists/{id}
+     */
+    async actualizar(id, cambios = {}) {
+        const data = await apiFetch(`/playlists/${id}`, {
+            method: 'PUT',
+            body: cambios,
+        });
+        return adaptarPlaylist(data);
+    },
+
+    /** Elimina una playlist. DELETE /api/playlists/{id} */
+    async eliminar(id) {
+        return apiFetch(`/playlists/${id}`, { method: 'DELETE' });
+    },
+
+    /**
+     * Agrega una canción a una playlist. POST /api/playlists/{id}/canciones/{cancionId}
+     */
+    async agregarCancion(playlistId, cancionId) {
+        const data = await apiFetch(`/playlists/${playlistId}/canciones/${cancionId}`, { method: 'POST' });
+        return adaptarPlaylist(data);
+    },
+
+    /**
+     * Quita una canción de una playlist. DELETE /api/playlists/{id}/canciones/{cancionId}
+     */
+    async quitarCancion(playlistId, cancionId) {
+        const data = await apiFetch(`/playlists/${playlistId}/canciones/${cancionId}`, { method: 'DELETE' });
+        return adaptarPlaylist(data);
+    },
+};
+
+// ─── COMPATIBILIDAD CON CÓDIGO LEGADO ────────────────────────────────────────
+// Los controladores anteriores usaban CancionesModelo y PlaylistModelo.
+// Los aliasamos para no tener que reescribir todo de golpe.
+const CancionesModelo = {
+    obtenerTodas:    () => GestorCanciones.obtenerTodas(),
+    obtenerFavoritos: (uid) => GestorCanciones.obtenerFavoritos(uid),
+    toggleFavorito:  (uid, cid) => GestorCanciones.toggleFavorito(cid, uid),
+    buscar:          (q) => GestorCanciones.buscar({ titulo: q }),
+};
+
+const PlaylistModelo = {
+    crear:           (uid, nombre) => GestorPlaylists.crear(nombre, uid),
+    obtenerDetalle:  (id) => GestorPlaylists.obtenerDetalle(id),
+    actualizarNombre:(id, nombre) => GestorPlaylists.actualizar(id, { nombre }),
+    agregarCancion:  (pid, cid) => GestorPlaylists.agregarCancion(pid, cid),
+    quitarCancion:   (pid, cid) => GestorPlaylists.quitarCancion(pid, cid),
+    listarPorUsuario:(uid) => GestorPlaylists.listarPorUsuario(uid),
+};

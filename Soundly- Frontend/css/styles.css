@@ -1,0 +1,1152 @@
+/* --- RESET --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000000;
+    /* Orbes fijos para que no se muevan al hacer scroll */
+    background-image:
+        radial-gradient(circle at 15% 15%, rgba(168, 85, 247, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif !important;
+    overflow-x: hidden;
+}
+
+/* Forzamos que todos los títulos sean blancos */
+h1,
+h2,
+h3,
+.brand-title {
+    color: #ffffff;
+}
+
+/* Estilo base para los orbes */
+.orb {
+    position: fixed;
+    border-radius: 50%;
+    z-index: -1;
+    pointer-events: none;
+    filter: blur(120px);
+}
+
+/* Orbe superior derecho (más intenso) */
+.orb-1 {
+    top: -100px;
+    right: 10%;
+    width: 600px;
+    height: 600px;
+    background: rgba(157, 80, 187, 0.15);
+    /* Purple-500 al 15% */
+}
+
+/* Orbe inferior izquierdo (más sutil) */
+.orb-2 {
+    bottom: -100px;
+    left: 10%;
+    width: 500px;
+    height: 500px;
+    background: rgba(126, 34, 206, 0.1);
+    /* Purple-700 al 10% */
+}
+
+/* IMPORTANTE: Asegurate que las secciones no tengan fondos sólidos */
+.hero-container,
+.features,
+.cta-section {
+    background: transparent !important;
+}
+
+/* --- NAVBAR --- */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 50px;
+    background-color: #000000;
+}
+
+/* Para el botón de Registrarse */
+.nav-btn-register {
+    background: linear-gradient(to right, #a855f7, #7e22ce);
+    color: white !important;
+    padding: 12px 30px;
+    /* Aumentamos un poquito el padding para que el botón crezca con la letra */
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    /* Mismo tamaño que el link de al lado */
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.nav-btn-register:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(168, 85, 247, 0.4);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.brand .brand-title {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.5rem !important;
+    /* Más chico para el menú */
+    font-weight: 700 !important;
+    letter-spacing: -0.5px;
+}
+
+/* Para el enlace de Iniciar Sesión */
+nav a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 1.1rem;
+    /* Lo subimos para igualar a Soundly */
+    font-weight: 600;
+    /* Le damos un poco más de cuerpo */
+}
+
+/* --- SEPARADOR --- */
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #333;
+}
+
+/* --- SECCIÓN HERO (ESTILO FIGMA) --- */
+.hero-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 80px);
+    padding: 0 50px;
+}
+
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1300px;
+    width: 100%;
+    gap: 80px;
+}
+
+.hero-text {
+    flex: 2;
+    text-align: left;
+    max-width: 750px;
+}
+
+.hero-text h1 {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 25px;
+}
+
+/* Letras en lila juntas abajo */
+.hero-text h1 span {
+    /* 1. Mantenemos el degradado */
+    background: linear-gradient(90deg, #FFFFFF 0%, #A855F7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; /* Agregado por compatibilidad */
+    color: transparent;     /* Agregado por compatibilidad */
+
+    /* 2. EL ARREGLO PARA EL TAMAÑO: */
+    font-size: inherit;      /* Obliga al span a medir lo mismo que el h1 (4rem) */
+    font-weight: inherit;    /* Obliga al span a tener el mismo grosor (800) */
+    line-height: inherit;    /* Mantiene el interlineado igual */
+    
+    /* 3. EL ARREGLO PARA LA POSICIÓN: */
+    display: inline;         /* Evita que se comporte como un bloque y se achique */
+    vertical-align: baseline; /* Alinea perfectamente las letras con el texto blanco */
+}
+
+.hero-text p {
+    color: #b3b3b3;
+    font-size: 1.3rem;
+    margin-bottom: 35px;
+}
+
+.hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.hero-image img {
+    width: 450px;
+    height: 450px;
+    /* Cuadrado como pediste */
+    object-fit: cover;
+    border-radius: 30px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* --- BOTONES --- */
+.btn-main {
+    text-decoration: none;
+    /* Esto elimina la raya de abajo */
+    display: inline-block;
+    padding: 18px 45px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: 0.3s;
+    background: linear-gradient(90deg, #7C3AED 0%, #A855F7 100%);
+    color: white;
+}
+
+/* Usamos .hero-text para que sea más específico y le gane a cualquier otra regla */
+.hero-text p.sub-text {
+    font-size: 0.85rem !important;
+    /* El tamaño pequeño que querías */
+    color: rgba(255, 255, 255, 0.5) !important;
+    /* Un blanco sutil para que no resalte tanto como el título */
+    margin-top: 15px;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+}
+
+/* --- FORMULARIOS (LOGIN/REGISTER) --- */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 20px;
+}
+
+
+
+input,
+select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    background-color: #2a2a2a;
+    border: none;
+    border-radius: 8px;
+    color: white;
+}
+
+/* Contenedor de la imagen como referencia */
+.hero-image {
+    position: relative;
+    /* Esto permite que el badge se ubique respecto a la foto */
+    display: flex;
+    justify-content: center;
+}
+
+.hero-image img {
+    width: 450px;
+    height: 450px;
+    object-fit: cover;
+    border-radius: 40px;
+}
+
+.info-badge {
+    position: absolute;
+    bottom: 0px;
+    /* Lo ubica abajo */
+    left: -20px;
+    /* Lo saca un poquito a la izquierda */
+    width: fit-content;
+    /* ¡CLAVE! Evita que se haga gigante */
+    background: rgba(18, 18, 18, 0.8);
+    /* Fondo oscuro estilo glassmorphism */
+    backdrop-filter: blur(10px);
+    /* Efecto de desenfoque */
+    padding: 15px 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10;
+    /* Asegura que esté siempre arriba de la foto */
+}
+
+.badge-text strong {
+    display: block;
+    /* Para que el span baje a la siguiente línea */
+    font-size: 1rem;
+    color: white;
+}
+
+.badge-text span {
+    font-size: 0.8rem;
+    color: #b3b3b3;
+}
+
+
+/* Ajuste de los textos dentro del badge */
+.info-badge div {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-badge strong {
+    font-size: 0.9rem;
+    color: #ffffff;
+}
+
+.info-badge span {
+    font-size: 0.75rem;
+    color: #b3b3b3;
+}
+
+.features {
+    padding: 80px 5%;
+    text-align: center;
+    background-color: #000;
+    /* Fondo negro puro para contrastar */
+}
+
+.features-title {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.features-subtitle {
+    color: #b3b3b3;
+    margin-bottom: 50px;
+}
+
+.features-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    /* Por si se ve en pantallas chicas */
+}
+
+/* MEJORA SECCIÓN FEATURES (SERVICIOS) */
+
+.feature-card {
+    background: rgba(18, 18, 18, 0.6); /* Fondo semi-transparente */
+    backdrop-filter: blur(10px); /* Efecto de desenfoque estilo vidrio */
+    padding: 40px 30px;
+    border-radius: 20px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    
+    /* Borde sutil y sombra para dar profundidad */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease; /* Transición suave para el hover */
+}
+
+.feature-card h3 {
+    color: #a855f7; /* Ponemos el título en el lila de la marca */
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    font-weight: 700;
+    /* Un brillo sutil detrás del texto */
+    text-shadow: 0 0 15px rgba(168, 85, 247, 0.4); 
+}
+
+.feature-card p {
+    color: #e0e0e0; /* Un gris un poco más claro para mejor lectura */
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 250px;
+}
+
+/* Efecto al pasar el mouse (Hover) */
+.feature-card:hover {
+    transform: translateY(-10px) scale(1.02); /* Se levanta y crece un poquito */
+    background: rgba(24, 24, 24, 0.8); /* Se oscurece un poco */
+    border-color: rgba(168, 85, 247, 0.4); /* El borde se ilumina en lila */
+    box-shadow: 0 15px 40px rgba(168, 85, 247, 0.2); /* Sombra lila */
+}
+
+.cta-content h2 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.cta-content h2 span {
+    color: #9d50bb;
+    /* El violeta de nuestra marca */
+}
+
+
+/* Reutilizamos el estilo de tu botón principal */
+.cta-section .btn-main {
+    padding: 18px 40px;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+/* Estilo para el pie de página */
+footer {
+    margin-top: 60px;
+    /* Aumentamos el primer valor (arriba/abajo) para que el texto baje */
+    padding: 40px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    text-align: center;
+}
+
+footer p {
+    font-size: 0.75rem;
+    color: #666;
+    margin: 0;
+}
+
+/* --- EFECTO DEGRADADO LILA (TEXT GRADIENT) --- */
+
+.purple-gradient {
+    /* Definimos el degradado de blanco a violeta */
+    background: linear-gradient(90deg, #FFFFFF 0%, #A855F7 100%);
+
+    /* ESTO ES LA MAGIA: Corta el fondo para que solo se vea DENTRO de las letras */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Hace que el color de letra original sea invisible */
+
+    /* Propiedad estándar por compatibilidad */
+    background-clip: text;
+    color: transparent;
+
+    font-weight: 800;
+    /* Asegura que la letra sea gruesa para que el degradado resalte */
+}
+
+/* Solo afecta a la sección de abajo */
+/* AJUSTE FINAL CTA - ESTILO FIGMA */
+.cta-section {
+    padding: 100px 5% !important;
+    text-align: center;
+    background-color: #000;
+}
+
+/* Forzamos el tamaño del título blanco */
+.cta-content h1 {
+    font-size: 2.8rem; /* Bajamos el tamaño */
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    color: #ffffff;
+    /* Sacamos el !important para que sea más flexible */
+}
+
+/* Título lila "...tu viaje musical?" */
+.cta-content .purple-gradient {
+    display: block; /* Mantenemos el efecto de Figma abajo */
+    font-size: 3.2rem; /* Bajamos el tamaño del degradado */
+    background: linear-gradient(90deg, #A855F7 0%, #7E22CE 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    margin-top: 5px;
+    /* Sacamos el !important */
+}
+
+/* Ajuste del texto de abajo */
+.cta-content p {
+    font-size: 1.2rem !important;
+    color: #b3b3b3 !important;
+    margin-bottom: 40px !important;
+}
+
+/* --- CORRECCIÓN FINAL Y MEJORAS --- */
+
+/* 1. ACHICAR TÍTULOS DEL CTA (LO DE AYER) */
+.cta-content h1 {
+    font-size: 2.8rem !important; /* Más chico "¿Listo para comenzar...?" */
+    margin-bottom: 20px !important;
+}
+
+.cta-content .purple-gradient {
+    font-size: 3.2rem !important; /* Más chico "...tu viaje musical?" */
+}
+
+
+/* 2. ARREGLAR TÍTULO "TU MÚSICA..." (ESTILO COMO EL ANTERIOR) */
+/* --- CORRECCIÓN FINAL Y MEJORAS --- */
+
+/* 1. ACHICAR TÍTULOS DEL CTA (LO DE AYER) */
+.cta-content h1 {
+    font-size: 2.8rem !important; /* Más chico "¿Listo para comenzar...?" */
+    margin-bottom: 20px !important;
+}
+
+.cta-content .purple-gradient {
+    font-size: 3.2rem !important; /* Más chico "...tu viaje musical?" */
+}
+
+
+/* 2. ARREGLAR TÍTULO "TU MÚSICA..." (ESTILO COMO EL ANTERIOR) */
+/* --- AJUSTE FINAL FEATURES --- */
+
+/* Título principal: Más grande y con el estilo del inicio */
+.features-title {
+    font-size: 3rem !important; /* Lo bajamos de 3.5 a 3 para igualar al otro */
+    font-weight: 800 !important;
+    text-align: center;
+    color: white !important;
+    margin-bottom: 15px !important;
+}
+
+/* Aplicamos el degradado al span */
+.features-title .purple-gradient {
+    display: inline !important;
+    font-size: inherit !important;
+    background: linear-gradient(90deg, #FFFFFF 0%, #A855F7 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: transparent !important;
+}
+
+/* Subtítulo: Lo agrandamos para que se lea claro */
+.features-subtitle {
+    font-size: 1.25rem !important; /* Un poco más grande para que sea legible */
+    color: #b3b3b3 !important;
+    max-width: 800px; /* Para que no ocupe todo el ancho y quede elegante */
+    margin: 0 auto 60px auto !important; /* Centrado */
+    line-height: 1.5;
+}
+
+/* Limpieza de las tarjetas (Sin sombras lilas fijas) */
+.feature-card {
+    background: #121212 !important;
+    box-shadow: none !important; /* Quitamos sombras por defecto */
+}
+
+.feature-card h3 {
+    color: white !important;
+    font-size: 1.4rem !important;
+    text-shadow: none !important; /* Limpiamos sombras del texto */
+}
+
+/* Solo sombra en el hover, como te gustaba */
+.feature-card:hover {
+    box-shadow: 0 15px 40px rgba(168, 85, 247, 0.2) !important;
+    transform: translateY(-10px);
+}
+
+
+/* ----------------------------------------------------------- */
+
+
+
+
+/* --- MEJORA ESTÉTICA: LOGIN SOUNDLY --- */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
+
+/* 1. CONTENEDOR PRINCIPAL */
+.login-container {
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Inter', sans-serif !important;
+}
+
+
+/* 3. BRANDING (LOGO Y TÍTULO) */
+.brand-inside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.brand-inside img {
+    width: 55px !important;
+    height: auto !important;
+    display: block;
+}
+
+.brand-title {
+    font-size: 2.4rem !important;
+    font-weight: 500 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.5px;
+}
+
+h2 {
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.5) !important;
+    margin-bottom: 40px;
+}
+
+
+/* --- UNIFICACIÓN TOTAL Y ARREGLO DE TAMAÑO - SOUNDLY --- */
+
+/* 1. Contenedor de cristal - FORZAMOS ALTURA ÚNICA */
+.login-container form,
+#form-registro {
+    background: rgba(255, 255, 255, 0.04) !important;
+    /* Lila transparente perfecto */
+    backdrop-filter: blur(30px) !important;
+    -webkit-backdrop-filter: blur(30px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+
+    /* Estructura idéntica */
+    width: 100%;
+    max-width: 420px;
+    padding: 60px 45px;
+    border-radius: 40px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+
+    /* ¡ACÁ ESTÁ LA CLAVE! Altura fija para que sean espejos */
+    min-height: 700px !important;
+    justify-content: space-between;
+    /* Distribuye el contenido para que no se vea vacío el login */
+    margin: 40px auto;
+}
+
+/* 2. Inputs minimalistas - ESTO SACA EL FONDO GRIS DEL REGISTRO */
+.login-container input,
+#form-registro input,
+.login-container select,
+#form-registro select {
+    font-family: 'Inter', sans-serif !important;
+    background: transparent !important;
+    /* Sacamos cualquier color de fondo gris */
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0 !important;
+    padding: 15px 0 !important;
+    margin-bottom: 10px !important;
+    /* Espacio uniforme */
+    font-size: 1rem;
+    color: #ffffff !important;
+    outline: none;
+}
+
+/* Color de los placeholders unificado */
+.login-container input::placeholder,
+#form-registro input::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Especial para fecha */
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 5. BOTÓN PRINCIPAL */
+button[type="submit"] {
+    background: #a855f7;
+    color: white;
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+button[type="submit"]:hover {
+    background: #9333ea;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+}
+
+/* 6. OTROS ELEMENTOS (Links y Checkbox) */
+.forgot-container {
+    text-align: right;
+    margin-bottom: 40px;
+}
+
+.forgot-container a,
+.footer-form,
+.footer-form a {
+    color: rgba(255, 255, 255, 0.5) !important;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+/* Contenedor del checkbox centrado */
+.terms-container {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centra todo el bloque en el formulario */
+    gap: 12px;
+    margin: 20px 0 30px 0;
+    width: 100%;
+}
+
+.terms-container input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    cursor: pointer;
+    accent-color: #a855f7; /* Color lila de Soundly */
+}
+
+.terms-container label {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6) !important;
+    cursor: pointer;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.date-input-group label {
+    display: block;
+    text-align: left;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 5px;
+}
+
+/* Contenedor del checkbox centrado */
+.terms-group {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Lo trae al medio */
+    gap: 10px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+/* Estilo del cuadradito */
+.terms-group input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    cursor: pointer;
+    accent-color: #a855f7; /* Lila de Soundly */
+}
+
+/* Estilo del texto */
+.terms-group label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5) !important;
+    cursor: pointer;
+}
+
+ /* --- ELIMINAR EL FONDO BLANCO AL AUTOCOMPLETAR --- */
+  input:-webkit-autofill {
+    -webkit-text-fill-color: white !important;
+    -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Fondo oscuro con efecto de desenfoque */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px); /* El efecto "glass" elegante */
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #121212;
+    margin: 2% auto;
+    padding: 40px;
+    width: 85%;
+    max-width: 900px; /* Ancho cómodo para lectura */
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Evita que se salga de la pantalla */
+}
+
+/* Título con estilo */
+.modal-content h3 {
+    font-size: 1.6rem;
+    color: #ffffff;
+    margin-bottom: 25px;
+    text-align: center; /* Cambiado a center */
+    border-bottom: 1px solid #333;
+    padding-bottom: 15px;
+}
+
+/* Área de texto scroll mejorada */
+.texto-scroll {
+    overflow-y: auto;
+    padding-right: 20px;
+    line-height: 1.7;
+    font-size: 1rem;
+    text-align: justify;
+    flex-grow: 1; /* Ocupa el espacio disponible */
+    scrollbar-width: thin;
+    scrollbar-color: #a855f7 #1e1e1e;
+}
+
+/* Botón estilo "Call to Action" */
+#cerrar-modal {
+    margin-top: 25px;
+    padding: 15px;
+    background: linear-gradient(90deg, #a855f7, #7e22ce);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.3s;
+}
+
+#cerrar-modal:hover {
+    transform: scale(1.02);
+    background: #9333ea;
+}
+
+/* =========================================================
+   MEDIA QUERIES — SISTEMA RESPONSIVE SOUNDLY
+   Breakpoints:
+     · Tablets          → max-width: 768px
+     · Tablets pequeñas → max-width: 600px
+     · Móviles          → max-width: 480px
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   1. TABLETS (≤ 768px)
+   --------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    /* ── Orbes: reducimos tamaño para que no tapen el contenido ── */
+    .orb-1 {
+        width: 350px;
+        height: 350px;
+        top: -60px;
+        right: 0;
+        opacity: 0.6;
+    }
+
+    .orb-2 {
+        width: 280px;
+        height: 280px;
+        bottom: -60px;
+        left: 0;
+        opacity: 0.5;
+    }
+
+    /* ── Navbar: compactamos el padding y reducimos fuentes ── */
+    header {
+        padding: 16px 24px;
+        gap: 12px;
+    }
+
+    .brand .brand-title {
+        font-size: 1.2rem !important;
+    }
+
+    nav a {
+        font-size: 0.95rem;
+        margin-left: 12px;
+    }
+
+    .nav-btn-register {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+
+    /* ── Hero: apilamos texto arriba, imagen abajo ── */
+    .hero-container {
+        padding: 0 24px;
+        min-height: auto;
+        padding-top: 40px;
+        padding-bottom: 60px;
+    }
+
+    .hero {
+        flex-direction: column;
+        gap: 40px;
+        text-align: center;
+        align-items: center;
+    }
+
+    .hero-text {
+        flex: none;
+        max-width: 100%;
+        text-align: center;
+    }
+
+    .hero-text h1 {
+        font-size: 2.8rem;
+        margin-bottom: 20px;
+    }
+
+    .hero-text p {
+        font-size: 1.1rem;
+        margin-bottom: 28px;
+    }
+
+    /* ── Imagen hero: cuadrada pero más pequeña ── */
+    .hero-image {
+        flex: none;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .hero-image img {
+        width: 100%;
+        max-width: 380px;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+    }
+
+    /* ── Badge: lo reposicionamos para que no tape texto ── */
+    .info-badge {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: -16px;
+        white-space: nowrap;
+    }
+
+    /* ── Features grid: 1 columna ── */
+    .features {
+        padding: 60px 24px;
+    }
+
+    .features-title {
+        font-size: 2.2rem !important;
+    }
+
+    .features-grid {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .feature-card {
+        width: 100%;
+        max-width: 420px;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+        padding: 70px 24px !important;
+    }
+
+    .cta-content h1 {
+        font-size: 2rem !important;
+    }
+
+    .cta-content .purple-gradient {
+        font-size: 2.4rem !important;
+    }
+
+    .cta-content p {
+        font-size: 1rem !important;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   2. TABLETS PEQUEÑAS (≤ 600px)
+   --------------------------------------------------------- */
+@media (max-width: 600px) {
+
+    /* ── Navbar: ocultamos el texto "Iniciar sesión" en pantallas muy angostas ── */
+    nav a:first-child {
+        display: none;
+    }
+
+    /* El botón "Registrarse" queda solo y bien centrado */
+    nav {
+        display: flex;
+        align-items: center;
+    }
+
+    /* ── Hero texto ── */
+    .hero-text h1 {
+        font-size: 2.3rem;
+    }
+
+    /* ── Orbes: los hacemos aún más chicos y difusos ── */
+    .orb-1 {
+        width: 260px;
+        height: 260px;
+        filter: blur(90px);
+    }
+
+    .orb-2 {
+        width: 220px;
+        height: 220px;
+        filter: blur(80px);
+    }
+}
+
+
+/* ---------------------------------------------------------
+   3. MÓVILES (≤ 480px)
+   --------------------------------------------------------- */
+@media (max-width: 480px) {
+
+    /* ── Navbar: apilamos logo y botón si hace falta ── */
+    header {
+        padding: 14px 16px;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .brand .brand-title {
+        font-size: 1.1rem !important;
+    }
+
+    .nav-btn-register {
+        padding: 9px 16px;
+        font-size: 0.88rem;
+    }
+
+    /* ── Hero ── */
+    .hero-container {
+        padding: 90px 20px 80px !important;
+    }
+
+    .hero {
+        gap: 32px;
+    }
+
+    .hero-text h1 {
+        font-size: 2rem;
+        margin-bottom: 16px;
+    }
+
+    .hero-text p {
+        font-size: 1rem;
+        margin-bottom: 24px;
+    }
+
+    .hero-text p.sub-text {
+        font-size: 0.78rem !important;
+    }
+
+    .hero-image img {
+        max-width: 290px;
+        border-radius: 24px;
+    }
+
+    /* ── Badge: ocultamos para no tapar la imagen en pantallas muy pequeñas ── */
+    .info-badge {
+        display: none;
+    }
+
+    /* ── Botón principal ── */
+    .btn-main {
+        padding: 15px 32px;
+        font-size: 1rem;
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    /* ── Features ── */
+    .features {
+        padding: 50px 16px;
+    }
+
+    .features-title {
+        font-size: 1.8rem !important;
+    }
+
+    .features-subtitle {
+        font-size: 1rem !important;
+        margin-bottom: 36px !important;
+    }
+
+    .feature-card {
+        padding: 30px 20px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+        padding: 50px 16px !important;
+    }
+
+    .cta-content h1 {
+        font-size: 1.7rem !important;
+    }
+
+    .cta-content .purple-gradient {
+        font-size: 2rem !important;
+    }
+
+    .cta-content p {
+        font-size: 0.95rem !important;
+        margin-bottom: 28px !important;
+    }
+
+    /* ── Login / Register forms en móvil ── */
+    .login-container {
+        padding: 20px 10px;
+    }
+
+    .login-container form,
+    #form-registro {
+        padding: 40px 24px;
+        min-height: auto !important;
+        border-radius: 28px;
+    }
+
+    .login-container .brand-title {
+        font-size: 1.8rem;
+    }
+
+    .login-container h2 {
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+    /* Evita zoom automático en iOS/Android al enfocar inputs */
+    .login-container input,
+    #form-registro input,
+    .login-container select,
+    #form-registro select {
+        font-size: 16px !important;
+    }
+
+    .forgot-container {
+        margin-bottom: 40px;
+    }
+
+    .footer-form {
+        margin-top: 50px !important;
+    }
+
+    .login-container button[type="submit"],
+    #form-registro button[type="submit"] {
+        padding: 16px;
+        font-size: 1rem;
+    }
+}

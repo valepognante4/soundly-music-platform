@@ -1,0 +1,1054 @@
+/**
+ * player-global.css — Soundly
+ * ═══════════════════════════════════════════════════════════════════════════
+ * REPRODUCTOR FIJO GLASSMORPHISM — Incluir en TODOS los HTML de la app
+ *
+ * Diseño inspirado en Spotify / Apple Music modernos:
+ *   - Fondo oscuro con blur (glassmorphism)
+ *   - Barra de progreso interactiva con thumb personalizado
+ *   - Animaciones: barras equalizadoras, spin cover, fade-in cover
+ *   - Botones con estados active/hover claros
+ *   - Completamente responsivo
+ *
+ * IDs requeridos en el HTML (se conectan a reproductor-global.js):
+ *   #global-player-bar  → contenedor raíz del footer
+ *   #np-art             → imagen de portada (<img>)
+ *   #np-title           → título de la canción
+ *   #np-artist          → nombre del artista
+ *   #np-like            → botón corazón
+ *   #btn-prev           → botón anterior
+ *   #btn-play           → botón play/pause principal
+ *   #btn-next           → botón siguiente
+ *   #btn-shuffle        → botón aleatorio
+ *   #btn-repeat         → botón repetir
+ *   #progress-track     → pista clickeable de progreso
+ *   #p-fill             → barra de progreso (relleno)
+ *   #p-current          → tiempo actual
+ *   #p-total            → duración total
+ *   #vol-btn            → botón mute/unmute
+ *   #vol-slider         → input range de volumen
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/* ── VARIABLES COMPARTIDAS ──────────────────────────────────────────────── */
+:root {
+  --sp-accent:     #a78bfa;          /* Violeta Soundly                       */
+  --sp-accent-2:   #7c3aed;          /* Violeta oscuro                        */
+  --sp-green:      #1db954;          /* Verde Spotify (para estados activos)  */
+  --sp-green-2:    #17a349;          /* Verde oscuro (hover)                  */
+  --sp-bg:         #0a0a0f;          /* Fondo base ultra oscuro               */
+  --sp-glass:      rgba(15, 15, 25, 0.85);  /* Glass base                   */
+  --sp-glass-edge: rgba(167, 139, 250, 0.12); /* Borde glass violeta         */
+  --sp-text:       #ffffff;
+  --sp-muted:      rgba(255, 255, 255, 0.45);
+  --sp-player-h:   86px;             /* Altura del footer player              */
+  --vol-pct:       80%;              /* Actualizado dinámicamente por JS      */
+}
+
+/* ── BODY — compensar el footer fijo ───────────────────────────────────── */
+body {
+  padding-bottom: var(--sp-player-h);
+}
+
+/* Las páginas con grid (home.html) ya controlan el layout.
+   En esas páginas el body usa grid-template-rows, así que el footer
+   va dentro del grid y no necesita position:fixed. Para las demás páginas
+   que no tienen grid (favoritos, playlist, busqueda, player) sí lo necesita. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REPRODUCTOR GLOBAL — FOOTER GLASSMORPHISM FIJO
+   ══════════════════════════════════════════════════════════════════════════ */
+
+#global-player-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--sp-player-h);
+  z-index: 9999;
+
+  /* Glassmorphism */
+  background: var(--sp-glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid var(--sp-glass-edge);
+  /* Profundidad interior con sombra hacia arriba */
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 -8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(167, 139, 250, 0.06);
+
+  /* Layout interno: 3 columnas */
+  display: grid;
+  grid-template-columns: 1fr 1.8fr 1fr;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+
+  /* Entrada suave */
+  animation: playerSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Línea de acento superior */
+#global-player-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sp-accent), transparent);
+  border-radius: 0 0 2px 2px;
+}
+
+@keyframes playerSlideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── COLUMNA IZQUIERDA: Now Playing ─────────────────────────────────────── */
+.gp-now-playing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Portada de álbum */
+#np-art {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transition: border-radius 0.4s, transform 0.3s, box-shadow 0.4s;
+  background: rgba(167, 139, 250, 0.1);
+
+  /* Fade-in al cambiar canción */
+  animation: coverFadeIn 0.3s ease both;
+}
+
+@keyframes coverFadeIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+#np-art.spinning {
+  animation: coverSpin 12s linear infinite;
+  border-radius: 50%;
+  /* Glow mientras reproduce */
+  box-shadow:
+    0 0 0 3px rgba(167, 139, 250, 0.25),
+    0 0 20px rgba(167, 139, 250, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes coverSpin {
+  to { transform: rotate(360deg); }
+}
+
+.gp-np-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#np-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  letter-spacing: -0.01em;
+  transition: color 0.3s;
+}
+
+/* Título en color acento cuando hay algo reproduciéndose */
+#global-player-bar.is-playing #np-title {
+  color: var(--sp-accent);
+}
+
+#np-artist {
+  font-size: 0.75rem;
+  color: var(--sp-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  transition: color 0.2s;
+}
+
+#np-artist:hover {
+  color: var(--sp-text);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Botón like */
+#np-like {
+  background: none;
+  border: none;
+  color: var(--sp-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#np-like:hover {
+  color: var(--sp-text);
+  background: rgba(255,255,255,0.06);
+  transform: scale(1.15);
+}
+
+#np-like.liked {
+  color: var(--sp-accent);
+}
+
+#np-like.liked svg path,
+#np-like.liked i {
+  fill: var(--sp-accent);
+  color: var(--sp-accent);
+}
+
+/* ── COLUMNA CENTRAL: Controles + Progreso ──────────────────────────────── */
+.gp-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Fila de botones de control */
+.gp-ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Botones secundarios (shuffle, prev, next, repeat) */
+.gp-ctrl-btn {
+  background: none;
+  border: none;
+  color: var(--sp-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: color 0.15s, transform 0.12s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: relative; /* Necesario para el dot indicator de .active::after */
+}
+
+.gp-ctrl-btn:hover {
+  color: var(--sp-text);
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.1);
+}
+
+.gp-ctrl-btn.active {
+  color: var(--sp-accent);
+}
+
+.gp-ctrl-btn.active::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  background: var(--sp-accent);
+  border-radius: 50%;
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Botón Play/Pause principal */
+#btn-play {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--sp-text);
+  color: #000;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.12s, box-shadow 0.2s, background 0.15s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+#btn-play::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sp-accent), var(--sp-accent-2));
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: -1;
+}
+
+#btn-play:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2), 0 4px 20px rgba(0,0,0,0.5);
+}
+
+#btn-play:hover::before {
+  opacity: 1;
+}
+
+#btn-play:active {
+  transform: scale(0.96);
+}
+
+/* Estado reproduciendo: el botón brilla en verde */
+#global-player-bar.is-playing #btn-play {
+  background: var(--sp-green);
+  box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.25), 0 4px 20px rgba(29, 185, 84, 0.3);
+  color: #000;
+}
+
+#global-player-bar.is-playing #btn-play::before {
+  background: linear-gradient(135deg, var(--sp-green), var(--sp-green-2));
+}
+
+#global-player-bar.is-playing #btn-play:hover {
+  box-shadow: 0 0 0 5px rgba(29, 185, 84, 0.3), 0 4px 24px rgba(29, 185, 84, 0.4);
+}
+
+/* Fila de progreso */
+.gp-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.gp-time {
+  font-size: 0.68rem;
+  color: var(--sp-muted);
+  min-width: 36px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Barra de progreso */
+#progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  cursor: pointer;
+  position: relative;
+  transition: height 0.15s;
+}
+
+#progress-track:hover {
+  height: 6px;
+}
+
+#progress-track:hover #p-fill::after {
+  opacity: 1;
+}
+
+#p-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sp-accent), var(--sp-accent-2));
+  border-radius: 99px;
+  pointer-events: none;
+  width: 0%;
+  transition: width 0.1s linear;
+  position: relative;
+}
+
+/* Thumb "dot" al hover */
+#p-fill::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sp-text);
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 0 6px rgba(167, 139, 250, 0.5);
+}
+
+/* ── COLUMNA DERECHA: Volumen ───────────────────────────────────────────── */
+.gp-extras {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+#vol-btn {
+  background: none;
+  border: none;
+  color: var(--sp-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+#vol-btn:hover {
+  color: var(--sp-text);
+}
+
+/* Slider de volumen */
+#vol-slider {
+  width: 90px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  /* Relleno dinámico usando la variable --vol-pct actualizada por JS */
+  background: linear-gradient(
+    to right,
+    var(--sp-accent) 0%,
+    var(--sp-accent) var(--vol-pct),
+    rgba(255, 255, 255, 0.15) var(--vol-pct),
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+  transition: height 0.15s;
+}
+
+#vol-slider:hover {
+  height: 6px;
+}
+
+#vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sp-text);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s, background 0.15s;
+}
+
+#vol-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  background: var(--sp-accent);
+}
+
+#vol-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sp-text);
+  border: none;
+  cursor: pointer;
+}
+
+/* Estado mute en el botón de volumen */
+#vol-btn.muted {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+#vol-btn.muted:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ANIMACIÓN DE BARRAS EQUALIZADORAS
+   Usadas por Vista.js en el número de la fila activa (.playlist-item.active)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.playing-anim {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+}
+
+.playing-anim span {
+  display: block;
+  width: 3px;
+  border-radius: 1px;
+  background: var(--sp-accent);
+  animation: equalizerBar 0.9s ease-in-out infinite alternate;
+}
+
+.playing-anim span:nth-child(1) { height: 60%;  animation-delay: 0s;    }
+.playing-anim span:nth-child(2) { height: 100%; animation-delay: 0.2s;  }
+.playing-anim span:nth-child(3) { height: 40%;  animation-delay: 0.4s;  }
+
+@keyframes equalizerBar {
+  0%   { transform: scaleY(0.3); }
+  100% { transform: scaleY(1);   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LISTAS DE CANCIONES — .playlist-item
+   Estilos globales compartidos por todas las páginas (player, favoritos,
+   playlist). Cada CSS específico puede sobrescribir.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.playlist-item {
+  display: grid;
+  grid-template-columns: 32px 48px 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.playlist-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.playlist-item.active {
+  background: rgba(167, 139, 250, 0.08);
+}
+
+.playlist-item.active .pl-title {
+  color: var(--sp-accent);
+}
+
+/* Número / equalizador */
+.pl-num {
+  font-size: 0.78rem;
+  color: var(--sp-muted);
+  text-align: center;
+  min-width: 20px;
+}
+
+.playlist-item.active .pl-num {
+  color: var(--sp-accent);
+}
+
+/* Thumbnail */
+.pl-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Info (título + artista) */
+.pl-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pl-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--sp-text);
+  transition: color 0.15s;
+}
+
+.pl-artist {
+  font-size: 0.75rem;
+  color: var(--sp-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pl-genre {
+  font-size: 0.72rem;
+  color: var(--sp-muted);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.pl-dur {
+  font-size: 0.78rem;
+  color: var(--sp-muted);
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Botón play en cada fila */
+.pl-play-btn {
+  background: none;
+  border: none;
+  color: var(--sp-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s, transform 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playlist-item:hover .pl-play-btn {
+  opacity: 1;
+}
+
+.pl-play-btn:hover {
+  color: var(--sp-text);
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.15);
+}
+
+.playlist-item.active .pl-play-btn {
+  opacity: 1;
+  color: var(--sp-accent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ESTADOS DE CARGA Y VACÍOS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 20px;
+  color: var(--sp-muted);
+  font-size: 0.875rem;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(167, 139, 250, 0.15);
+  border-top-color: var(--sp-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-placeholder {
+  color: var(--sp-muted);
+  font-size: 0.875rem;
+  padding: 20px;
+  text-align: center;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--sp-muted);
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 0.9rem;
+  max-width: 280px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MODAL CREAR PLAYLIST — Global
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.2s ease both;
+}
+
+.modal-overlay[style*="flex"] {
+  display: flex;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-content {
+  background: rgba(22, 22, 35, 0.95);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  border-radius: 16px;
+  padding: 32px;
+  width: 380px;
+  max-width: calc(100vw - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(167, 139, 250, 0.05);
+  animation: modalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes modalSlideIn {
+  from { transform: translateY(24px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+
+.modal-content h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sp-text);
+  letter-spacing: -0.02em;
+}
+
+.modal-content input[type="text"] {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--sp-text);
+  font-size: 0.9rem;
+  padding: 12px 16px;
+  width: 100%;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.modal-content input[type="text"]:focus {
+  border-color: var(--sp-accent);
+  background: rgba(167, 139, 250, 0.06);
+}
+
+.modal-content input[type="text"]::placeholder {
+  color: var(--sp-muted);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+#modal-error-message,
+.error-msg {
+  font-size: 0.8rem;
+  color: #f87171;
+  padding: 8px 12px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 8px;
+  display: none;
+}
+
+.btn-primario {
+  background: linear-gradient(135deg, var(--sp-accent), var(--sp-accent-2));
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s, transform 0.12s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.btn-primario:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+}
+
+.btn-primario:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-secundario {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sp-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-secundario:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--sp-text);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AJUSTE PARA HOME.HTML (body usa CSS Grid, no necesita padding-bottom)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Cuando el body tiene el layout de grid de home, el footer va en su celda */
+body.home-layout {
+  padding-bottom: 0;
+}
+
+body.home-layout #global-player-bar {
+  position: relative;
+  grid-column: 1/3;
+  grid-row: 2;
+  height: var(--sp-player-h);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ARTIST CARDS — usadas por Vista.renderizarArtistas()
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.artist-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 20px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.2s;
+  text-align: center;
+}
+
+.artist-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateY(-3px);
+}
+
+.artist-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.artist-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.artist-genre {
+  font-size: 0.75rem;
+  color: var(--sp-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SEARCH RESULT ITEMS — usados por Vista.renderizarResultadosBusqueda()
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.search-result-item {
+  display: grid;
+  grid-template-columns: 56px 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.search-result-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.search-result-item img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.search-result-item .info h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.search-result-item .info p {
+  font-size: 0.75rem;
+  color: var(--sp-muted);
+}
+
+.result-dur {
+  font-size: 0.75rem;
+  color: var(--sp-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.result-play-btn {
+  background: none;
+  border: none;
+  color: var(--sp-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-result-item:hover .result-play-btn {
+  opacity: 1;
+}
+
+.result-play-btn:hover {
+  color: var(--sp-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PLAYLIST CARDS — usadas por Vista.renderizarPlaylists()
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.playlist-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.playlist-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.playlist-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.playlist-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.playlist-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-meta {
+  font-size: 0.75rem;
+  color: var(--sp-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SCROLLBAR GLOBAL
+   ══════════════════════════════════════════════════════════════════════════ */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167, 139, 250, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.2);
+  border-radius: 99px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.4);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Ajustes para pantallas pequeñas
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  #global-player-bar {
+    grid-template-columns: 1fr auto 1fr;
+    padding: 0 12px;
+    gap: 8px;
+    height: 70px;
+  }
+
+  .gp-now-playing { gap: 8px; }
+  #np-art { width: 40px; height: 40px; }
+  #np-title  { max-width: 120px; font-size: 0.8rem; }
+  #np-artist { max-width: 120px; display: none; }
+
+  .gp-ctrl-btn[data-action="shuffle"],
+  .gp-ctrl-btn[data-action="repeat"],
+  .gp-extras { display: none; }
+
+  .gp-progress-row { display: none; }
+
+  #btn-play { width: 36px; height: 36px; }
+}
+
+@media (max-width: 480px) {
+  #global-player-bar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .gp-extras { display: none; }
+}

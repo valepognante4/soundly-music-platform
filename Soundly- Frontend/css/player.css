@@ -1,0 +1,604 @@
+/* ─── VARIABLES CSS ────────────────────────────────────────────── */
+:root {
+    --color-accent:   #1db954;       /* Verde Soundly */
+    --color-purple:   #7c3aed;       /* Orbe morado */
+    --color-bg:       #0b0b0b;       /* Fondo del body */
+    --color-surface:  rgba(255, 255, 255, 0.03);  /* Panel glassmorphism */
+    --color-border:   rgba(255, 255, 255, 0.08);  /* Bordes sutiles */
+    --color-text:     #ffffff;
+    --color-muted:    rgba(255, 255, 255, 0.45);
+    --color-muted-2:  rgba(255, 255, 255, 0.25);
+    --font-main:      'Segoe UI', sans-serif;
+    --radius-card:    20px;
+    --radius-btn:     50%;
+    --shadow-panel:   0 8px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* --- BASE Y RESET --- */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-main);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* --- ORBES DE FONDO --- */
+.orb {
+    position: fixed;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: -1;
+    opacity: 0.25;
+    pointer-events: none;
+}
+.orb-1 { background: var(--color-accent); top: -80px; left: -60px; }
+.orb-2 { background: var(--color-purple); bottom: -80px; right: -60px; }
+
+/* --- PANEL PRINCIPAL (Glassmorphism) --- */
+.main-panel {
+    width: 100%;
+    max-width: 960px;
+    background: var(--color-surface);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    padding: 36px;
+    box-shadow: var(--shadow-panel);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* --- ENCABEZADO --- */
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+#welcome-text {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+#nombre-usuario {
+    color: var(--color-accent);
+    font-weight: 700;
+    text-transform: capitalize;
+}
+.logout-mini {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255,255,255,0.7);
+    padding: 8px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: 0.2s ease;
+}
+.logout-mini:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+/* --- LAYOUT PRINCIPAL (2 columnas) --- */
+.content-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 28px;
+    align-items: start;
+}
+
+/* ─── SECCIÓN DEL REPRODUCTOR ─── */
+.player-section { display: flex; flex-direction: column; }
+
+.song-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Portada del álbum */
+.album-wrapper {
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+.album-wrapper:hover { transform: scale(1.02); }
+
+#album-cover {
+    width: 100%;
+    display: block;
+    transition: opacity 0.25s ease;
+}
+
+/* Giro cuando está reproduciendo */
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+.album-wrapper.spinning #album-cover {
+    animation: spin-slow 20s linear infinite;
+    border-radius: 50%;
+}
+
+.album-overlay {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+#genre-badge {
+    background: rgba(29, 185, 84, 0.85);
+    color: var(--color-text);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Aseguramos que la info esté centrada y ocupando el ancho completo */
+.song-info { 
+    text-align: center; 
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Esto centra horizontalmente */
+    width: 100%;
+}
+
+/* El título debe comportarse bien si es largo */
+#song-title {
+    margin: 0 0 4px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+}
+#artist-name {
+    margin: 0;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+}
+
+/* Barra de progreso */
+.progress-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.time-label {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.4);
+    min-width: 32px;
+    text-align: center;
+}
+.progress-bar-wrapper {
+    flex: 1;
+    cursor: pointer;
+    padding: 8px 0;
+}
+.progress-bar-bg {
+    height: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--color-accent), #17a849);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.5s linear;
+}
+
+/* Controles */
+/* Ajusta el contenedor de controles */
+.controls {
+    display: flex;
+    justify-content: center; /* Centra todo */
+    align-items: center;     /* Alinea todos al medio */
+    gap: 20px;               /* Espacio entre botones */
+    margin: 20px 0;
+}
+
+.play-main {
+    /* Forzamos el tamaño */
+    width: 50px !important;
+    height: 50px !important;
+    
+    /* Esto es lo que crea el círculo */
+    border-radius: 50% !important;
+    
+    /* Eliminamos cualquier relleno que deforme la forma */
+    padding: 0 !important;
+    margin: 0 !important;
+    
+    /* Centrado absoluto */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    
+    /* Propiedades de diseño */
+    background: #fff !important; /* Blanco sólido */
+    color: #000 !important;      /* Ícono negro */
+    border: none !important;
+    cursor: pointer;
+    
+    /* Evitamos que el flexbox lo estire */
+    flex-shrink: 0; 
+}
+.play-main:hover {
+    transform: scale(1.1);
+}
+
+.play-main i {
+    margin: 0 !important; /* Elimina márgenes extra del icono */
+    font-size: 1.2rem;    /* Ajusta el tamaño del icono de Play */
+}
+
+/* 2. Botones secundarios (Shuffle, Prev, Next, Repeat) */
+.control-btn {
+    background: none;
+    border: none;
+    color: var(--color-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    color: var(--color-text);
+    background: rgba(255,255,255,0.05);
+}
+
+/* 3. Área de Volumen: Icono profesional */
+.volume-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.vol-icon { 
+    font-size: 1.1rem; 
+    color: var(--color-muted);
+    width: 20px; /* Ancho fijo para que no salte el slider */
+}
+
+.active-toggle {
+    color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+}
+
+/* Volumen */
+.volume-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+/* --- VOLUMEN MEJORADO --- */
+.volume-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+/* El ícono ahora está alineado y usa FontAwesome */
+.vol-icon { 
+    font-size: 1.1rem; 
+    color: var(--color-muted);
+    width: 20px; /* Ancho fijo para que no salte el slider al cambiar de icono */
+    text-align: center;
+}
+
+/* El Slider: Mantenemos esto pero le damos un toque más limpio */
+.volume-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* El círculo del slider (thumb) */
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff; /* Blanco queda mejor que verde para un diseño limpio */
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+/* El porcentaje */
+.vol-value {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    min-width: 35px;
+    text-align: right;
+    font-family: monospace; /* La fuente mono hace que los números no salten al cambiar */
+}
+
+/* ─── SECCIÓN DE PLAYLIST ─── */
+.playlist-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 520px;
+}
+.playlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.playlist-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+.track-count {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.35);
+}
+
+.playlist-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+}
+.playlist-list::-webkit-scrollbar { width: 4px; }
+.playlist-list::-webkit-scrollbar-track { background: transparent; }
+.playlist-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.playlist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border: 1px solid transparent;
+}
+.playlist-item:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.06);
+}
+.playlist-item.active {
+    background: rgba(29, 185, 84, 0.1);
+    border-color: rgba(29, 185, 84, 0.25);
+}
+.playlist-item.active .pl-title { color: var(--color-accent); }
+
+.pl-num {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.25);
+    min-width: 18px;
+    text-align: center;
+}
+.pl-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.pl-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.pl-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pl-artist {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pl-genre {
+    font-size: 0.68rem;
+    color: rgba(29, 185, 84, 0.7);
+    background: rgba(29, 185, 84, 0.08);
+    padding: 3px 8px;
+    border-radius: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.pl-dur {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.3);
+    min-width: 34px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* --- BARRA INFERIOR --- */
+.player-bar {
+    position: fixed;
+    bottom: 16px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: rgba(255,255,255,0.2);
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    z-index: 10;
+}
+
+
+.title-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Empuja el corazón a la derecha */
+    width: 100%;
+}
+
+.like-btn {
+    background: none;
+    border: none;
+    color: #b3b3b3; /* Gris suave cuando no está activo */
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+}
+
+.like-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Cuando se marca como "Me gusta" */
+.like-btn.active {
+    color: #1DB954; /* Verde Spotify */
+}
+
+/* Estilos del Header y Menú */
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-home-btn {
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.avatar-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.avatar {
+    width: 35px;
+    height: 35px;
+    background: #1DB954; /* Verde Spotify */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000;
+}
+
+/* El menú desplegable oculto */
+/* Menú desplegable */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 20px; /* Ajustado para que no se pegue al borde */
+    top: 60px;
+    background: #181818; 
+    width: 200px;
+    padding: 8px 0; /* Padding interno más limpio */
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08); /* Borde sutil */
+    z-index: 1000;
+}
+
+/* Nombre de usuario dentro del menú */
+#user-name-display {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    gap: 10px; /* Espacio entre icono y texto */
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Asegurar que el icono sea visible y tenga color */
+#user-name-display i {
+    display: inline-block !important; /* Fuerza la visualización */
+    font-size: 1.2rem !important;     /* Asegura tamaño */
+    color: #1DB954 !important;        /* Asegura visibilidad */
+    margin-right: 8px;                /* Espacio elegante */
+}
+
+/* Botón Cerrar Sesión (Ahora más elegante) */
+#btn-logout {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #b3b3b3; /* Color gris suave */
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+#btn-logout:hover {
+    color: #ffffff; /* Se ilumina al pasar el mouse */
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 680px) {
+    .main-panel { padding: 24px 18px; }
+    .content-layout {
+        grid-template-columns: 1fr;
+    }
+    .playlist-section { max-height: 320px; }
+}

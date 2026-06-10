@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de sesión - Soundly</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" type="image/png" href="images/soundly-logo-2048px.png">
+
+</head>
+
+<body>
+
+
+
+    <main class="login-container">
+        <!-- Orbes de fondo (asegurate que estén aquí) -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+
+        <form id="form-login">
+            <a href="index.html" style="color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.9rem;">
+            </a>
+            <div class="brand-inside">
+                <img src="images/soundly-logo-2048px.png" alt="Logo" width="60">
+                <span class="brand-title">Soundly</span>
+            </div>
+
+            <h2>Bienvenido de nuevo a tu música</h2>
+
+            <div class="input-group">
+                <input type="email" name="email" id="email" placeholder="Email" required>
+            </div>
+
+            <div class="input-group">
+                <input type="password" name="password" id="password" placeholder="Contraseña" required>
+            </div>
+
+            <div class="forgot-container">
+                <a id="recuperar-link" href="#">Olvidaste la contraseña?</a>
+            </div>
+
+            <button type="submit">Iniciar</button>
+
+            <p class="footer-form">
+                ¿No tenés cuenta? <a href="register.html">Registrate</a>
+            </p>
+        </form>
+    </main>
+
+    <!-- VINCOULACIÓN DE SCRIPTS -->
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/config.js"></script>
+    <script src="js/modelo.js"></script>
+    <script src="js/controlador-login.js"></script>
+    
+</body>
+
+</html>

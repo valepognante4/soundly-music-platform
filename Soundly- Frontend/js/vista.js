@@ -1,0 +1,328 @@
+/**
+ * vista.js — Soundly
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CAPA DE VISTA (MVC)
+ *
+ * Renderiza listas de canciones, artistas, búsqueda y playlists.
+ * Cada función recibe datos ya ADAPTADOS (campo interno c.img, c.src, etc.)
+ * y un callback de acción — nunca llama al modelo directamente.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+const Vista = {
+
+    // ── HELPER INTERNO ────────────────────────────────────────────────────
+    _getContainer(id) {
+        const el = document.getElementById(id);
+        if (!el) console.warn(`[Vista] Contenedor #${id} no encontrado en el DOM.`);
+        return el;
+    },
+
+    // ── FORMATEAR TIEMPO ──────────────────────────────────────────────────
+    fmt(s) {
+        if (!s || isNaN(s)) return '0:00';
+        return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // renderizarListaCanciones
+    // Renderiza una lista de canciones con botón Play individual.
+    // Cada canción actualiza el reproductor global al hacer clic.
+    //
+    // @param {Array}    canciones     - Lista de objetos canción (ya adaptados)
+    // @param {string}   contenedorId  - ID del elemento DOM contenedor
+    // @param {number}   idxActivo     - Índice de la canción actualmente en reproducción
+    // @param {Function} onPlay        - Callback(cancion, idx): qué hacer al presionar Play
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarListaCanciones(canciones, contenedorId, idxActivo = -1, onPlay = null) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+
+        if (!canciones || canciones.length === 0) {
+            contenedor.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🎵</div>
+                    <p>No hay canciones disponibles.</p>
+                </div>`;
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
+        canciones.forEach((c, i) => {
+            const item = document.createElement('div');
+            item.className = 'playlist-item' + (i === idxActivo ? ' active' : '');
+            item.dataset.id = c.id;
+            item.innerHTML = `
+                <div class="pl-num">${i === idxActivo
+                    ? '<span class="playing-anim"><span></span><span></span><span></span></span>'
+                    : i + 1
+                }</div>
+                <img class="pl-thumb" 
+                     src="${c.img}" 
+                     alt="${c.titulo}"
+                     onerror="this.src='https://placehold.co/48x48/1a1a2e/a78bfa?text=♪'">
+                <div class="pl-info">
+                    <span class="pl-title">${c.titulo}</span>
+                    <span class="pl-artist">${c.artista}</span>
+                </div>
+                <span class="pl-genre">${c.genero || ''}</span>
+                <span class="pl-dur">${this.fmt(c.duracion)}</span>
+                <button class="pl-play-btn" 
+                        id="play-btn-${c.id}"
+                        aria-label="Reproducir ${c.titulo}"
+                        title="Reproducir">
+                    ${i === idxActivo
+                        ? '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+                        : '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5,3 19,12 5,21"/></svg>'
+                    }
+                </button>
+            `;
+
+            // Clic en la fila o en el botón → reproduce con lista completa
+            const accionPlay = () => {
+                if (typeof onPlay === 'function') {
+                    onPlay(c, i);
+                } else {
+                    // Comportamiento por defecto: usar el reproductor global
+                    window.SoundlyPlayer?.reproducirLista(canciones, i);
+                }
+            };
+
+            item.querySelector('.pl-play-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                accionPlay();
+            });
+            item.addEventListener('click', accionPlay);
+
+            fragment.appendChild(item);
+        });
+
+        contenedor.appendChild(fragment);
+    },
+
+    // Alias de compatibilidad con el código anterior
+    renderizarPlaylist(lista, contenedorId, idxActivo, callbackClick) {
+        this.renderizarListaCanciones(lista, contenedorId, idxActivo, callbackClick
+            ? (c, i) => callbackClick(i)
+            : null
+        );
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // renderizarTarjetasCanciones
+    // Tarjetas grandes de música (grilla home). Cada tarjeta tiene imagen,
+    // título, artista y botón Play flotante.
+    //
+    // @param {Array}    canciones    - Lista adaptada
+    // @param {string}   contenedorId - ID del contenedor
+    // @param {Function} onPlay       - Callback(cancion, idx)
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarTarjetasCanciones(canciones, contenedorId, onPlay = null) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+
+        if (!canciones || canciones.length === 0) {
+            contenedor.innerHTML = '<p class="empty-state">No hay contenido disponible.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        canciones.forEach((c, i) => {
+            const card = document.createElement('div');
+            card.className = 'music-card';
+            card.id = `card-cancion-${c.id}`;
+            card.innerHTML = `
+                <img class="card-art" 
+                     src="${c.img}" 
+                     alt="${c.titulo}"
+                     onerror="this.src='https://placehold.co/300x300/1a1a2e/a78bfa?text=♪'">
+                <div class="card-play-btn" aria-label="Reproducir ${c.titulo}">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                </div>
+                <div class="card-title">${c.titulo}</div>
+                <div class="card-sub">${c.artista}</div>
+            `;
+
+            card.addEventListener('click', () => {
+                if (typeof onPlay === 'function') onPlay(c, i);
+                else window.SoundlyPlayer?.reproducirLista(canciones, i);
+            });
+
+            contenedor.appendChild(card);
+        });
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // renderizarArtistas
+    // Tarjetas de artistas con foto circular y nombre.
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarArtistas(artistas, contenedorId, onClickArtista = null) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+
+        if (!artistas || artistas.length === 0) {
+            contenedor.innerHTML = '<p class="empty-state">No hay artistas disponibles.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        artistas.forEach((a) => {
+            const card = document.createElement('div');
+            card.className = 'artist-card';
+            card.id = `card-artista-${a.id}`;
+            card.innerHTML = `
+                <img class="artist-photo" 
+                     src="${a.foto}" 
+                     alt="${a.nombre}"
+                     onerror="this.src='https://placehold.co/200x200/1a1a2e/a78bfa?text=🎤'">
+                <div class="artist-name">${a.nombre}</div>
+                <div class="artist-genre">${a.genero}</div>
+            `;
+            if (typeof onClickArtista === 'function') {
+                card.addEventListener('click', () => onClickArtista(a));
+            }
+            contenedor.appendChild(card);
+        });
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // renderizarResultadosBusqueda
+    // Resultados de búsqueda con imagen, título, artista y botón Play.
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarResultadosBusqueda(resultados, contenedorId) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+
+        if (!resultados || resultados.length === 0) {
+            contenedor.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <p>No se encontraron resultados.</p>
+                </div>`;
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        resultados.forEach((c, i) => {
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            item.id = `resultado-${c.id}`;
+            item.innerHTML = `
+                <img src="${c.img}" 
+                     alt="${c.titulo}"
+                     onerror="this.src='https://placehold.co/60x60/1a1a2e/a78bfa?text=♪'">
+                <div class="info">
+                    <h4>${c.titulo}</h4>
+                    <p>${c.artista} ${c.genero ? '· ' + c.genero : ''}</p>
+                </div>
+                <span class="result-dur">${this.fmt(c.duracion)}</span>
+                <button class="result-play-btn" 
+                        id="search-play-${c.id}"
+                        aria-label="Reproducir ${c.titulo}">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                </button>
+            `;
+
+            item.querySelector('.result-play-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.SoundlyPlayer?.reproducirLista(resultados, i);
+            });
+            item.addEventListener('click', () => {
+                window.SoundlyPlayer?.reproducirLista(resultados, i);
+            });
+
+            contenedor.appendChild(item);
+        });
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // renderizarPlaylists
+    // Lista de playlists del usuario con nombre, creador y cantidad de canciones.
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarPlaylists(playlists, contenedorId, onClickPlaylist = null) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+
+        if (!playlists || playlists.length === 0) {
+            contenedor.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>Todavía no tenés playlists. ¡Creá una!</p>
+                </div>`;
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        playlists.forEach((p) => {
+            const item = document.createElement('div');
+            item.className = 'playlist-card';
+            item.id = `card-playlist-${p.id}`;
+            const portada = p.canciones?.[0]?.img 
+                || 'https://placehold.co/60x60/1a1a2e/a78bfa?text=🎵';
+            item.innerHTML = `
+                <img class="playlist-thumb" 
+                     src="${portada}" 
+                     alt="${p.nombre}"
+                     onerror="this.src='https://placehold.co/60x60/1a1a2e/a78bfa?text=🎵'">
+                <div class="playlist-info">
+                    <span class="playlist-name">${p.nombre}</span>
+                    <span class="playlist-meta">
+                        ${p.canciones.length} canciones · ${p.creador}
+                    </span>
+                </div>
+            `;
+            if (typeof onClickPlaylist === 'function') {
+                item.addEventListener('click', () => onClickPlaylist(p));
+            }
+            contenedor.appendChild(item);
+        });
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // actualizarNombreUsuario
+    // ─────────────────────────────────────────────────────────────────────
+    actualizarNombreUsuario(nombre) {
+        const el = document.getElementById('nombre-usuario-display')
+            || document.getElementById('user-name');
+        if (el) el.textContent = nombre;
+        const avatar = document.getElementById('user-avatar');
+        if (avatar && nombre) avatar.textContent = nombre[0].toUpperCase();
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // mostrarError / mostrarExito
+    // ─────────────────────────────────────────────────────────────────────
+    mostrarError(elementoId, mensaje) {
+        const el = document.getElementById(elementoId);
+        if (!el) return;
+        el.textContent = mensaje;
+        el.style.display = 'block';
+        el.className = el.className.replace('hidden', '') + ' error-msg';
+    },
+
+    ocultarError(elementoId) {
+        const el = document.getElementById(elementoId);
+        if (el) el.style.display = 'none';
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // renderizarCategorias (compatibilidad legado)
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarCategorias(categorias, contenedorId) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+        contenedor.innerHTML = '';
+        categorias.forEach(cat => {
+            const div = document.createElement('div');
+            div.className = 'category-card';
+            div.textContent = cat.label || cat.nombre || cat;
+            contenedor.appendChild(div);
+        });
+    },
+};

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de usuario - Soundly</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" type="image/png" href="images/soundly-logo-2048px.png">
+</head>
+
+<body>
+
+    <main class="login-container">
+        <a href="index.html" style="color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.9rem;">
+        </a>
+        <!-- Reutilizamos el formulario con la misma estructura -->
+        <form id="form-registro" action="#" method="POST">
+
+            <!-- Logo y Título integrados -->
+            <div class="brand-inside">
+                <img src="images/soundly-logo-2048px.png" alt="Logo de Soundly">
+                <div class="brand-title">Soundly</div>
+            </div>
+
+            <h2>Registrate para empezar a escuchar</h2>
+
+            <!-- Usamos placeholders directamente para un look más limpio como en Figma -->
+            <input type="email" name="email" placeholder="Email" required>
+
+            <input type="text" name="username" placeholder="Nombre de usuario" required>
+
+            <input type="password" name="password" placeholder="Contraseña" required>
+
+            <!-- Campo de fecha con etiqueta en gris sutil -->
+            <div class="date-input-group">
+                <label for="birthdate">Fecha de nacimiento</label>
+                <input type="date" id="birthdate" name="birthdate" required>
+            </div>
+
+            <div class="terms-container">
+                <input type="checkbox" id="terms" name="terms">
+                <label for="terms">
+                    Acepto los <a href="#" id="link-terminos">términos y condiciones</a>
+                </label>
+            </div>
+
+            <div id="modal-terminos" class="modal">
+                <div class="modal-content">
+                    <h3>Términos de Uso</h3>
+                    <div class="texto-scroll">
+                        <p><strong>1. Aceptación de los términos:</strong> Al registrarte y utilizar Soundly, confirmas
+                            que has leído, comprendido y aceptado estos Términos y Condiciones. Si no estás de acuerdo
+                            con alguna parte de ellos, te solicitamos que no utilices nuestra plataforma.</p>
+
+                        <p><strong>2. Uso de la plataforma:</strong> Soundly es un servicio de streaming de música
+                            destinado exclusivamente para uso personal y no comercial. Te comprometes a no utilizar la
+                            plataforma para fines ilícitos, ni para distribuir, reproducir o modificar contenido
+                            protegido por derechos de autor sin la debida autorización.</p>
+
+                        <p><strong>3. Privacidad y Datos Personales:</strong> Tu privacidad es nuestra prioridad. Al
+                            crear una cuenta, nos proporcionas datos básicos como nombre de usuario, correo electrónico
+                            y fecha de nacimiento. Estos datos se utilizan únicamente para gestionar tu acceso a la
+                            plataforma y personalizar tu experiencia. Nunca compartiremos tu información personal con
+                            terceros sin tu consentimiento expreso, salvo que lo exija la ley.</p>
+
+                        <p><strong>4. Propiedad Intelectual:</strong> Todo el contenido, diseño, logotipos y
+                            funcionalidades disponibles en Soundly son propiedad de nuestro equipo de desarrollo. La
+                            reproducción, distribución o comunicación pública no autorizada de cualquier material
+                            presente en la aplicación queda estrictamente prohibida.</p>
+
+                        <p><strong>5. Edad mínima:</strong> Para registrarte en Soundly, debes ser mayor de 18 años. Al
+                            aceptar estos términos, confirmas que cumples con este requisito legal y que la información
+                            proporcionada es verídica.</p>
+
+                        <p><strong>6. Suspensión de cuentas:</strong> Nos reservamos el derecho de suspender o cancelar
+                            temporal o permanentemente aquellas cuentas que infrinjan estos términos, realicen un uso
+                            indebido de los servicios o comprometan la seguridad de otros usuarios.</p>
+                    </div>
+                    <button id="cerrar-modal">Cerrar</button>
+                </div>
+            </div>
+
+            <button type="submit">Registrarse</button>
+
+            <!-- Clase footer-form para que coincida con el CSS que arreglamos -->
+            <p class="footer-form">
+                ¿Ya tenés cuenta? <a href="login.html">Iniciar sesión</a>
+            </p>
+        </form>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/config.js"></script>
+    <script src="js/modelo.js"></script>
+    <script src="js/controlador-registro.js"></script>
+
+</body>
+
+</html>

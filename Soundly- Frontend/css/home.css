@@ -1,0 +1,745 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --green: #1db954;
+    --bg: #0a0a0a;
+    --sidebar-bg: #111111;
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --card-hover: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.07);
+    --text: #ffffff;
+    --muted: rgba(255, 255, 255, 0.45);
+    --player-h: 78px;
+}
+
+body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 1fr var(--player-h);
+    overflow: hidden;
+}
+
+.sidebar {
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    grid-row: 1/2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-top {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    text-decoration: none;
+}
+
+.brand img {
+    width: 34px;
+}
+
+.brand-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+}
+
+.nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.nav-link svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.nav-link:hover {
+    color: var(--text);
+    background: var(--card-bg);
+}
+
+.nav-link.active {
+    color: var(--text);
+}
+
+.nav-link.active svg {
+    color: var(--green);
+}
+
+.sidebar-library {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+}
+
+.sidebar-library::-webkit-scrollbar {
+    width: 3px;
+}
+
+.sidebar-library::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
+.lib-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.lib-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.playlist-item-side {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.playlist-item-side:hover {
+    background: var(--card-bg);
+}
+
+.pl-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.playlist-item-side.liked .pl-dot {
+    background: var(--green);
+}
+
+.pl-name {
+    font-size: 0.84rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-content {
+    grid-column: 2;
+    grid-row: 1;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #0f1e14 0%, #0a0a0a 300px);
+    padding: 0 0 40px;
+}
+
+.main-content::-webkit-scrollbar {
+    width: 5px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.topbar-nav {
+    display: flex;
+    gap: 8px;
+}
+
+.topbar-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.topbar-btn:hover {
+    color: var(--text);
+    background: var(--card-hover);
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px 6px 6px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.user-chip:hover {
+    background: var(--card-hover);
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #000;
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.section {
+    padding: 28px 32px 0;
+}
+
+.greeting {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    letter-spacing: -0.5px;
+}
+
+.quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.quick-card {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    min-height: 60px;
+}
+
+.quick-card:hover {
+    background: var(--card-hover);
+    transform: translateY(-1px);
+}
+
+.quick-card.now-playing {
+    border-color: rgba(29, 185, 84, 0.3);
+    background: rgba(29, 185, 84, 0.07);
+}
+
+/* --- Bloque de Iconos mejorado (Reemplaza el viejo) --- */
+.quick-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.quick-thumb.icon-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3d1a6e, #7c3aed);
+}
+
+.quick-thumb.icon-thumb svg {
+    width: 28px;
+    height: 28px;
+    fill: white;
+    transition: transform 0.2s ease;
+}
+
+.quick-card:hover .quick-thumb.icon-thumb svg {
+    transform: scale(1.15);
+}
+
+
+.quick-label {
+    padding: 0 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+    margin-top: 36px;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.see-all {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.see-all:hover {
+    color: var(--text);
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.music-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.music-card:hover {
+    background: var(--card-hover);
+    transform: translateY(-3px);
+}
+
+.music-card:hover .card-play-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.music-card.now-playing {
+    border-color: rgba(29, 185, 84, 0.35);
+}
+
+.card-art {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    object-fit: cover;
+    margin-bottom: 14px;
+    display: block;
+}
+
+.card-play-btn {
+    position: absolute;
+    right: 28px;
+    bottom: 72px;
+    width: 42px;
+    height: 42px;
+    background: var(--green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #000;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    box-shadow: 0 4px 16px rgba(29, 185, 84, 0.4);
+}
+
+.card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+/* PLAYER BAR */
+.player-bar {
+    grid-column: 1/3;
+    grid-row: 2;
+    background: #161616;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    z-index: 100;
+}
+
+.now-playing {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.np-art {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    transition: transform 0.3s;
+}
+
+.np-art.spinning {
+    animation: spin 8s linear infinite;
+    border-radius: 50%;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.np-info {
+    min-width: 0;
+}
+
+.np-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.np-artist {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.np-like {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.np-like:hover {
+    color: var(--green);
+}
+
+.np-like.liked {
+    color: var(--green);
+}
+
+.player-controls {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.ctrl-btns {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.ctrl-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.15s, transform 0.1s;
+    line-height: 1;
+}
+
+.ctrl-btn:hover {
+    color: var(--text);
+    transform: scale(1.1);
+}
+
+.ctrl-btn.active {
+    color: var(--green);
+}
+
+.ctrl-play {
+    width: 38px;
+    height: 38px;
+    background: var(--text);
+    border-radius: 50%;
+    border: none;
+    color: #000;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+}
+
+.ctrl-play:hover {
+    transform: scale(1.06);
+}
+
+.progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.p-time {
+    font-size: 0.7rem;
+    color: var(--muted);
+    min-width: 34px;
+    text-align: center;
+}
+
+.progress-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    pointer-events: none;
+    width: 0%;
+}
+
+.player-extras {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.extra-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.15s;
+}
+
+.extra-btn:hover {
+    color: var(--text);
+}
+
+.vol-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vol-slider {
+    width: 90px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+}
+
+.logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: 0.15s;
+    font-family: inherit;
+}
+
+.logout-btn:hover {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Esto hace que el enlace se comporte como una caja invisible */
+.card-link-wrapper {
+    text-decoration: none;
+    color: inherit;
+    display: block; /* Para que ocupe todo el espacio de la tarjeta */
+}
+
+/* Aplicas el mismo diseño que ya tienen tus otras tarjetas */
+.card-favoritas {
+    background-color: #181818; /* El color oscuro que usas */
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: background 0.3s;
+}
+
+.card-favoritas:hover {
+    background-color: #282828; /* Efecto hover al pasar el mouse */
+}
+
+.btn-sidebar-create {
+    background: transparent !important; /* Fuerza la transparencia */
+    border: none !important;           /* Elimina el borde gris/blanco */
+    color: #b3b3b3 !important;        /* Color del texto */
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    transition: color 0.2s;
+}
+
+.btn-sidebar-create:hover {
+    color: #ffffff !important;        /* Se ilumina al pasar el mouse */
+}
+
+.sidebar { 
+    background: #121212; /* Cambiado a un gris oscuro, consistente con el main-content */
+    color: #fff; 
+    padding: 20px; 
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Espaciado general entre secciones */
+}
+
+.sidebar nav a { 
+    display: flex; 
+    align-items: center; 
+    gap: 18px; /* Aumentamos el gap para más aire */
+    color: #b3b3b3; 
+    text-decoration: none; 
+    padding: 10px 0; /* Aumentamos el padding para separar mejor las filas */
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    transition: all 0.2s ease;
+}
+
+/* Logo más pequeño y refinado */
+.logo { 
+    font-size: 18px; /* Reducido de 24px a 18px */
+    font-weight: 700; /* Menos grueso que el 900 anterior */
+    margin-bottom: 25px; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+
+.logo-img {
+    width: 28px;  /* Reducido de 35px */
+    height: 28px;
+    object-fit: contain;
+}
+
+.sidebar nav a:hover { 
+    color: #fff; 
+}
+
+/* Estilo para el título de "PLAYLISTS" si lo tienes en el HTML */
+.sidebar h3 {
+    font-size: 0.75rem; /* Muy pequeña para subtítulos */
+    color: #b3b3b3;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 20px;
+}
