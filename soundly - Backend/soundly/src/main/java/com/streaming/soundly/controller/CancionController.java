@@ -14,10 +14,13 @@ import java.util.stream.Collectors;
 public class CancionController {
 
     private final CancionService cancionService;
+    private final com.streaming.soundly.service.DynamicSourcingService dynamicSourcingService;
 
     // Inyección por constructor limpia y profesional
-    public CancionController(CancionService cancionService) {
+    public CancionController(CancionService cancionService, 
+                             com.streaming.soundly.service.DynamicSourcingService dynamicSourcingService) {
         this.cancionService = cancionService;
+        this.dynamicSourcingService = dynamicSourcingService;
     }
 
     @GetMapping("/buscar")
@@ -25,7 +28,14 @@ public class CancionController {
             @RequestParam(required = false) String titulo,
             @RequestParam(required = false) String artista,
             @RequestParam(required = false) String genero) {
-        // CU-06: Buscar Música (Filtra de forma dinámica por lo que ingrese el usuario)
+        
+        // Si hay título, aplicamos el Sourcing Dinámico
+        if (titulo != null && !titulo.trim().isEmpty()) {
+            List<CancionDTO> resultados = dynamicSourcingService.buscarYSourcerDinamico(titulo);
+            return ResponseEntity.ok(resultados);
+        }
+
+        // Búsqueda local por defecto
         List<CancionDTO> resultados = cancionService.buscarConFiltros(titulo, artista, genero);
         return ResponseEntity.ok(resultados);
     }

@@ -4,7 +4,9 @@ import com.streaming.soundly.dto.ArtistaDTO;
 import com.streaming.soundly.dto.CancionDTO;
 import com.streaming.soundly.service.ArtistaService;
 import com.streaming.soundly.service.CancionService;
+import com.streaming.soundly.service.DynamicSourcingService;
 import jakarta.validation.Valid;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,11 +20,13 @@ public class AdminController {
 
     private final CancionService cancionService;
     private final ArtistaService artistaService;
+    private final DynamicSourcingService dynamicSourcingService;
 
     // Inyección múltiple por constructor de manera limpia y profesional
-    public AdminController(CancionService cancionService, ArtistaService artistaService) {
+    public AdminController(CancionService cancionService, ArtistaService artistaService,  @Lazy DynamicSourcingService dynamicSourcingService) {
         this.cancionService = cancionService;
         this.artistaService = artistaService;
+        this.dynamicSourcingService = dynamicSourcingService;
     }
 
     // ==========================================
@@ -41,6 +45,18 @@ public class AdminController {
         // CU-17: Modificar Metadata de Canción (título, género, año, etc.)
         CancionDTO cancionModificada = cancionService.actualizarMetadata(id, cancionDTO);
         return ResponseEntity.ok(cancionModificada); // 200 OK
+    }
+
+    // Agrega esto a tu controlador
+    @GetMapping("/canciones/buscar")
+    public ResponseEntity<?> buscarCancion(@RequestParam String titulo) {
+        try {
+            // Aquí llamas al nuevo DynamicSourcingService
+            return ResponseEntity.ok(dynamicSourcingService.buscarYSourcerDinamico(titulo));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al buscar/sincronizar canción: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/canciones/{id}")

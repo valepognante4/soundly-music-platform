@@ -97,5 +97,24 @@ public class MusicApiClient {
             return null;
         }
     }
+
+    /**
+     * Busca canciones en Deezer usando una palabra clave.
+     *
+     * @param query término de búsqueda
+     * @return Lista de canciones resultantes
+     */
+    public ExternalTrackListDTO searchCanciones(String query) {
+        if (query == null || query.trim().isEmpty()) return null;
+        String url = DEEZER_BASE_URL + "/search?q=" + query + "&limit=10"; // limitamos para no saturar
+        log.info("[Deezer] Buscando canciones con query: {}", url);
+        try {
+            return restTemplate.getForObject(url, ExternalTrackListDTO.class);
+        } catch (HttpClientErrorException e) {
+            log.warn("[Deezer] Error buscando con query '{}': {} {}",
+                    query, e.getStatusCode(), e.getMessage());
+            return null;
+        }
+    }
 }
 

@@ -25,6 +25,9 @@ public class ExternalCancionDTO {
     @JsonProperty("artist")
     private ExternalArtistaDTO artist;
 
+    @JsonProperty("album")
+    private ExternalAlbumDTO album;
+
     @JsonProperty("duration") // Deezer devuelve la duración en segundos
     private int duration;
 

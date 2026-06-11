@@ -34,6 +34,10 @@ public class Cancion {
     @JoinColumn(name = "artista_id", nullable = false) // Crea la clave foránea en la tabla canciones
     private Artista artista;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "album_id")
+    private Album album;
+
     @ManyToMany(mappedBy = "cancionesFavoritas")
     private List<Usuario> usuariosQueLeDieronLike;
 

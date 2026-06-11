@@ -32,6 +32,9 @@ public class Artista {
     @OneToMany(mappedBy = "artista", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Cancion> canciones = new java.util.ArrayList<>();
 
+    @OneToMany(mappedBy = "artista", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Album> albumes = new java.util.ArrayList<>();
+
     // Métodos de conveniencia para asegurar la bidireccionalidad
     public void addCancion(Cancion cancion) {
         this.canciones.add(cancion);

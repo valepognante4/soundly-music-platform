@@ -16,6 +16,9 @@ public class ExternalAlbumDTO {
     @JsonProperty("title")
     private String title;
 
+    @JsonProperty("cover_medium")
+    private String coverUrl;
+
     @JsonProperty("genres")
     private ExternalArtistaDTO.GenreWrapper genres;
 }
