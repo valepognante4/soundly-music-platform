@@ -319,6 +319,18 @@ body {
   transform: scale(0.96);
 }
 
+/* Estado cargando: spinner violeta semitransparente */
+#btn-play.loading {
+  background: rgba(167, 139, 250, 0.18);
+  color: var(--sp-accent);
+  cursor: wait;
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.3), 0 4px 16px rgba(0,0,0,0.4);
+}
+
+@keyframes sp-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Estado reproduciendo: el botón brilla en verde */
 #global-player-bar.is-playing #btn-play {
   background: var(--sp-green);

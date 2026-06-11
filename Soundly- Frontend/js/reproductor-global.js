@@ -90,6 +90,30 @@
     audio.preload = 'metadata';
     audio.volume  = estado.volumen;
 
+    // ── 3b. PROXY DE AUDIO (anti-CORS para CDNs externos) ──────────────────
+    // Redirige URLs de CDNs externos (Deezer, etc.) por el endpoint
+    // /api/audio/proxy de nuestro backend Spring Boot.
+    // El browser carga desde su propio origen → sin bloqueo CORS.
+    function construirProxyUrl(src, idLocal) {
+        if (!src) return src;
+        const apiBase = window.SoundlyConfig?.API_BASE_URL || 'http://localhost:8080/api';
+        
+        // Solo proxear URLs HTTP externas (no localhost ni rutas relativas)
+        const esUrlExterna = /^https?:\/\//.test(src) &&
+                             !src.includes('localhost') &&
+                             !src.includes('127.0.0.1');
+        
+        // Novedad: si es externa y tenemos el ID local, le pedimos al backend 
+        // que genere una URL fresca para evitar el error 403 (URL caducada)
+        if (esUrlExterna && idLocal) {
+            return `${apiBase}/audio/proxy/track/${idLocal}`;
+        }
+
+        // Fallback clásico (aunque no debería llegar acá si todo va bien)
+        if (!esUrlExterna) return src;
+        return `${apiBase}/audio/proxy?url=${encodeURIComponent(src)}`;
+    }
+
     // ── 4. HELPERS DE VISTA ───────────────────────────────────────────────
     function fmt(segundos) {
         if (!segundos || isNaN(segundos)) return '0:00';
@@ -162,9 +186,20 @@
             mostrarToastError('Esta canción no tiene preview disponible.');
             return false; // señal de fallo
         }
+        // Validación mínima: debe ser una URL o ruta relativa
+        const srcStr = String(cancion.src).trim();
+        if (!srcStr || srcStr === 'undefined' || srcStr === 'null') {
+            console.warn('[SoundlyPlayer] archivoUrl vacío o inválido:', srcStr);
+            mostrarToastError('Esta canción no tiene preview disponible.');
+            return false;
+        }
         // Solo recargamos si cambió la fuente (evita restart innecesario)
-        if (audio.src !== cancion.src) {
-            audio.src = cancion.src;
+        // Comparamos contra la URL proxeada ya que eso es lo que tendrá audio.src
+        // Ahora pasamos también cancion.id para que el backend la busque fresca
+        const proxyUrl = construirProxyUrl(srcStr, cancion.id);
+        if (audio.src !== proxyUrl) {
+            setLoadingState(true);
+            audio.src = proxyUrl;
             audio.load();
         }
         if (tiempoInicial > 0) {
@@ -173,10 +208,32 @@
         return true; // señal de éxito
     }
 
+    // Indicador visual de carga en el botón play
+    function setLoadingState(loading) {
+        const btnPlay = document.getElementById('btn-play');
+        if (!btnPlay) return;
+        if (loading) {
+            btnPlay.classList.add('loading');
+            btnPlay.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                width="20" height="20" style="animation:sp-spin .7s linear infinite">
+                <path d="M12 2a10 10 0 1 0 10 10" stroke-linecap="round"/>
+            </svg>`;
+        } else {
+            btnPlay.classList.remove('loading');
+            // El icono correcto lo pone actualizarUI()
+            actualizarUI();
+        }
+    }
+
     function reproducir(cancion) {
         const c = adaptarCancion(cancion);
         estado.lista = [c];
         estado.idx   = 0;
+        // Actualizar título/artista en el footer de forma inmediata (feedback visual)
+        setTexto('np-title',  c.titulo);
+        setTexto('np-artist', c.artista);
+        const npArt = document.getElementById('np-art');
+        if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
         const cargado = cargarEnAudio(c);
         if (!cargado) return; // src vacío → no continuar
         audio.play().then(() => {
@@ -186,7 +243,9 @@
             notificarCambio();
         }).catch(err => {
             console.error('[SoundlyPlayer] Error al reproducir:', err);
-            mostrarToastError('No se pudo reproducir la canción.');
+            estado.playing = false;
+            setLoadingState(false);
+            mostrarToastError('No se pudo reproducir la canción. Verificá tu conexión.');
         });
     }
 
@@ -194,6 +253,11 @@
         estado.lista = listaCrudos.map(adaptarCancion);
         estado.idx   = Math.max(0, Math.min(indice, estado.lista.length - 1));
         const c = estado.lista[estado.idx];
+        // Feedback inmediato: título/artista/portada se muestran al instante
+        setTexto('np-title',  c.titulo);
+        setTexto('np-artist', c.artista);
+        const npArt = document.getElementById('np-art');
+        if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
         const cargado = cargarEnAudio(c);
         if (!cargado) {
             // Sin src: igual actualizamos la UI con el título/artista para que el usuario sepa qué seleccionó
@@ -209,23 +273,36 @@
             if (c.id) registrarReproduccion(c.id);
         }).catch(err => {
             console.error('[SoundlyPlayer] Error al reproducir lista:', err);
-            mostrarToastError('No se pudo reproducir la canción.');
+            estado.playing = false;
+            setLoadingState(false);
+            mostrarToastError('No se pudo reproducir la canción. Verificá tu conexión.');
         });
     }
 
     function togglePlay() {
-        if (!estado.lista.length) return;
+        if (!estado.lista.length) {
+            mostrarToastError('Seleccioná una canción primero.');
+            return;
+        }
         if (!audio.src) {
-            cargarEnAudio(estado.lista[estado.idx]);
+            const cargado = cargarEnAudio(estado.lista[estado.idx]);
+            if (!cargado) return;
         }
         if (estado.playing) {
             audio.pause();
-            estado.playing = false;
+            // El evento 'pause' del audio se encarga de actualizar estado.playing y la UI
         } else {
-            audio.play().then(() => { estado.playing = true; }).catch(() => {});
+            // Actualizamos icono optimistamente para dar feedback inmediato
+            estado.playing = true;
+            actualizarUI();
+            audio.play().catch(err => {
+                console.error('[SoundlyPlayer] togglePlay error:', err);
+                estado.playing = false;
+                actualizarUI();
+                mostrarToastError('No se pudo reproducir. Intentá de nuevo.');
+            });
         }
         guardarEstado();
-        actualizarUI();
     }
 
     function siguiente() {
@@ -236,12 +313,22 @@
             estado.idx = (estado.idx + 1) % estado.lista.length;
         }
         const c = estado.lista[estado.idx];
-        cargarEnAudio(c);
-        if (estado.playing) audio.play();
+        // Feedback visual inmediato
+        setTexto('np-title',  c.titulo);
+        setTexto('np-artist', c.artista);
+        const npArt = document.getElementById('np-art');
+        if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
+        const cargado = cargarEnAudio(c);
+        if (!cargado) { actualizarUI(); return; }
+        if (estado.playing) {
+            audio.play()
+                .then(() => { actualizarUI(); notificarCambio(); if (c.id) registrarReproduccion(c.id); })
+                .catch(err => { console.error('[SoundlyPlayer] siguiente error:', err); estado.playing = false; actualizarUI(); });
+        } else {
+            actualizarUI();
+            notificarCambio();
+        }
         guardarEstado();
-        actualizarUI();
-        notificarCambio();
-        if (c.id) registrarReproduccion(c.id);
     }
 
     function anterior() {
@@ -252,11 +339,22 @@
         }
         estado.idx = (estado.idx - 1 + estado.lista.length) % estado.lista.length;
         const c = estado.lista[estado.idx];
-        cargarEnAudio(c);
-        if (estado.playing) audio.play();
+        // Feedback visual inmediato
+        setTexto('np-title',  c.titulo);
+        setTexto('np-artist', c.artista);
+        const npArt = document.getElementById('np-art');
+        if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
+        const cargado = cargarEnAudio(c);
+        if (!cargado) { actualizarUI(); return; }
+        if (estado.playing) {
+            audio.play()
+                .then(() => { actualizarUI(); notificarCambio(); })
+                .catch(err => { console.error('[SoundlyPlayer] anterior error:', err); estado.playing = false; actualizarUI(); });
+        } else {
+            actualizarUI();
+            notificarCambio();
+        }
         guardarEstado();
-        actualizarUI();
-        notificarCambio();
     }
 
     function toggleShuffle() {
@@ -309,10 +407,26 @@
     audio.addEventListener('ended', () => {
         if (estado.repeat) {
             audio.currentTime = 0;
-            audio.play();
+            audio.play().catch(() => {});
         } else {
             siguiente();
         }
+    });
+
+    // Quitar estado de carga cuando el audio puede reproducirse
+    audio.addEventListener('canplay', () => {
+        setLoadingState(false);
+    });
+
+    // Mostrar carga si el buffer se agota durante la reproducción
+    audio.addEventListener('waiting', () => {
+        setLoadingState(true);
+    });
+
+    audio.addEventListener('playing', () => {
+        setLoadingState(false);
+        estado.playing = true;
+        actualizarUI();
     });
 
     audio.addEventListener('play',  () => { estado.playing = true;  actualizarUI(); });
@@ -322,11 +436,12 @@
         const codigo = audio.error?.code;
         // Código 4 = MEDIA_ELEMENT_ERROR: No soportado / URL inválida / CORS
         const msg = codigo === 4
-            ? 'Preview no disponible para esta canción.'
+            ? 'Preview no disponible para esta canción (formato no compatible o CORS).'
             : 'Error al cargar el audio. Intentá con otra canción.';
         console.error('[SoundlyPlayer] Error de audio (código', codigo, '):', audio.error);
         mostrarToastError(msg);
         estado.playing = false;
+        setLoadingState(false);
         actualizarUI();
     });
 
