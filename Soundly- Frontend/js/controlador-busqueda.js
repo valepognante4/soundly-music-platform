@@ -15,8 +15,10 @@ const ControladorBusqueda = {
     },
 
     init() {
-        const input    = document.getElementById('search-input');
-        const clearBtn = document.getElementById('search-clear-btn');
+        const input      = document.getElementById('search-input');
+        const clearBtn   = document.getElementById('search-clear-btn');
+        const categorias = document.getElementById('categories-section');
+        const resultados = document.getElementById('search-results');
 
         if (!input) return;
 
@@ -30,10 +32,15 @@ const ControladorBusqueda = {
             if (clearBtn) clearBtn.style.display = valor ? 'block' : 'none';
 
             if (!valor) {
-                const contenedor = document.getElementById('search-results');
-                if (contenedor) contenedor.innerHTML = '';
+                // Sin texto → volvemos a mostrar categorías
+                if (resultados) { resultados.innerHTML = ''; resultados.hidden = true; }
+                if (categorias) categorias.hidden = false;
                 return;
             }
+
+            // Hay texto → ocultamos categorías y mostramos contenedor de resultados
+            if (categorias) categorias.hidden = true;
+            if (resultados) resultados.hidden = false;
 
             ControladorBusqueda.state.debounceTimer = setTimeout(() => {
                 ControladorBusqueda.realizarBusqueda(valor);
@@ -44,8 +51,8 @@ const ControladorBusqueda = {
         clearBtn?.addEventListener('click', () => {
             input.value = '';
             clearBtn.style.display = 'none';
-            const contenedor = document.getElementById('search-results');
-            if (contenedor) contenedor.innerHTML = '';
+            if (resultados) { resultados.innerHTML = ''; resultados.hidden = true; }
+            if (categorias) categorias.hidden = false;
             input.focus();
         });
 
@@ -64,25 +71,29 @@ const ControladorBusqueda = {
 
         const contenedor = document.getElementById('search-results');
 
-        // Estado de carga
+        // Estado de carga con spinner animado
         if (contenedor) {
-            contenedor.innerHTML = `<div class="loading-state">
-                <div class="loading-spinner"></div>
-                <p>Buscando...</p>
-            </div>`;
+            contenedor.innerHTML = `
+                <div class="search-loading-state">
+                    <div class="search-spinner"></div>
+                    <p>Buscando en Soundly y Deezer…</p>
+                </div>`;
         }
 
         try {
-            // Búsqueda por título (el campo más común para búsqueda de usuario)
+            // GestorCanciones.buscar() → GET /api/canciones/buscar?titulo=query
+            // El DynamicSourcingService del backend enriquece automáticamente con Deezer
             const resultados = await GestorCanciones.buscar({ titulo: query });
             Vista.renderizarResultadosBusqueda(resultados, 'search-results');
         } catch (error) {
             console.error('[Busqueda] Error:', error);
             if (contenedor) {
-                contenedor.innerHTML = `<div class="empty-state">
-                    <div class="empty-icon">⚠️</div>
-                    <p>Error al conectar con el servidor. Intentá de nuevo.</p>
-                </div>`;
+                contenedor.innerHTML = `
+                    <div class="search-empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <p class="empty-title">No se pudo conectar</p>
+                        <p class="empty-sub">Revisá tu conexión o intentá de nuevo.</p>
+                    </div>`;
             }
         }
     },

@@ -158,8 +158,9 @@
     // ── 5. LÓGICA DE REPRODUCCIÓN ─────────────────────────────────────────
     function cargarEnAudio(cancion, tiempoInicial = 0) {
         if (!cancion || !cancion.src) {
-            console.warn('[SoundlyPlayer] Canción sin src:', cancion);
-            return;
+            console.warn('[SoundlyPlayer] Canción sin src, saltando:', cancion?.titulo);
+            mostrarToastError('Esta canción no tiene preview disponible.');
+            return false; // señal de fallo
         }
         // Solo recargamos si cambió la fuente (evita restart innecesario)
         if (audio.src !== cancion.src) {
@@ -169,26 +170,36 @@
         if (tiempoInicial > 0) {
             audio.currentTime = tiempoInicial;
         }
+        return true; // señal de éxito
     }
 
     function reproducir(cancion) {
         const c = adaptarCancion(cancion);
         estado.lista = [c];
         estado.idx   = 0;
-        cargarEnAudio(c);
+        const cargado = cargarEnAudio(c);
+        if (!cargado) return; // src vacío → no continuar
         audio.play().then(() => {
             estado.playing = true;
             guardarEstado();
             actualizarUI();
             notificarCambio();
-        }).catch(err => console.error('[SoundlyPlayer] Error al reproducir:', err));
+        }).catch(err => {
+            console.error('[SoundlyPlayer] Error al reproducir:', err);
+            mostrarToastError('No se pudo reproducir la canción.');
+        });
     }
 
     function reproducirLista(listaCrudos, indice = 0) {
         estado.lista = listaCrudos.map(adaptarCancion);
         estado.idx   = Math.max(0, Math.min(indice, estado.lista.length - 1));
         const c = estado.lista[estado.idx];
-        cargarEnAudio(c);
+        const cargado = cargarEnAudio(c);
+        if (!cargado) {
+            // Sin src: igual actualizamos la UI con el título/artista para que el usuario sepa qué seleccionó
+            actualizarUI();
+            return;
+        }
         audio.play().then(() => {
             estado.playing = true;
             guardarEstado();
@@ -196,7 +207,10 @@
             notificarCambio();
             // Avisar al backend que se reprodujo (CU-07)
             if (c.id) registrarReproduccion(c.id);
-        }).catch(err => console.error('[SoundlyPlayer] Error al reproducir lista:', err));
+        }).catch(err => {
+            console.error('[SoundlyPlayer] Error al reproducir lista:', err);
+            mostrarToastError('No se pudo reproducir la canción.');
+        });
     }
 
     function togglePlay() {
@@ -304,8 +318,16 @@
     audio.addEventListener('play',  () => { estado.playing = true;  actualizarUI(); });
     audio.addEventListener('pause', () => { estado.playing = false; actualizarUI(); });
 
-    audio.addEventListener('error', (e) => {
-        console.error('[SoundlyPlayer] Error de audio:', audio.error);
+    audio.addEventListener('error', () => {
+        const codigo = audio.error?.code;
+        // Código 4 = MEDIA_ELEMENT_ERROR: No soportado / URL inválida / CORS
+        const msg = codigo === 4
+            ? 'Preview no disponible para esta canción.'
+            : 'Error al cargar el audio. Intentá con otra canción.';
+        console.error('[SoundlyPlayer] Error de audio (código', codigo, '):', audio.error);
+        mostrarToastError(msg);
+        estado.playing = false;
+        actualizarUI();
     });
 
     // ── 7. NOTIFICACIONES ENTRE MÓDULOS ──────────────────────────────────
@@ -321,6 +343,49 @@
         try {
             await fetch(`${window.SoundlyConfig.API_BASE_URL}/canciones/${cancionId}/reproducir`, { method: 'POST' });
         } catch (e) { /* silencioso — no interrumpir la UX */ }
+    }
+
+    // ── 8b. TOAST DE ERROR NO INVASIVO ───────────────────────────────────
+    // Muestra un mensaje flotante sobre el reproductor por 3 segundos.
+    // No interrumpe ninguna navegación ni estado del reproductor.
+    function mostrarToastError(mensaje) {
+        // Reutilizar toast existente o crear uno nuevo
+        let toast = document.getElementById('sp-toast-error');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'sp-toast-error';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            // Estilos inline para ser autónomo (no depende de ningún CSS externo)
+            Object.assign(toast.style, {
+                position:        'fixed',
+                bottom:          '100px',      // justo encima del footer del reproductor
+                left:            '50%',
+                transform:       'translateX(-50%)',
+                background:      'rgba(20, 10, 40, 0.92)',
+                backdropFilter:  'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border:          '1px solid rgba(167, 139, 250, 0.35)',
+                color:           '#e9d5ff',
+                padding:         '10px 20px',
+                borderRadius:    '999px',
+                fontSize:        '0.82rem',
+                fontWeight:      '500',
+                boxShadow:       '0 4px 20px rgba(0,0,0,0.5)',
+                zIndex:          '9999',
+                transition:      'opacity 0.3s ease',
+                pointerEvents:   'none',
+                whiteSpace:      'nowrap',
+            });
+            document.body.appendChild(toast);
+        }
+
+        // Limpiar timer anterior si el toast ya estaba visible
+        clearTimeout(toast._timer);
+
+        toast.textContent = `⚠️  ${mensaje}`;
+        toast.style.opacity = '1';
+        toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
     }
 
     // ── 9. RESTAURAR ESTADO AL NAVEGAR ───────────────────────────────────

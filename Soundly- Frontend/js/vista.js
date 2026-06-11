@@ -191,7 +191,7 @@ const Vista = {
 
     // ─────────────────────────────────────────────────────────────────────
     // renderizarResultadosBusqueda
-    // Resultados de búsqueda con imagen, título, artista y botón Play.
+    // Resultados de búsqueda glassmorphism: portada, título, artista, duración, play.
     // ─────────────────────────────────────────────────────────────────────
     renderizarResultadosBusqueda(resultados, contenedorId) {
         const contenedor = this._getContainer(contenedorId);
@@ -199,46 +199,66 @@ const Vista = {
 
         if (!resultados || resultados.length === 0) {
             contenedor.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">🔍</div>
-                    <p>No se encontraron resultados.</p>
+                <div class="search-empty-state">
+                    <div class="search-empty-icon">🔍</div>
+                    <p class="empty-title">Sin resultados</p>
+                    <p class="empty-sub">Probá con otro nombre de canción o artista.</p>
                 </div>`;
             return;
         }
 
-        contenedor.innerHTML = '';
+        // Cabecera con contador de resultados
+        const header = document.createElement('div');
+        header.className = 'search-results-header';
+        header.innerHTML = `<h2>Resultados <span class="results-count">${resultados.length} encontradas</span></h2>`;
+
+        const grid = document.createElement('div');
+        grid.className = 'search-results-grid';
+
         resultados.forEach((c, i) => {
-            const item = document.createElement('div');
-            item.className = 'search-result-item';
-            item.id = `resultado-${c.id}`;
-            item.innerHTML = `
-                <img src="${c.img}" 
-                     alt="${c.titulo}"
-                     onerror="this.src='https://placehold.co/60x60/1a1a2e/a78bfa?text=♪'">
-                <div class="info">
-                    <h4>${c.titulo}</h4>
-                    <p>${c.artista} ${c.genero ? '· ' + c.genero : ''}</p>
+            const card = document.createElement('div');
+            card.className = 'search-card';
+            card.id = `resultado-${c.id}`;
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', `Reproducir ${c.titulo} de ${c.artista}`);
+
+            card.innerHTML = `
+                <div class="search-card-art-wrap">
+                    <img class="search-card-art"
+                         src="${c.img}"
+                         alt="Portada de ${c.titulo}"
+                         onerror="this.src='https://placehold.co/64x64/0d0d1a/a78bfa?text=♪'">
+                    <button class="search-card-play-btn"
+                            id="search-play-${c.id}"
+                            aria-label="Reproducir ${c.titulo}">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                            <polygon points="5,3 19,12 5,21"/>
+                        </svg>
+                    </button>
                 </div>
-                <span class="result-dur">${this.fmt(c.duracion)}</span>
-                <button class="result-play-btn" 
-                        id="search-play-${c.id}"
-                        aria-label="Reproducir ${c.titulo}">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                        <polygon points="5,3 19,12 5,21"/>
-                    </svg>
-                </button>
+                <div class="search-card-info">
+                    <span class="search-card-title">${c.titulo}</span>
+                    <span class="search-card-artist">${c.artista}</span>
+                </div>
+                <span class="search-card-dur">${this.fmt(c.duracion)}</span>
             `;
 
-            item.querySelector('.result-play-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
+            const accionPlay = (e) => {
+                e?.stopPropagation();
                 window.SoundlyPlayer?.reproducirLista(resultados, i);
-            });
-            item.addEventListener('click', () => {
-                window.SoundlyPlayer?.reproducirLista(resultados, i);
-            });
+            };
 
-            contenedor.appendChild(item);
+            card.querySelector('.search-card-play-btn').addEventListener('click', accionPlay);
+            card.addEventListener('click', accionPlay);
+            card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') accionPlay(); });
+
+            grid.appendChild(card);
         });
+
+        contenedor.innerHTML = '';
+        contenedor.appendChild(header);
+        contenedor.appendChild(grid);
     },
 
     // ─────────────────────────────────────────────────────────────────────
