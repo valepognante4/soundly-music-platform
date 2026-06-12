@@ -26,68 +26,6 @@ body, html {
     gap: 8px;
 }
 
-.sidebar { 
-    background: #121212; /* Cambiado a un gris oscuro, consistente con el main-content */
-    color: #fff; 
-    padding: 20px; 
-    display: flex;
-    flex-direction: column;
-    gap: 10px; /* Espaciado general entre secciones */
-}
-
-.sidebar nav a { 
-    display: flex; 
-    align-items: center; 
-    gap: 18px; /* Aumentamos el gap para más aire */
-    color: #b3b3b3; 
-    text-decoration: none; 
-    padding: 10px 0; /* Aumentamos el padding para separar mejor las filas */
-    font-size: 0.85rem; 
-    font-weight: 600; 
-    transition: all 0.2s ease;
-}
-
-/* Logo más pequeño y refinado */
-.logo { 
-    font-size: 18px; /* Reducido de 24px a 18px */
-    font-weight: 700; /* Menos grueso que el 900 anterior */
-    margin-bottom: 25px; 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-}
-
-.logo-img {
-    width: 28px;  /* Reducido de 35px */
-    height: 28px;
-    object-fit: contain;
-}
-
-.sidebar nav a:hover { 
-    color: #fff; 
-}
-
-/* Estilo para el título de "PLAYLISTS" si lo tienes en el HTML */
-.sidebar h3 {
-    font-size: 0.75rem; /* Muy pequeña para subtítulos */
-    color: #b3b3b3;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 20px;
-}
-
-
-.nav-links { display: flex; flex-direction: column; gap: 20px; }
-
-.nav-links a {
-    color: var(--text-muted);
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.9rem;
-    transition: color 0.2s;
-}
-
-.nav-links a.active, .nav-links a:hover { color: var(--text-main); }
 
 /* --- 4. CONTENIDO PRINCIPAL --- */
 .main-content {
@@ -142,23 +80,6 @@ h2 { font-size: 1.5rem; margin-bottom: 24px; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.btn-sidebar-create {
-    background: transparent !important; /* Fuerza la transparencia */
-    border: none !important;           /* Elimina el borde gris/blanco */
-    color: #b3b3b3 !important;        /* Color del texto */
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    transition: color 0.2s;
-}
-
-.btn-sidebar-create:hover {
-    color: #ffffff !important;        /* Se ilumina al pasar el mouse */
-}
 
 /* Selector de vista (Lista) */
 .list-view-toggle {

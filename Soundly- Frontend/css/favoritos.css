@@ -13,58 +13,6 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-ser
     height: 100vh;
 }
 
-/* --- 2. SIDEBAR (Izquierda) --- */
-/* --- 2. SIDEBAR (Izquierda) - ESTILO REFINADO --- */
-.sidebar { 
-    background: #121212; /* Cambiado a un gris oscuro, consistente con el main-content */
-    color: #fff; 
-    padding: 20px; 
-    display: flex;
-    flex-direction: column;
-    gap: 10px; /* Espaciado general entre secciones */
-}
-
-/* Espaciado mejorado entre botones de navegación */
-.sidebar nav a { 
-    display: flex; 
-    align-items: center; 
-    gap: 18px; /* Aumentamos el gap para más aire */
-    color: #b3b3b3; 
-    text-decoration: none; 
-    padding: 10px 0; /* Aumentamos el padding para separar mejor las filas */
-    font-size: 0.85rem; 
-    font-weight: 600; 
-    transition: all 0.2s ease;
-}
-
-/* Logo más pequeño y refinado */
-.logo { 
-    font-size: 18px; /* Reducido de 24px a 18px */
-    font-weight: 700; /* Menos grueso que el 900 anterior */
-    margin-bottom: 25px; 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-}
-
-.logo-img {
-    width: 28px;  /* Reducido de 35px */
-    height: 28px;
-    object-fit: contain;
-}
-
-.sidebar nav a:hover { 
-    color: #fff; 
-}
-
-/* Estilo para el título de "PLAYLISTS" si lo tienes en el HTML */
-.sidebar h3 {
-    font-size: 0.75rem; /* Muy pequeña para subtítulos */
-    color: #b3b3b3;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 20px;
-}
 
 /* --- 3. CONTENIDO PRINCIPAL (Derecha) --- */
 .main-content { background: #121212; overflow-y: auto; color: white; }
