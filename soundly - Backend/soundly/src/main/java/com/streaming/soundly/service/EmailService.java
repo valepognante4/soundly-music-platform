@@ -35,7 +35,7 @@ public class EmailService {
      */
     @Async
     public void enviarEmailRecuperacion(String destinatario, String token) {
-        String enlace = frontendUrl + "/reset-password?token=" + token;
+        String enlace = frontendUrl + "/reset-password.html?token=" + token;
 
         String cuerpoHtml = """
                 <html>
