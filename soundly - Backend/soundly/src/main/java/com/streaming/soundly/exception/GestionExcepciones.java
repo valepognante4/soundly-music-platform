@@ -58,4 +58,14 @@ public class GestionExcepciones {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
+    // 409 — Conflicto al registrar (ej. Email ya existe)
+    @ExceptionHandler(EmailYaRegistradoException.class)
+    public ResponseEntity<Map<String, String>> gestionarEmailYaRegistrado(EmailYaRegistradoException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "CONFLICT");
+        error.put("mensaje", ex.getMessage());
+        error.put("timestamp", LocalDateTime.now().toString());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
 }

@@ -115,19 +115,31 @@ function adaptarPlaylist(dto) {
 // GestorUsuarios — Autenticación y sesión
 // ═════════════════════════════════════════════════════════════════════════════
 const GestorUsuarios = {
-    /**
-     * Registra un nuevo usuario. POST /api/auth/registrar
-     */
     async registrar(usuario) {
-        return apiFetch('/auth/registrar', {
-            method: 'POST',
-            body: {
-                nombreUsuario:   usuario.apodo,
-                email:           usuario.correo,
-                password:        usuario.clave,
-                fechaNacimiento: usuario.nacimiento,
-            },
-        });
+        try {
+            await apiFetch('/auth/registrar', {
+                method: 'POST',
+                body: {
+                    nombreUsuario:   usuario.apodo,
+                    email:           usuario.correo,
+                    password:        usuario.clave,
+                    fechaNacimiento: usuario.nacimiento,
+                },
+            });
+            return { exito: true };
+        } catch (error) {
+            if (error.message.includes('409') || error.message.includes('CONFLICT')) {
+                const match = error.message.match(/— (.+)$/);
+                const detalle = match ? match[1] : null;
+                let mensajeError = 'El correo ya está registrado.';
+                try {
+                    const parsed = JSON.parse(detalle);
+                    if (parsed?.mensaje) mensajeError = parsed.mensaje;
+                } catch { }
+                return { exito: false, motivo: 'duplicado', mensaje: mensajeError };
+            }
+            return { exito: false, motivo: 'servidor', mensaje: 'Error al conectar con el servidor.' };
+        }
     },
 
     /**

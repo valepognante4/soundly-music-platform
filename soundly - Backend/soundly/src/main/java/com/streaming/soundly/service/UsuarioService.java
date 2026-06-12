@@ -4,6 +4,7 @@ import com.streaming.soundly.dto.LoginDTO;
 import com.streaming.soundly.dto.RegistroDTO;
 import com.streaming.soundly.dto.ResetPasswordRequestDTO;
 import com.streaming.soundly.dto.UsuarioDTO;
+import com.streaming.soundly.exception.EmailYaRegistradoException;
 import com.streaming.soundly.exception.TokenInvalidoException;
 import com.streaming.soundly.mapper.UsuarioMapper;
 import com.streaming.soundly.model.PasswordResetToken;
@@ -42,7 +43,7 @@ public class UsuarioService implements IUsuarioService {
     public UsuarioDTO registrar(RegistroDTO registroDTO) {
         // CU-05: Validación estricta de datos duplicados en Base de Datos
         if (usuarioRepository.existsByEmail(registroDTO.getEmail())) {
-            throw new IllegalArgumentException("El email ya se encuentra registrado en Soundly");
+            throw new EmailYaRegistradoException("El email ya se encuentra registrado en Soundly");
         }
 
         Usuario usuario = new Usuario();

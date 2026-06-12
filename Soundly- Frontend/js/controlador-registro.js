@@ -59,15 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 4. Registro en el Backend
-        try {
-            if (await GestorUsuarios.yaExiste(usuario.correo)) {
-                return Swal.fire({ icon: 'error', title: 'Ups', text: 'El correo ya existe.', background: '#121212', color: '#fff' });
-            }
-            await GestorUsuarios.registrar(usuario);
+        const resultado = await GestorUsuarios.registrar(usuario);
+        if (resultado.exito) {
             Swal.fire({ icon: 'success', title: '¡Bienvenida!', text: 'Registro exitoso', background: '#121212', color: '#fff', timer: 2000 });
             setTimeout(() => window.location.href = 'home.html', 2000);
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Error al conectar con el servidor.', background: '#121212', color: '#fff' });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error en el registro', text: resultado.mensaje, background: '#121212', color: '#fff' });
         }
     });
 });
