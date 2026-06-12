@@ -52,7 +52,14 @@ async function apiFetch(endpoint, opciones = {}) {
     }
     // 204 No Content: no hay body que parsear
     if (response.status === 204) return null;
-    return response.json();
+    
+    // Si la respuesta es JSON, la parsea. Si es texto plano (como los endpoints de auth), devuelve texto.
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+        return response.json();
+    } else {
+        return response.text();
+    }
 }
 
 // ─── ADAPTADORES ─────────────────────────────────────────────────────────────
