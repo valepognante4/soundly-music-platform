@@ -157,6 +157,67 @@ const GestorUsuarios = {
         sessionStorage.removeItem('soundly_player_state');
         window.location.href = 'login.html';
     },
+
+    // ─── RECUPERACIÓN DE CONTRASEÑA ───────────────────────────────────────────
+
+    /**
+     * Paso 1: Solicita el envío del correo de recuperación.
+     * POST /api/auth/recuperar-password
+     *
+     * El backend SIEMPRE responde 200 (no revela si el email existe),
+     * así que solo manejamos errores de red/servidor.
+     *
+     * @param {string} email
+     * @returns {Promise<{ exito: boolean, mensaje: string, motivo?: string }>}
+     */
+    async solicitarRecuperacion(email) {
+        try {
+            const mensaje = await apiFetch('/auth/recuperar-password', {
+                method: 'POST',
+                body: { email },
+            });
+            return { exito: true, mensaje: typeof mensaje === 'string' ? mensaje : 'Revisá tu bandeja de entrada.' };
+        } catch (error) {
+            if (error.message.includes('Failed to fetch')) {
+                return { exito: false, motivo: 'red', mensaje: 'No se pudo conectar con el servidor.' };
+            }
+            return { exito: false, motivo: 'servidor', mensaje: 'Ocurrió un error. Intentá de nuevo.' };
+        }
+    },
+
+    /**
+     * Paso 2: Confirma el cambio de contraseña enviando el token y la nueva clave.
+     * POST /api/auth/reset-password
+     *
+     * @param {string} token         — Extraído del parámetro ?token= de la URL.
+     * @param {string} nuevaPassword — Nueva contraseña ingresada por el usuario.
+     * @returns {Promise<{ exito: boolean, mensaje: string, motivo?: string }>}
+     */
+    async resetearPassword(token, nuevaPassword) {
+        try {
+            const mensaje = await apiFetch('/auth/reset-password', {
+                method: 'POST',
+                body: { token, nuevaPassword },
+            });
+            return { exito: true, mensaje: typeof mensaje === 'string' ? mensaje : 'Contraseña actualizada correctamente.' };
+        } catch (error) {
+            if (error.message.includes('TOKEN_INVALIDO') || error.message.includes('400')) {
+                // Extraer el mensaje del backend si está en el JSON
+                const match = error.message.match(/— (.+)$/);
+                const detalle = match ? match[1] : null;
+                let mensajeError = 'El enlace es inválido o ya expiró.';
+                try {
+                    const parsed = JSON.parse(detalle);
+                    if (parsed?.mensaje) mensajeError = parsed.mensaje;
+                } catch { /* el detalle no es JSON, usamos el mensaje por defecto */ }
+                return { exito: false, motivo: 'token', mensaje: mensajeError };
+            }
+            if (error.message.includes('Failed to fetch')) {
+                return { exito: false, motivo: 'red', mensaje: 'No se pudo conectar con el servidor.' };
+            }
+            return { exito: false, motivo: 'servidor', mensaje: 'Error inesperado. Intentá de nuevo.' };
+        }
+    },
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
