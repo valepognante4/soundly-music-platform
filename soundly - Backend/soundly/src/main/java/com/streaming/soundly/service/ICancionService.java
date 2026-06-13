@@ -8,6 +8,8 @@ public interface ICancionService {
     void incrementarReproduccion(Long id);
     boolean alternarFavorito(Long cancionId, Long usuarioId);
     List<CancionDTO> obtenerCancionesDestacadas();
+    // BUG FIX #5: M\u00e9todo faltante para obtener las canciones favoritas de un usuario
+    List<CancionDTO> obtenerFavoritos(Long usuarioId);
     CancionDTO guardar(CancionDTO cancionDTO);
     CancionDTO actualizarMetadata(Long id, CancionDTO cancionDTO);
     void eliminarDelCatalogo(Long id);

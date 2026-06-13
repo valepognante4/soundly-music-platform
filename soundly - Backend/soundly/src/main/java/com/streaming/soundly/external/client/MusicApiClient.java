@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 @Component
 public class MusicApiClient {
     private static final Logger log = LoggerFactory.getLogger(MusicApiClient.class);
@@ -100,13 +101,24 @@ public class MusicApiClient {
 
     /**
      * Busca canciones en Deezer usando una palabra clave.
+     * BUG FIX #3: El query se encodea correctamente con UriComponentsBuilder
+     * para que espacios y caracteres especiales no rompan la URL.
      *
      * @param query término de búsqueda
      * @return Lista de canciones resultantes
      */
     public ExternalTrackListDTO searchCanciones(String query) {
         if (query == null || query.trim().isEmpty()) return null;
-        String url = DEEZER_BASE_URL + "/search?q=" + query + "&limit=10"; // limitamos para no saturar
+
+        // BUG FIX #3: build() y toUriString() codifica la URL correctamente.
+        // Se usa fromUriString en lugar de fromHttpUrl para mayor compatibilidad
+        String url = UriComponentsBuilder
+                .fromUriString(DEEZER_BASE_URL + "/search")
+                .queryParam("q", query.trim())
+                .queryParam("limit", 10)
+                .build()
+                .toUriString();
+
         log.info("[Deezer] Buscando canciones con query: {}", url);
         try {
             return restTemplate.getForObject(url, ExternalTrackListDTO.class);
@@ -117,4 +129,3 @@ public class MusicApiClient {
         }
     }
 }
-

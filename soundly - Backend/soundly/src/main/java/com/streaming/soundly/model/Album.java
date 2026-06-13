@@ -11,7 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "albums")
+@Table(name = "album")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Album {
@@ -36,5 +36,5 @@ public class Album {
     private Artista artista;
     
     @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Cancion> canciones;
+    private List<Cancion> canciones = new java.util.ArrayList<>();
 }

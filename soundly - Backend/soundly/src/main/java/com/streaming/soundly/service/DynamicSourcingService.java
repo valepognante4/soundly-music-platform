@@ -31,29 +31,28 @@ public class DynamicSourcingService {
     private final IArtistaService artistaService;
     private final MusicApiClient musicApiClient;
 
-    // Self-injection para habilitar el proxy AOP en llamadas internas
     private DynamicSourcingService self;
 
     public DynamicSourcingService(CancionRepository cancionRepository,
                                   AlbumRepository albumRepository,
                                   IArtistaService artistaService,
-                                  MusicApiClient musicApiClient) {
+                                  MusicApiClient musicApiClient,
+                                  jakarta.persistence.EntityManager entityManager) {
         this.cancionRepository = cancionRepository;
         this.albumRepository = albumRepository;
         this.artistaService = artistaService;
         this.musicApiClient = musicApiClient;
+        this.entityManager = entityManager;
     }
+
+    private final jakarta.persistence.EntityManager entityManager;
 
     @Autowired
     public void setSelf(DynamicSourcingService self) {
         this.self = self;
     }
 
-    /**
-     * Sourcing Dinámico:
-     * Al NO tener @Transactional aquí arriba, el ciclo for puede continuar libremente.
-     * Cada iteración abre su propia transacción independiente a través de self.persistirJerarquia.
-     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<CancionDTO> buscarYSourcerDinamico(String query) {
         List<Cancion> locales = cancionRepository.findByTituloContainingIgnoreCase(query);
 
@@ -66,14 +65,15 @@ public class DynamicSourcingService {
                     Optional<Cancion> cancionExistente = cancionRepository.findByExternalId(extTrack.getId());
                     if (cancionExistente.isEmpty()) {
                         try {
-                            // Llamamos a través del proxy self para que REQUIRES_NEW tenga efecto
                             self.persistirJerarquia(extTrack);
                         } catch (Exception e) {
                             log.error("[Sourcing] Error aisaldo persistiendo la canción externa {}: {}", extTrack.getId(), e.getMessage());
-                            // El bucle sigue con la próxima canción, sin romper el EntityManager de las demás
                         }
                     }
                 }
+                
+                // Limpiamos la caché L1 para forzar la relectura desde la BD
+                entityManager.clear();
                 locales = cancionRepository.findByTituloContainingIgnoreCase(query);
             }
         }
@@ -83,49 +83,49 @@ public class DynamicSourcingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * REQUIRES_NEW crea una nueva transacción aislada. Si esto falla, SOLO se hace rollback
-     * de esta canción, manteniendo intacto el resto de las iteraciones.
-     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void persistirJerarquia(ExternalCancionDTO extTrack) {
-        // 1. Obtener/Crear Artista
         String nombreArtista = (extTrack.getArtist() != null) ? extTrack.getArtist().getName() : "Artista Desconocido";
         Artista artista = artistaService.obtenerOCrearArtista(nombreArtista, extTrack.getArtist());
-        
-        // 2. Obtener/Crear Álbum con Save-First y Flusheo inmediato
-        Album album = null;
+
+        if (artista == null || artista.getId() == null) {
+            throw new IllegalStateException("[Sourcing] No se pudo persistir el artista: " + nombreArtista);
+        }
+
+        Album albumPersistido = null;
         if (extTrack.getAlbum() != null && extTrack.getAlbum().getId() != null && extTrack.getAlbum().getTitle() != null) {
-            try {
-                album = albumRepository.findByExternalId(extTrack.getAlbum().getId())
-                        .orElseGet(() -> {
-                            Album nuevoAlbum = new Album();
-                            nuevoAlbum.setExternalId(extTrack.getAlbum().getId());
-                            nuevoAlbum.setTitulo(extTrack.getAlbum().getTitle());
-                            nuevoAlbum.setImagenUrl(extTrack.getAlbum().getCoverUrl());
-                            nuevoAlbum.setArtista(artista);
-                            
-                            // Persistimos EXPLÍCITAMENTE antes de continuar
-                            return albumRepository.saveAndFlush(nuevoAlbum);
-                        });
-            } catch (Exception e) {
-                log.warn("[Sourcing] Estrategia defensiva: Falló la creación del álbum {} por {}. Se insertará la canción con album_id = NULL", 
-                        extTrack.getAlbum().getId(), e.getMessage());
-                album = null; // Evitamos romper la transacción de la canción
+            Long albumExternalId = extTrack.getAlbum().getId();
+            Optional<Album> albumExistente = albumRepository.findByExternalId(albumExternalId);
+
+            if (albumExistente.isPresent()) {
+                // Usamos la entidad real ya recuperada, no un proxy.
+                albumPersistido = albumExistente.get();
+            } else {
+                Album nuevoAlbum = new Album();
+                nuevoAlbum.setExternalId(albumExternalId);
+                nuevoAlbum.setTitulo(extTrack.getAlbum().getTitle());
+                nuevoAlbum.setImagenUrl(extTrack.getAlbum().getCoverUrl());
+                nuevoAlbum.setArtista(artista);
+
+                // saveAndFlush asegura que el INSERT se envíe a la BD de inmediato y se genere el ID
+                albumPersistido = albumRepository.saveAndFlush(nuevoAlbum);
+
+                if (albumPersistido.getId() == null) {
+                    throw new IllegalStateException("[Sourcing] Falló la persistencia del álbum y la generación de ID.");
+                }
             }
         }
 
-        // 3. Persistir Canción
         Cancion cancion = CancionMapper.toEntity(extTrack);
         cancion.setTitulo(extTrack.getTitle());
         cancion.setImagenUrl(extTrack.getCoverUrl());
         cancion.setArtista(artista);
-        
-        if (album != null) {
-            cancion.setAlbum(album);
+
+        if (albumPersistido != null) {
+            // Asignamos la entidad gestionada y sincronizada
+            cancion.setAlbum(albumPersistido);
         }
 
-        // El saveAndFlush final garantiza que el Foreign Key constraint se ejecute y evalúe aquí mismo
         cancionRepository.saveAndFlush(cancion);
         log.info("[Sourcing] Nueva canción guardada exitosamente: {} - {}", artista.getNombre(), cancion.getTitulo());
     }

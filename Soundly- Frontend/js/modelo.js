@@ -271,10 +271,12 @@ const GestorCanciones = {
     },
 
     /**
-     * Obtiene los favoritos de un usuario. GET /api/usuarios/{userId}/favoritos
+     * Obtiene los favoritos de un usuario.
+     * BUG FIX: La URL anterior apuntaba a /usuarios/{userId}/favoritos (no existía en el backend).
+     * El endpoint correcto en el backend es GET /api/canciones/favoritos/usuario/{userId}
      */
     async obtenerFavoritos(userId) {
-        const data = await apiFetch(`/usuarios/${userId}/favoritos`).catch(() => []);
+        const data = await apiFetch(`/canciones/favoritos/usuario/${userId}`).catch(() => []);
         return (Array.isArray(data) ? data : []).map(adaptarCancion);
     },
 

@@ -55,6 +55,13 @@ public class CancionController {
         return ResponseEntity.ok(mensaje);
     }
 
+    // BUG FIX #4: Endpoint faltante que el frontend (favoritos.html) necesita para listar favoritos
+    @GetMapping("/favoritos/usuario/{usuarioId}")
+    public ResponseEntity<List<CancionDTO>> obtenerFavoritos(@PathVariable Long usuarioId) {
+        List<CancionDTO> favoritos = cancionService.obtenerFavoritos(usuarioId);
+        return ResponseEntity.ok(favoritos);
+    }
+
     @GetMapping("/recomendados")
     public ResponseEntity<List<CancionDTO>> obtenerRecomendados() {
         // Extra indispensable para llenar la sección "Recomendados para vos" de la pantalla principal que armó Santiago

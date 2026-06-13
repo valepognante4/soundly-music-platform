@@ -3,10 +3,13 @@ package com.streaming.soundly.service;
 import com.streaming.soundly.dto.CancionDTO;
 import com.streaming.soundly.external.client.MusicApiClient;
 import com.streaming.soundly.external.dto.ExternalCancionDTO;
+import com.streaming.soundly.external.dto.ExternalTrackListDTO;
 import com.streaming.soundly.mapper.CancionMapper;
+import com.streaming.soundly.model.Album;
 import com.streaming.soundly.model.Artista;
 import com.streaming.soundly.model.Cancion;
 import com.streaming.soundly.model.Usuario;
+import com.streaming.soundly.repository.AlbumRepository;
 import com.streaming.soundly.repository.CancionRepository;
 import com.streaming.soundly.repository.UsuarioRepository;
 import com.streaming.soundly.service.ICancionService;
@@ -24,16 +27,18 @@ public class CancionService implements ICancionService {
 
     private final CancionRepository cancionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final AlbumRepository albumRepository;
     private final MusicApiClient musicApiClient;
-    // 1. Agregamos el servicio de artistas
     private final IArtistaService artistaService;
 
     public CancionService(CancionRepository cancionRepository,
                           UsuarioRepository usuarioRepository,
+                          AlbumRepository albumRepository,
                           MusicApiClient musicApiClient,
-                          IArtistaService artistaService) { // Inyección
+                          IArtistaService artistaService) {
         this.cancionRepository = cancionRepository;
         this.usuarioRepository = usuarioRepository;
+        this.albumRepository = albumRepository;
         this.musicApiClient = musicApiClient;
         this.artistaService = artistaService;
     }
@@ -56,18 +61,38 @@ public class CancionService implements ICancionService {
 
         // 1. Obtener/Crear Artista (Seguro)
         String nombreArtista = (externalDto.getArtist() != null) ? externalDto.getArtist().getName() : "Artista Desconocido";
-        // Le pasamos el nombre Y el objeto DTO del artista que viene de la API
         Artista artista = artistaService.obtenerOCrearArtista(nombreArtista, externalDto.getArtist());
 
-        // 2. Mapear canción
+        // 2. Obtener/Crear Álbum si la API trae datos de álbum
+        Album album = null;
+        if (externalDto.getAlbum() != null && externalDto.getAlbum().getId() != null && externalDto.getAlbum().getTitle() != null) {
+            Long albumExternalId = externalDto.getAlbum().getId();
+            album = albumRepository.findByExternalId(albumExternalId)
+                    .orElseGet(() -> {
+                        Album nuevoAlbum = new Album();
+                        nuevoAlbum.setExternalId(albumExternalId);
+                        nuevoAlbum.setTitulo(externalDto.getAlbum().getTitle());
+                        nuevoAlbum.setImagenUrl(externalDto.getAlbum().getCoverUrl());
+                        nuevoAlbum.setArtista(artista);
+                        // saveAndFlush garantiza que el PK del álbum exista en BD antes del INSERT de canción
+                        return albumRepository.saveAndFlush(nuevoAlbum);
+                    });
+        }
+
+        // 3. Mapear canción
         Cancion nuevaCancion = CancionMapper.toEntity(externalDto);
 
-        // 3. Asegurar campos (usando los datos validados)
+        // 4. Asegurar campos (usando los datos validados)
         nuevaCancion.setTitulo(externalDto.getTitle());
         nuevaCancion.setImagenUrl(externalDto.getCoverUrl());
         nuevaCancion.setArtista(artista);
 
-        // 4. Guardar
+        // Solo vinculamos el álbum si se persistió con un ID válido
+        if (album != null && album.getId() != null) {
+            nuevaCancion.setAlbum(album);
+        }
+
+        // 5. Guardar canción
         Cancion guardada = cancionRepository.save(nuevaCancion);
 
         return CancionMapper.toDTO(guardada);
@@ -76,11 +101,47 @@ public class CancionService implements ICancionService {
     @Override
     @Transactional(readOnly = true)
     public List<CancionDTO> buscarConFiltros(String titulo, String artista, String genero) {
-        // Cuando agregues las queries personalizadas en tu repositorio, mapearás la lista así:
-        List<Cancion> canciones = cancionRepository.findAll(); // Ejemplo base
+        // 1. Consultar base de datos local
+        List<Cancion> canciones;
+        if (titulo != null && !titulo.trim().isEmpty()) {
+            canciones = cancionRepository.findByTituloContainingIgnoreCase(titulo.trim());
+        } else {
+            canciones = cancionRepository.findAllWithArtista();
+        }
 
-        return canciones.stream()
-                .map(CancionMapper::toDTO)
+        // 2. Fall-through: si la BD local devuelve resultados, los retornamos directamente
+        if (canciones != null && !canciones.isEmpty()) {
+            return canciones.stream()
+                    .map(CancionMapper::toDTO)
+                    .collect(Collectors.toList());
+        }
+
+        // 3. La BD local está vacía → llamamos a Deezer con el query
+        String query = titulo != null && !titulo.trim().isEmpty() ? titulo.trim() : artista;
+        if (query == null || query.trim().isEmpty()) {
+            return List.of();
+        }
+
+        ExternalTrackListDTO externalResult = musicApiClient.searchCanciones(query);
+
+        if (externalResult == null || externalResult.getData() == null || externalResult.getData().isEmpty()) {
+            return List.of();
+        }
+
+        // 4. Mapear ExternalCancionDTO → CancionDTO para no romper el frontend
+        return externalResult.getData().stream()
+                .map(ext -> {
+                    String nombreArtista = (ext.getArtist() != null) ? ext.getArtist().getName() : "Artista Desconocido";
+                    return CancionDTO.builder()
+                            .id(ext.getId())
+                            .titulo(ext.getTitle())
+                            .duracion(ext.getDuration())
+                            .imagenUrl(ext.getCoverUrl())
+                            .archivoUrl(ext.getPreviewUrl())
+                            .contadorReproducciones(0)
+                            .nombreArtista(nombreArtista)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -121,6 +182,19 @@ public class CancionService implements ICancionService {
         List<Cancion> destacadas = cancionRepository.findAllWithArtista();
 
         return destacadas.stream()
+                .map(CancionMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    // BUG FIX #4 y #5: Método que faltaba para obtener los favoritos de un usuario.
+    // El frontend lo llama desde favoritos.html pero no existía en el servicio.
+    @Override
+    @Transactional(readOnly = true)
+    public List<CancionDTO> obtenerFavoritos(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con id: " + usuarioId));
+
+        return usuario.getCancionesFavoritas().stream()
                 .map(CancionMapper::toDTO)
                 .collect(Collectors.toList());
     }
