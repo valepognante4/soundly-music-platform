@@ -1,6 +1,7 @@
 package com.streaming.soundly.controller;
 
 import com.streaming.soundly.dto.PlaylistDTO;
+import com.streaming.soundly.dto.PlaylistRequestDTO;
 import com.streaming.soundly.service.PlaylistService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,23 +23,24 @@ public class PlaylistController {
     }
 
     @PostMapping
-    public ResponseEntity<PlaylistDTO> crearPlaylist(@Valid @RequestBody PlaylistDTO playlistDTO) {
+    public ResponseEntity<PlaylistDTO> crearPlaylist(@Valid @RequestBody PlaylistRequestDTO requestDTO) {
         // CU-11: Crear Playlist
-        PlaylistDTO nuevaPlaylist = playlistService.crear(playlistDTO);
+        PlaylistDTO nuevaPlaylist = playlistService.crearPlaylist(requestDTO);
         return new ResponseEntity<>(nuevaPlaylist, HttpStatus.CREATED); // Devuelve 201 Created
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PlaylistDTO> modificarPlaylist(@PathVariable Long id, @Valid @RequestBody PlaylistDTO playlistDTO) {
-        // CU-12: Modificar Playlist (Cambiar Nombre/Descripción)
-        PlaylistDTO playlistModificada = playlistService.modificar(id, playlistDTO);
+    public ResponseEntity<PlaylistDTO> modificarPlaylist(@PathVariable Long id, @Valid @RequestBody PlaylistRequestDTO requestDTO) {
+        // CU-12: Modificar Playlist (Cambiar Nombre)
+        // Usamos modificarNombre asumiendo que el DTO trae el nuevo nombre
+        PlaylistDTO playlistModificada = playlistService.modificarNombre(id, requestDTO.getNombre());
         return ResponseEntity.ok(playlistModificada); // Devuelve 200 OK
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarPlaylist(@PathVariable Long id) {
         // CU-13: Eliminar Playlist
-        playlistService.eliminar(id);
+        playlistService.eliminarPlaylist(id);
         return ResponseEntity.noContent().build(); // Devuelve 204 No Content (estándar para DELETE exitosos)
     }
 
@@ -52,7 +54,7 @@ public class PlaylistController {
     @DeleteMapping("/{id}/canciones/{cancionId}")
     public ResponseEntity<PlaylistDTO> quitarCancionDePlaylist(@PathVariable Long id, @PathVariable Long cancionId) {
         // CU-15: Quitar Canción de Playlist
-        PlaylistDTO playlistActualizada = playlistService.quitarCancion(id, cancionId);
+        PlaylistDTO playlistActualizada = playlistService.eliminarCancion(id, cancionId);
         return ResponseEntity.ok(playlistActualizada);
     }
 
