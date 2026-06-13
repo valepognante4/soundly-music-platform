@@ -158,6 +158,12 @@
         // --- Botones de estado ---
         toggleClass('btn-shuffle', 'active', estado.shuffle);
         toggleClass('btn-repeat',  'active', estado.repeat);
+
+        // --- Botón Like (Actualizar data-id) ---
+        const btnLike = document.querySelector('.btn-like');
+        if (btnLike) {
+            btnLike.setAttribute('data-id', c.id);
+        }
     }
 
     function setTexto(id, texto) {

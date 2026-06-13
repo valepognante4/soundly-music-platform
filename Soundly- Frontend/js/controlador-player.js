@@ -56,7 +56,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('soundly:cancion-cambio', ({ detail }) => {
         resaltarCancionActiva(detail.idx);
     });
+
+    // 6. Escuchar click en el botón de "Me Gusta"
+    const btnLike = document.querySelector('.btn-like');
+    if (btnLike) {
+        btnLike.addEventListener('click', toggleLike);
+    }
 });
+
+// ── LÓGICA DE FAVORITOS ────────────────────────────────────────────────────────
+async function toggleLike(event) {
+    const btn = event.currentTarget;
+    const cancionId = btn.getAttribute('data-id');
+    const usuario = GestorUsuarios.obtenerActivo() || (typeof currentUser !== 'undefined' ? currentUser : null);
+    
+    if (!cancionId) {
+        alert('No hay ninguna canción seleccionada.');
+        return;
+    }
+    
+    if (!usuario || !usuario.id) {
+        alert('Debes iniciar sesión para agregar a favoritos.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/canciones/${cancionId}/favorito/usuario/${usuario.id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    // Opcional: mostrar un feedback visual temporal (toast o animación)
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                }
+            }
+        } else {
+            console.error('Error al cambiar favorito, status:', response.status);
+            alert('No se pudo actualizar el estado de favorito.');
+        }
+    } catch (error) {
+        console.error('Error de red al intentar dar Me Gusta:', error);
+        alert('Ocurrió un error de red al intentar conectarse con el servidor.');
+    }
+}
 
 // ─── CARGA DE VISTAS ──────────────────────────────────────────────────────────
 
@@ -91,11 +143,11 @@ async function cargarVistaFavoritos(usuario) {
 
         if ($('playlist-name')) $('playlist-name').textContent = 'Canciones Favoritas';
 
-        Vista.renderizarListaCanciones(
+        Vista.renderizarTarjetasFavoritas(
             favoritos,
             'playlist-list',
-            -1,
-            (cancion, idx) => window.SoundlyPlayer.reproducirLista(favoritos, idx)
+            (cancion, idx) => window.SoundlyPlayer.reproducirLista(favoritos, idx),
+            toggleLike
         );
 
         calcularEstadisticasPlaylist(favoritos);

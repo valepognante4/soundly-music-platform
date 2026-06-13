@@ -482,22 +482,30 @@ body {
     width: 100%;
 }
 
-.like-btn {
+.btn-like {
     background: none;
     border: none;
     color: #b3b3b3; /* Gris suave cuando no está activo */
     font-size: 1.2rem;
     cursor: pointer;
     transition: transform 0.2s, color 0.2s;
+    outline: none;
 }
 
-.like-btn:hover {
+.btn-like:hover {
     transform: scale(1.1);
 }
 
-/* Cuando se marca como "Me gusta" */
-.like-btn.active {
-    color: #1DB954; /* Verde Spotify */
+/* Cuando se marca como "Me gusta" (ícono fas) */
+.btn-like i.fas.fa-heart {
+    color: #b388ff; /* Color lila solicitado */
+    animation: likeZoom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes likeZoom {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
 }
 
 /* Estilos del Header y Menú */

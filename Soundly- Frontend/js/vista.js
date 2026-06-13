@@ -157,6 +157,65 @@ const Vista = {
     },
 
     // ─────────────────────────────────────────────────────────────────────
+    // renderizarTarjetasFavoritas
+    // Tarjetas de canciones para la sección Favoritos, incluye botón Me Gusta.
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarTarjetasFavoritas(canciones, contenedorId, onPlay = null, onLike = null) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+
+        if (!canciones || canciones.length === 0) {
+            contenedor.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🎵</div>
+                    <p>No tienes canciones en tus favoritos.</p>
+                </div>`;
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        canciones.forEach((c, i) => {
+            const card = document.createElement('div');
+            card.className = 'music-card';
+            card.id = `card-fav-${c.id}`;
+            card.innerHTML = `
+                <img class="card-art" 
+                     src="${c.img}" 
+                     alt="${c.titulo}"
+                     onerror="this.src='https://placehold.co/300x300/1a1a2e/a78bfa?text=♪'">
+                <div class="card-play-btn" aria-label="Reproducir ${c.titulo}">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                </div>
+                <div class="card-title">${c.titulo}</div>
+                <div class="card-sub">${c.artista}</div>
+                <button class="btn-like fav-card-like" data-id="${c.id}" aria-label="Me gusta" style="position: absolute; top: 10px; right: 10px; z-index: 2; padding: 5px; background: rgba(0,0,0,0.5); border-radius: 50%;">
+                    <i class="fas fa-heart"></i>
+                </button>
+            `;
+
+            // Play callback
+            card.addEventListener('click', (e) => {
+                // Evitar que el clic en el botón de Me gusta dispare el play de la tarjeta
+                if (e.target.closest('.fav-card-like')) return;
+                
+                if (typeof onPlay === 'function') onPlay(c, i);
+                else window.SoundlyPlayer?.reproducirLista(canciones, i);
+            });
+
+            // Like callback
+            const btnLike = card.querySelector('.fav-card-like');
+            btnLike.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof onLike === 'function') onLike(e);
+            });
+
+            contenedor.appendChild(card);
+        });
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
     // renderizarArtistas
     // Tarjetas de artistas con foto circular y nombre.
     // ─────────────────────────────────────────────────────────────────────
