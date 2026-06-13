@@ -104,8 +104,9 @@ public class PlaylistService implements IPlaylistService {
     @Override
     @Transactional(readOnly = true)
     public List<PlaylistDTO> buscarPorUsuario(Long usuarioId) {
-        // Devuelve las playlists pertenecientes al usuario
-        // Podrías implementar playlistRepository.findByUsuarioId(usuarioId) si lo tienes
-        return new ArrayList<>();
+        // Devuelve las playlists pertenecientes al usuario mapeadas a DTO
+        return playlistRepository.findByUsuarioId(usuarioId).stream()
+                .map(PlaylistMapper::toDTO)
+                .collect(java.util.stream.Collectors.toList());
     }
 }
