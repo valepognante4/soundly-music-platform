@@ -342,17 +342,22 @@ const Vista = {
             const item = document.createElement('div');
             item.className = 'playlist-card';
             item.id = `card-playlist-${p.id}`;
+            // Protección contra nulos
+            const nombre = p.nombre || 'Playlist sin nombre';
+            const creador = p.creador || 'Desconocido';
+            const cantidadCanciones = p.canciones ? p.canciones.length : 0;
             const portada = p.canciones?.[0]?.img 
                 || 'https://placehold.co/60x60/1a1a2e/a78bfa?text=🎵';
+                
             item.innerHTML = `
                 <img class="playlist-thumb" 
                      src="${portada}" 
-                     alt="${p.nombre}"
+                     alt="${nombre}"
                      onerror="this.src='https://placehold.co/60x60/1a1a2e/a78bfa?text=🎵'">
                 <div class="playlist-info">
-                    <span class="playlist-name">${p.nombre}</span>
+                    <span class="playlist-name">${nombre}</span>
                     <span class="playlist-meta">
-                        ${p.canciones.length} canciones · ${p.creador}
+                        ${cantidadCanciones} canciones · ${creador}
                     </span>
                 </div>
             `;

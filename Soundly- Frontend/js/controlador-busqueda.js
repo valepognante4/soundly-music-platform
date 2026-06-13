@@ -122,18 +122,23 @@ function inicializarModalCrearPlaylistGlobal() {
 
     const cerrarModal = () => {
         modal.style.display = 'none';
-        const input = document.getElementById('input-nombre-playlist');
-        if (input) input.value = '';
+        const inputNombre = document.getElementById('input-nombre-playlist');
+        const inputDesc = document.getElementById('input-desc-playlist');
+        if (inputNombre) inputNombre.value = '';
+        if (inputDesc) inputDesc.value = '';
     };
 
-    btnCrear   ?.addEventListener('click', () => { modal.style.display = 'flex'; });
+    btnCrear?.addEventListener('click', () => { modal.style.display = 'flex'; });
     btnCancelar?.addEventListener('click', cerrarModal);
-    modal      .addEventListener('click', e => { if (e.target === modal) cerrarModal(); });
+    modal.addEventListener('click', e => { if (e.target === modal) cerrarModal(); });
 
     btnGuardar?.addEventListener('click', async () => {
-        const input  = document.getElementById('input-nombre-playlist');
-        const nombre = input?.value.trim();
-        const error  = document.getElementById('modal-error-message');
+        const inputNombre  = document.getElementById('input-nombre-playlist');
+        const inputDesc    = document.getElementById('input-desc-playlist');
+        
+        const nombre      = inputNombre?.value.trim();
+        const descripcion = inputDesc?.value.trim() || '';
+        const error       = document.getElementById('modal-error-message');
 
         if (!nombre) {
             if (error) { error.textContent = 'Por favor, escribí un nombre.'; error.style.display = 'block'; }
@@ -142,12 +147,44 @@ function inicializarModalCrearPlaylistGlobal() {
         if (error) error.style.display = 'none';
 
         try {
-            const nueva = await GestorPlaylists.crear(nombre, usuario?.id);
+            const nueva = await GestorPlaylists.crear(nombre, descripcion, usuario?.id);
             cerrarModal();
-            if (nueva?.id) window.location.href = `playlist.html?id=${nueva.id}`;
+            // Refrescar el sidebar dinámicamente sin recargar la página
+            refrescarSidebarPlaylists();
+            
+            // Opcional: Notificar al usuario que se creó correctamente
+            // alert('Playlist creada correctamente');
         } catch (e) {
             console.error('[Modal] Error al crear playlist:', e);
             if (error) { error.textContent = 'No se pudo crear. Intentá de nuevo.'; error.style.display = 'block'; }
         }
     });
+    
+    // Cargar las playlists inicialmente si el contenedor existe
+    if (document.getElementById('sidebar-playlists')) {
+        refrescarSidebarPlaylists();
+    }
+}
+
+/**
+ * Función para renderizar el listado de playlists en la barra lateral sin recargar
+ */
+async function refrescarSidebarPlaylists() {
+    const usuario = GestorUsuarios.obtenerActivo();
+    if (!usuario) return;
+    
+    const sidebarContainer = document.getElementById('sidebar-playlists');
+    if (!sidebarContainer) return;
+    
+    try {
+        const playlists = await GestorPlaylists.listarPorUsuario(usuario.id);
+        
+        // Usamos la vista para renderizar (reutiliza o crea items en el aside)
+        // Redirigir a playlist.html cuando hagan click
+        Vista.renderizarPlaylists(playlists, 'sidebar-playlists', (playlist) => {
+            window.location.href = `playlist.html?id=${playlist.id}`;
+        });
+    } catch (e) {
+        console.error('[Sidebar] Error al cargar playlists:', e);
+    }
 }

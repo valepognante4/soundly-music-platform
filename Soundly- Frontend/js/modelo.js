@@ -45,20 +45,35 @@ async function apiFetch(endpoint, opciones = {}) {
     if (config.body && typeof config.body === 'object') {
         config.body = JSON.stringify(config.body);
     }
-    const response = await fetch(url, config);
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => `HTTP ${response.status}`);
-        throw new Error(`[API] ${response.status} ${response.statusText} — ${errorText}`);
-    }
-    // 204 No Content: no hay body que parsear
-    if (response.status === 204) return null;
     
-    // Si la respuesta es JSON, la parsea. Si es texto plano (como los endpoints de auth), devuelve texto.
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-        return response.json();
-    } else {
-        return response.text();
+    console.log(`[API Fetch] Enviando petición a: ${url}`, config);
+    
+    try {
+        const response = await fetch(url, config);
+        console.log(`[API Fetch] Respuesta de ${url}: Status ${response.status}`);
+        
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => `HTTP ${response.status}`);
+            console.error(`[API Fetch] Error ${response.status} en ${url}:`, errorText);
+            throw new Error(`[API] ${response.status} ${response.statusText} — ${errorText}`);
+        }
+        // 204 No Content: no hay body que parsear
+        if (response.status === 204) return null;
+        
+        // Si la respuesta es JSON, la parsea. Si es texto plano (como los endpoints de auth), devuelve texto.
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const jsonData = await response.json();
+            console.log(`[API Fetch] JSON recibido de ${url}:`, jsonData);
+            return jsonData;
+        } else {
+            const textData = await response.text();
+            console.log(`[API Fetch] Texto recibido de ${url}:`, textData);
+            return textData;
+        }
+    } catch (error) {
+        console.error(`[API Fetch] Petición fallida a ${url}:`, error);
+        throw error;
     }
 }
 
@@ -315,14 +330,16 @@ const GestorPlaylists = {
      * Crea una nueva playlist. POST /api/playlists
      * El body debe incluir nombre y, si el backend lo requiere, el creadorId.
      */
-    async crear(nombre, usuarioId) {
+    async crear(nombre, descripcion, usuarioId) {
+        const usuarioActivo = GestorUsuarios.obtenerActivo();
+        const uid = usuarioId || usuarioActivo?.id;
+        
         const data = await apiFetch('/playlists', {
             method: 'POST',
             body: {
-                nombre,
-                nombreCreador: GestorUsuarios.obtenerActivo()?.apodo || '',
-                // Si PlaylistService necesita el ID del usuario, agrega aquí:
-                // creadorId: usuarioId,
+                nombre: nombre,
+                descripcion: descripcion,
+                usuarioId: uid
             },
         });
         return adaptarPlaylist(data);
@@ -336,8 +353,24 @@ const GestorPlaylists = {
 
     /** Lista las playlists de un usuario. GET /api/playlists/usuario/{usuarioId} */
     async listarPorUsuario(usuarioId) {
-        const data = await apiFetch(`/playlists/usuario/${usuarioId}`).catch(() => []);
-        return (Array.isArray(data) ? data : []).map(adaptarPlaylist);
+        try {
+            let data = await apiFetch(`/playlists/usuario/${usuarioId}`);
+            console.log("[listarPorUsuario] Data original recibida:", data);
+            
+            // Si la data viene en formato de paginación o envuelta en un objeto
+            if (data && !Array.isArray(data)) {
+                if (Array.isArray(data.content)) data = data.content;
+                else if (Array.isArray(data.data)) data = data.data;
+                else if (Array.isArray(data.playlists)) data = data.playlists;
+            }
+            
+            const playlists = (Array.isArray(data) ? data : []).map(adaptarPlaylist);
+            console.log("[listarPorUsuario] Playlists adaptadas:", playlists);
+            return playlists;
+        } catch (error) {
+            console.error("[listarPorUsuario] Error al obtener playlists:", error);
+            return [];
+        }
     },
 
     /**
