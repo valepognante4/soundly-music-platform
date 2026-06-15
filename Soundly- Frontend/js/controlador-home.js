@@ -10,7 +10,7 @@
  *   - Conectar eventos de UI al Reproductor Global
  *   - Modal de Crear Playlist
  *
- * Expone window.initHome() para que el sistema SPA (navegacion.js) pueda
+ * Expone window.initHome() para que el sistema SPA (navegacion.js / index.html) pueda
  * reinicializar la sección al navegar sin recargar la página.
  *
  * Dependencias (deben cargarse antes en el HTML, en este orden):
@@ -82,7 +82,7 @@ window.initHome = async function initHome() {
         Vista.renderizarTarjetasCanciones(
             recomendadas.slice(0, 4),
             'cards-recomendados',
-            (cancion, idx) => window.SoundlyPlayer.reproducirLista(recomendadas, idx)
+            (cancion, idx) => window.SoundlyEvents.reproducirLista(recomendadas, idx)
         );
     }
 
@@ -90,7 +90,7 @@ window.initHome = async function initHome() {
         Vista.renderizarTarjetasCanciones(
             recomendadas.slice(4, 8),
             'cards-mas',
-            (cancion, idx) => window.SoundlyPlayer.reproducirLista(recomendadas, idx + 4)
+            (cancion, idx) => window.SoundlyEvents.reproducirLista(recomendadas, idx + 4)
         );
     }
 
@@ -130,10 +130,8 @@ window.initHome = async function initHome() {
 
 // ─── AUTO-INIT: Solo cuando se accede directamente a home.html (no via SPA) ──
 document.addEventListener('DOMContentLoaded', () => {
-    const path = window.location.pathname;
-    // En app.html el SPA llama initHome() manualmente via navegarA
-    // En home.html (acceso directo) lo inicializamos aquí
-    if (path.includes('home.html') || path.endsWith('/') || path.endsWith('index.html')) {
+    if (document.getElementById('content')) return;
+    if (window.location.pathname.includes('home.html')) {
         window.initHome();
     }
 });
@@ -164,7 +162,7 @@ function renderizarQuickGrid(canciones) {
             <span class="quick-label">${c.titulo}</span>
         `;
         div.addEventListener('click', () => {
-            window.SoundlyPlayer.reproducirLista(canciones, i);
+            window.SoundlyEvents.reproducirLista(canciones, i);
         });
         grid.appendChild(div);
     });
@@ -183,6 +181,12 @@ async function cargarPlaylistsSidebar(usuarioId) {
             a.href = `playlist.html?id=${p.id}`;
             a.className = 'nav-link sidebar-playlist-link';
             a.id = `sidebar-pl-${p.id}`;
+            a.addEventListener('click', (e) => {
+                if (typeof window.navegarA === 'function') {
+                    e.preventDefault();
+                    window.navegarA(`playlist.html?id=${p.id}`);
+                }
+            });
             a.innerHTML = `
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16" height="16">
                     <path d="M9 18V5l12-2v13"/>
@@ -235,7 +239,9 @@ function inicializarModalCrearPlaylist(usuario, signal) {
             const nuevaPlaylist = await GestorPlaylists.crear(nombre, usuario.id);
             cerrarModal();
             if (nuevaPlaylist?.id) {
-                window.location.href = `playlist.html?id=${nuevaPlaylist.id}`;
+                const url = `playlist.html?id=${nuevaPlaylist.id}`;
+                if (typeof window.navegarA === 'function') window.navegarA(url);
+                else window.location.href = url;
             }
         } catch (error) {
             console.error('[Home] Error al crear playlist:', error);
@@ -247,16 +253,16 @@ function inicializarModalCrearPlaylist(usuario, signal) {
 // ── COMPATIBILIDAD: funciones globales del reproductor ────────────────────────
 function selectSong(idx) {
     const canciones = window._soundlyCancionesCache || [];
-    if (canciones[idx]) window.SoundlyPlayer?.reproducirLista(canciones, idx);
+    if (canciones[idx]) window.SoundlyEvents?.reproducirLista(canciones, idx);
 }
-function togglePlay() { window.SoundlyPlayer?.togglePlay(); }
-function nextSong()   { window.SoundlyPlayer?.siguiente(); }
-function prevSong()   { window.SoundlyPlayer?.anterior(); }
-function seekTo(e)    { window.SoundlyPlayer?.seekTo(e); }
+function togglePlay() { window.SoundlyEvents?.togglePlay(); }
+function nextSong()   { window.SoundlyEvents?.siguiente(); }
+function prevSong()   { window.SoundlyEvents?.anterior(); }
+function seekTo(e)    { window.dispatchEvent(new CustomEvent('soundly:seek', { detail: { event: e } })); }
 function toggleMute() {
     const audio = window.SoundlyPlayer?.getAudio();
     if (!audio) return;
     audio.muted = !audio.muted;
     document.getElementById('vol-btn').textContent = audio.muted ? '🔇' : '🔊';
 }
-function setVol(v) { window.SoundlyPlayer?.setVolumen(v); }
+function setVol(v) { window.SoundlyEvents?.setVolumen(v); }

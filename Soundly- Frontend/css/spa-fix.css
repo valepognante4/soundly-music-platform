@@ -1,0 +1,267 @@
+/**
+ * spa-fix.css — Soundly
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Correcciones de layout exclusivas para el shell SPA (index.html).
+ * No modifica los CSS originales de las vistas.
+ *
+ * Problemas que resuelve:
+ *   1. player.css redefine body como flex → rompe el grid del shell.
+ *   2. favoritos/playlist/busqueda sobreescriben height del body (100% vs 100vh).
+ *   3. Desfase entre --player-h (78px) y --sp-player-h (86px) en la fila del grid.
+ *   4. .main-content pierde grid-column al acumular reglas de múltiples vistas.
+ *   5. Vistas favoritos/playlist perdían el wrapper .app-wrapper al inyectarse.
+ *   6. Vista player pierde .main-panel al extraer solo su innerHTML.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1. GRID DEL SHELL — prioridad sobre player.css, favoritos.css, etc.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body.home-layout {
+    display: grid !important;
+    grid-template-columns: 240px 1fr !important;
+    grid-template-rows: 1fr var(--sp-player-h, 86px) !important;
+    grid-template-areas:
+        "sidebar main"
+        "player  player" !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    box-sizing: border-box;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2. HIJOS DIRECTOS DEL SHELL — posición explícita en el grid
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body.home-layout > .sidebar {
+    grid-area: sidebar !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    padding: 0 !important;
+    background: var(--sidebar-bg, #111111) !important;
+    border-right: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+    overflow: hidden;
+    z-index: 50;
+}
+
+body.home-layout > #content.main-content {
+    grid-area: main !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    box-sizing: border-box;
+}
+
+body.home-layout > #global-player-bar {
+    grid-area: player !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    height: var(--sp-player-h, 86px) !important;
+    min-height: var(--sp-player-h, 86px) !important;
+    max-height: var(--sp-player-h, 86px) !important;
+    transform: translateY(0) !important;
+    flex-shrink: 0;
+    z-index: 200;
+}
+
+body.home-layout > #global-player-bar:not(.player-visible) {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Overlays fuera del flujo del grid */
+body.home-layout > #full-screen-player,
+body.home-layout > #modal-crear-playlist,
+body.home-layout > #view-modals {
+    position: fixed !important;
+    grid-area: unset !important;
+    grid-column: unset !important;
+    grid-row: unset !important;
+    pointer-events: none;
+}
+
+body.home-layout > #full-screen-player {
+    inset: 0;
+    z-index: 10001;
+}
+
+body.home-layout > #modal-crear-playlist {
+    inset: 0;
+    z-index: 10000;
+}
+
+body.home-layout > #view-modals {
+    inset: 0;
+    z-index: 9998;
+    width: 0;
+    height: 0;
+    overflow: visible;
+}
+
+body.home-layout > #view-modals > *,
+body.home-layout > #modal-crear-playlist[style*="flex"],
+body.home-layout > #modal-crear-playlist:not([style*="none"]) {
+    pointer-events: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3. ESTILOS POR VISTA — compensan wrappers perdidos (.app-wrapper, etc.)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Home ── */
+body.home-layout #content:has(#greeting) {
+    background: linear-gradient(180deg, #0f1e14 0%, #0a0a0a 300px) !important;
+    padding: 0 0 40px !important;
+}
+
+/* ── Búsqueda ── */
+body.home-layout #content:has(#search-input) {
+    background: #121212 !important;
+    padding: 24px 32px !important;
+    border-radius: 8px;
+}
+
+body.home-layout.dark-theme {
+    background: #000000 !important;
+}
+
+/* ── Favoritos ── */
+body.home-layout #content:has(#fav-meta-info) {
+    background: #121212 !important;
+    padding: 0 !important;
+    color: #ffffff;
+}
+
+body.home-layout #content:has(#fav-meta-info) .playlist-controls {
+    padding: 20px 40px !important;
+}
+
+body.home-layout #content:has(#fav-meta-info) .playlist-container {
+    padding: 0 40px 40px !important;
+}
+
+body.home-layout #content:has(#fav-meta-info) .hero-banner {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+body.home-layout #content:has(#fav-meta-info) .cards-grid {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Playlist ── */
+body.home-layout #content:has(#playlist-name) {
+    background: #121212 !important;
+    padding: 0 0 20px !important;
+}
+
+body.home-layout #content:has(#playlist-name) .hero-banner,
+body.home-layout #content:has(#playlist-name) .action-buttons,
+body.home-layout #content:has(#playlist-name) .playlist-container {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Player (main-panel inyectado sin wrapper) ── */
+body.home-layout #content:has(.content-layout) {
+    background: #0b0b0b !important;
+    padding: 36px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 24px !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    max-width: 100% !important;
+}
+
+body.home-layout #content:has(.content-layout) .player-header {
+    width: 100%;
+    flex-shrink: 0;
+}
+
+body.home-layout #content:has(.content-layout) .content-layout {
+    width: 100%;
+    min-width: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. CONTENIDO INTERNO — evitar desbordes horizontales
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body.home-layout #content > * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+body.home-layout #content .hero-banner,
+body.home-layout #content .section,
+body.home-layout #content .search-header,
+body.home-layout #content .categories-section,
+body.home-layout #content .search-results {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. RESPONSIVE — mantener grid funcional en pantallas pequeñas
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    body.home-layout {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto 1fr var(--sp-player-h, 86px) !important;
+        grid-template-areas:
+            "sidebar"
+            "main"
+            "player" !important;
+    }
+
+    body.home-layout > .sidebar {
+        grid-area: sidebar !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        max-height: 56px;
+        overflow-x: auto;
+    }
+
+    body.home-layout > #content.main-content {
+        grid-area: main !important;
+        grid-column: 1 !important;
+    }
+
+    body.home-layout > #global-player-bar {
+        grid-area: player !important;
+        grid-column: 1 !important;
+    }
+}

@@ -1,37 +1,68 @@
 /**
  * reproductor-global.js — Soundly
  * ─────────────────────────────────────────────────────────────────────────────
- * REPRODUCTOR GLOBAL PERSISTENTE
+ * REPRODUCTOR GLOBAL PERSISTENTE — Singleton + Event Bus
  *
- * Estrategia anti-corte de música entre páginas:
- *   1. Un único objeto `Audio` vive en window.SoundlyPlayer (no se destruye).
- *   2. Al navegar, sessionStorage guarda el índice, tiempo y estado de pausa.
- *   3. La nueva página restaura ese estado al cargar.
- *   4. El footer player-bar se actualiza en cualquier página que lo incluya.
+ * Arquitectura:
+ *   1. Audio singleton en window.__soundlyAudioInstance (sobrevive en SPA).
+ *   2. Estado en window.__soundlyEstado (compartido entre re-evaluaciones).
+ *   3. Vistas comunican vía eventos (window.dispatchEvent), nunca reinician audio.
+ *   4. syncUI() solo actualiza DOM — nunca toca audio.src si ya está activo.
  *
- * MAPEO DE CAMPOS (Backend → Interno):
- *   CancionDTO.imagenUrl   → cancion.img
- *   CancionDTO.archivoUrl  → cancion.src
- *   CancionDTO.nombreArtista → cancion.artista
- *   CancionDTO.titulo      → cancion.titulo
- *   CancionDTO.id          → cancion.id
- *   CancionDTO.duracion    → cancion.duracion
+ * Eventos de comando (vistas → reproductor):
+ *   soundly:reproducir          { cancion }
+ *   soundly:reproducir-lista    { lista, indice }
+ *   soundly:toggle-play
+ *   soundly:siguiente / soundly:anterior
+ *   soundly:set-volumen         { valor }
+ *   soundly:seek                { event }
+ *   soundly:toggle-shuffle / soundly:toggle-repeat
  *
- * CÓMO USAR desde cualquier controlador:
- *   SoundlyPlayer.reproducir(cancion);          // reproduce una canción puntual
- *   SoundlyPlayer.reproducirLista(lista, idx);  // carga lista y reproduce en idx
- *   SoundlyPlayer.togglePlay();
- *   SoundlyPlayer.siguiente();
- *   SoundlyPlayer.anterior();
+ * Eventos de notificación (reproductor → vistas):
+ *   soundly:cancion-cambio      { cancion, idx }
+ *   soundly:estado-cambio       { playing, idx, lista }
+ *   soundly:ui-sync
+ *   soundly:vista-cambiada      { url }  → reproductor llama syncUI()
+ *
+ * Atajo para controladores:
+ *   window.SoundlyEvents.reproducirLista(lista, idx)
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 (function () {
     'use strict';
 
-    // ── 1. ADAPTADOR DE DATOS ──────────────────────────────────────────────
-    // Normaliza cualquier objeto que venga del backend a campos internos
-    // consistentes. Así el resto del código nunca toca .imagenUrl directamente.
+    // ── GUARD IDEMPOTENTE ─────────────────────────────────────────────────
+    // Si el motor ya está activo (SPA), solo sincronizamos UI y salimos.
+    if (window.__soundlyPlayerInitialized && window.__soundlyPlayerCore) {
+        window.__soundlyPlayerCore.syncUI();
+        return;
+    }
+
+    const STORAGE_KEY = 'soundly_player_state';
+
+    // ── ESTADO GLOBAL ─────────────────────────────────────────────────────
+    if (!window.__soundlyEstado) {
+        window.__soundlyEstado = {
+            lista:    [],
+            idx:      0,
+            playing:  false,
+            shuffle:  false,
+            repeat:   false,
+            volumen:  0.8,
+            currentTime: 0,
+        };
+    }
+    const estado = window.__soundlyEstado;
+
+    // ── AUDIO SINGLETON ───────────────────────────────────────────────────
+    if (!window.__soundlyAudioInstance) {
+        window.__soundlyAudioInstance = new Audio();
+        window.__soundlyAudioInstance.preload = 'metadata';
+    }
+    const audio = window.__soundlyAudioInstance;
+
+    // ── ADAPTADOR DE DATOS ────────────────────────────────────────────────
     function adaptarCancion(dto) {
         if (!dto) return null;
         return {
@@ -45,19 +76,6 @@
         };
     }
 
-    // ── 2. ESTADO INTERNO ─────────────────────────────────────────────────
-    const STORAGE_KEY = 'soundly_player_state';
-
-    const estado = {
-        lista:    [],   // Array de canciones adaptadas
-        idx:      0,    // Índice actual
-        playing:  false,
-        shuffle:  false,
-        repeat:   false,
-        volumen:  0.8,
-    };
-
-    // Carga el estado guardado de sessionStorage (entre navegaciones)
     function cargarEstadoGuardado() {
         try {
             const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -84,116 +102,42 @@
                 repeat:      estado.repeat,
                 volumen:     estado.volumen,
                 playing:     estado.playing,
-                currentTime: audio.currentTime // Guardar tiempo exacto
+                currentTime: audio.currentTime,
             }));
-        } catch (e) { /* quota exceeded — ignorar */ }
+        } catch (e) { /* quota exceeded */ }
     }
 
-    // Captura el estado exacto milisegundos antes de que la página se descargue
-    window.addEventListener('beforeunload', guardarEstado);
-
-    // ── Heartbeat: guardar currentTime cada 5 s mientras hay reproducción ──
-    // Esto minimiza el desfase si el usuario navega sin que beforeunload se dispare
-    setInterval(() => {
-        if (!audio.paused && audio.currentTime > 0) guardarEstado();
-    }, 5000);
-
-    // ── 3. ELEMENTO AUDIO NATIVO ──────────────────────────────────────────
-    // SINGLETON: si ya existe una instancia global (no debería en MPA, pero es
-    // un seguro extra), la reutilizamos en vez de crear una nueva y cortar el audio.
-    const audio = new Audio();
-    audio.preload = 'metadata';
-    audio.volume  = estado.volumen;
-
-    // ── 3b. PROXY DE AUDIO (anti-CORS para CDNs externos) ──────────────────
-    // Redirige URLs de CDNs externos (Deezer, etc.) por el endpoint
-    // /api/audio/proxy de nuestro backend Spring Boot.
-    // El browser carga desde su propio origen → sin bloqueo CORS.
     function construirProxyUrl(src, idLocal) {
         if (!src) return src;
         const apiBase = window.SoundlyConfig?.API_BASE_URL || 'http://localhost:8080/api';
-        
-        // Solo proxear URLs HTTP externas (no localhost ni rutas relativas)
         const esUrlExterna = /^https?:\/\//.test(src) &&
                              !src.includes('localhost') &&
                              !src.includes('127.0.0.1');
-        
-        // Novedad: si es externa y tenemos el ID local, le pedimos al backend 
-        // que genere una URL fresca para evitar el error 403 (URL caducada)
         if (esUrlExterna && idLocal) {
             return `${apiBase}/audio/proxy/track/${idLocal}`;
         }
-
-        // Fallback clásico (aunque no debería llegar acá si todo va bien)
         if (!esUrlExterna) return src;
         return `${apiBase}/audio/proxy?url=${encodeURIComponent(src)}`;
     }
 
-    // ── 4. HELPERS DE VISTA ───────────────────────────────────────────────
+    function esMismaFuenteActiva(cancion) {
+        if (!audio.src || !cancion?.src) return false;
+        const proxyUrl = construirProxyUrl(cancion.src, cancion.id);
+        return audio.src === proxyUrl ||
+               audio.src.includes(proxyUrl) ||
+               (cancion.id && audio.src.includes(String(cancion.id)));
+    }
+
+    function audioEstaActivo() {
+        return Boolean(audio.src && audio.src !== window.location.href);
+    }
+
+    // ── HELPERS DE VISTA ──────────────────────────────────────────────────
     function fmt(segundos) {
         if (!segundos || isNaN(segundos)) return '0:00';
         const m = Math.floor(segundos / 60);
         const s = String(Math.floor(segundos % 60)).padStart(2, '0');
         return `${m}:${s}`;
-    }
-
-    // ── Visibilidad del footer ─────────────────────────────────────────────
-    // REGLA: visible cuando hay al menos una canción en lista (pausada O reproduciendo).
-    //        oculto solo si la cola está vacía o nunca se seleccionó nada.
-    // IMPORTANTE: esta función NUNCA toca el objeto `audio` — solo clases CSS.
-    function actualizarVisibilidad() {
-        const playerBar = document.getElementById('global-player-bar');
-        if (!playerBar) return;
-        const hayCancion = estado.lista.length > 0;
-        playerBar.classList.toggle('player-visible', hayCancion);
-    }
-
-    // Actualiza todos los elementos del footer player-bar si existen en la página
-    function actualizarUI() {
-        const c = estado.lista[estado.idx];
-
-        // --- Visibilidad del reproductor (independiente del estado play/pause) ---
-        actualizarVisibilidad();
-
-        if (!c) return;
-
-        // --- Clase is-playing en el footer (activa estilos CSS de estado) ---
-        const playerBar = document.getElementById('global-player-bar');
-        if (playerBar) playerBar.classList.toggle('is-playing', estado.playing);
-
-        // --- Imagen portada ---
-        const npArt = document.getElementById('np-art');
-        if (npArt) {
-            npArt.src = c.img;
-            npArt.alt = c.titulo;
-            // Animación spin solo cuando está reproduciendo
-            npArt.classList.toggle('spinning', estado.playing);
-        }
-
-        // --- Título y artista ---
-        setTexto('np-title',  c.titulo);
-        setTexto('np-artist', c.artista);
-
-        // --- Botón play/pause ---
-        const btnPlay = document.getElementById('btn-play');
-        if (btnPlay) {
-            btnPlay.innerHTML = estado.playing
-                ? '<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
-                : '<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><polygon points="5,3 19,12 5,21"/></svg>';
-        }
-
-        // --- Tiempo total ---
-        setTexto('p-total', fmt(c.duracion));
-
-        // --- Botones de estado ---
-        toggleClass('btn-shuffle', 'active', estado.shuffle);
-        toggleClass('btn-repeat',  'active', estado.repeat);
-
-        // --- Botón Like (Actualizar data-id) ---
-        const btnLike = document.querySelector('.btn-like');
-        if (btnLike) {
-            btnLike.setAttribute('data-id', c.id);
-        }
     }
 
     function setTexto(id, texto) {
@@ -206,6 +150,67 @@
         if (el) el.classList.toggle(cls, condicion);
     }
 
+    function actualizarVisibilidad() {
+        const playerBar = document.getElementById('global-player-bar');
+        if (!playerBar) return;
+        playerBar.classList.toggle('player-visible', estado.lista.length > 0);
+    }
+
+    function actualizarUI() {
+        const c = estado.lista[estado.idx];
+        actualizarVisibilidad();
+        if (!c) return;
+
+        const playerBar = document.getElementById('global-player-bar');
+        if (playerBar) playerBar.classList.toggle('is-playing', estado.playing);
+
+        const npArt = document.getElementById('np-art');
+        if (npArt) {
+            npArt.src = c.img;
+            npArt.alt = c.titulo;
+            npArt.classList.toggle('spinning', estado.playing);
+        }
+
+        setTexto('np-title',  c.titulo);
+        setTexto('np-artist', c.artista);
+
+        const btnPlay = document.getElementById('btn-play');
+        if (btnPlay) {
+            btnPlay.innerHTML = estado.playing
+                ? '<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+                : '<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><polygon points="5,3 19,12 5,21"/></svg>';
+        }
+
+        setTexto('p-total', fmt(c.duracion));
+        toggleClass('btn-shuffle', 'active', estado.shuffle);
+        toggleClass('btn-repeat',  'active', estado.repeat);
+
+        const btnLike = document.querySelector('.btn-like');
+        if (btnLike) btnLike.setAttribute('data-id', c.id);
+
+        const volSlider = document.getElementById('vol-slider');
+        if (volSlider) {
+            const pct = Math.round(estado.volumen * 100);
+            volSlider.value = pct;
+            volSlider.style.setProperty('--vol-pct', pct + '%');
+        }
+
+        actualizarProgreso();
+    }
+
+    /** Solo DOM — nunca modifica el objeto Audio si ya está reproduciendo. */
+    function syncUI() {
+        if (audioEstaActivo() && !audio.paused) {
+            estado.playing = true;
+        } else if (audioEstaActivo() && audio.paused) {
+            estado.playing = false;
+        }
+        actualizarUI();
+        window.dispatchEvent(new CustomEvent('soundly:ui-sync', {
+            detail: { playing: estado.playing, idx: estado.idx },
+        }));
+    }
+
     function actualizarProgreso() {
         if (!audio.duration) return;
         const pct = (audio.currentTime / audio.duration) * 100;
@@ -215,36 +220,6 @@
         if (cur)  cur.textContent  = fmt(audio.currentTime);
     }
 
-    // ── 5. LÓGICA DE REPRODUCCIÓN ─────────────────────────────────────────
-    function cargarEnAudio(cancion, tiempoInicial = 0) {
-        if (!cancion || !cancion.src) {
-            console.warn('[SoundlyPlayer] Canción sin src, saltando:', cancion?.titulo);
-            mostrarToastError('Esta canción no tiene preview disponible.');
-            return false; // señal de fallo
-        }
-        // Validación mínima: debe ser una URL o ruta relativa
-        const srcStr = String(cancion.src).trim();
-        if (!srcStr || srcStr === 'undefined' || srcStr === 'null') {
-            console.warn('[SoundlyPlayer] archivoUrl vacío o inválido:', srcStr);
-            mostrarToastError('Esta canción no tiene preview disponible.');
-            return false;
-        }
-        // Solo recargamos si cambió la fuente (evita restart innecesario)
-        // Comparamos contra la URL proxeada ya que eso es lo que tendrá audio.src
-        // Ahora pasamos también cancion.id para que el backend la busque fresca
-        const proxyUrl = construirProxyUrl(srcStr, cancion.id);
-        if (audio.src !== proxyUrl) {
-            setLoadingState(true);
-            audio.src = proxyUrl;
-            audio.load();
-        }
-        if (tiempoInicial > 0) {
-            audio.currentTime = tiempoInicial;
-        }
-        return true; // señal de éxito
-    }
-
-    // Indicador visual de carga en el botón play
     function setLoadingState(loading) {
         const btnPlay = document.getElementById('btn-play');
         if (!btnPlay) return;
@@ -256,22 +231,89 @@
             </svg>`;
         } else {
             btnPlay.classList.remove('loading');
-            // El icono correcto lo pone actualizarUI()
             actualizarUI();
         }
+    }
+
+    function notificarCambio() {
+        const c = estado.lista[estado.idx];
+        window.dispatchEvent(new CustomEvent('soundly:cancion-cambio', {
+            detail: { cancion: c, idx: estado.idx },
+        }));
+        notificarEstado();
+    }
+
+    function notificarEstado() {
+        window.dispatchEvent(new CustomEvent('soundly:estado-cambio', {
+            detail: { playing: estado.playing, idx: estado.idx, lista: estado.lista },
+        }));
+    }
+
+    async function registrarReproduccion(cancionId) {
+        try {
+            await fetch(`${window.SoundlyConfig.API_BASE_URL}/canciones/${cancionId}/reproducir`, { method: 'POST' });
+        } catch (e) { /* silencioso */ }
+    }
+
+    function mostrarToastError(mensaje) {
+        let toast = document.getElementById('sp-toast-error');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'sp-toast-error';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            Object.assign(toast.style, {
+                position: 'fixed', bottom: '100px', left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(20, 10, 40, 0.92)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(167, 139, 250, 0.35)',
+                color: '#e9d5ff', padding: '10px 20px', borderRadius: '999px',
+                fontSize: '0.82rem', fontWeight: '500',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.5)', zIndex: '9999',
+                transition: 'opacity 0.3s ease', pointerEvents: 'none', whiteSpace: 'nowrap',
+            });
+            document.body.appendChild(toast);
+        }
+        clearTimeout(toast._timer);
+        toast.textContent = `⚠️  ${mensaje}`;
+        toast.style.opacity = '1';
+        toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
+
+    // ── LÓGICA DE REPRODUCCIÓN ────────────────────────────────────────────
+    function cargarEnAudio(cancion, tiempoInicial = 0) {
+        if (!cancion || !cancion.src) {
+            console.warn('[SoundlyPlayer] Canción sin src:', cancion?.titulo);
+            mostrarToastError('Esta canción no tiene preview disponible.');
+            return false;
+        }
+        const srcStr = String(cancion.src).trim();
+        if (!srcStr || srcStr === 'undefined' || srcStr === 'null') {
+            mostrarToastError('Esta canción no tiene preview disponible.');
+            return false;
+        }
+        const proxyUrl = construirProxyUrl(srcStr, cancion.id);
+        if (audio.src !== proxyUrl) {
+            setLoadingState(true);
+            audio.src = proxyUrl;
+            audio.load();
+        }
+        if (tiempoInicial > 0) audio.currentTime = tiempoInicial;
+        return true;
     }
 
     function reproducir(cancion) {
         const c = adaptarCancion(cancion);
         estado.lista = [c];
         estado.idx   = 0;
-        // Actualizar título/artista en el footer de forma inmediata (feedback visual)
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
         if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
         const cargado = cargarEnAudio(c);
-        if (!cargado) return; // src vacío → no continuar
+        if (!cargado) return;
         audio.play().then(() => {
             estado.playing = true;
             guardarEstado();
@@ -289,23 +331,17 @@
         estado.lista = listaCrudos.map(adaptarCancion);
         estado.idx   = Math.max(0, Math.min(indice, estado.lista.length - 1));
         const c = estado.lista[estado.idx];
-        // Feedback inmediato: título/artista/portada se muestran al instante
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
         if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
         const cargado = cargarEnAudio(c);
-        if (!cargado) {
-            // Sin src: igual actualizamos la UI con el título/artista para que el usuario sepa qué seleccionó
-            actualizarUI();
-            return;
-        }
+        if (!cargado) { actualizarUI(); return; }
         audio.play().then(() => {
             estado.playing = true;
             guardarEstado();
             actualizarUI();
             notificarCambio();
-            // Avisar al backend que se reprodujo (CU-07)
             if (c.id) registrarReproduccion(c.id);
         }).catch(err => {
             console.error('[SoundlyPlayer] Error al reproducir lista:', err);
@@ -326,9 +362,7 @@
         }
         if (estado.playing) {
             audio.pause();
-            // El evento 'pause' del audio se encarga de actualizar estado.playing y la UI
         } else {
-            // Actualizamos icono optimistamente para dar feedback inmediato
             estado.playing = true;
             actualizarUI();
             audio.play().catch(err => {
@@ -349,7 +383,6 @@
             estado.idx = (estado.idx + 1) % estado.lista.length;
         }
         const c = estado.lista[estado.idx];
-        // Feedback visual inmediato
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
@@ -369,13 +402,9 @@
 
     function anterior() {
         if (!estado.lista.length) return;
-        if (audio.currentTime > 3) {
-            audio.currentTime = 0;
-            return;
-        }
+        if (audio.currentTime > 3) { audio.currentTime = 0; return; }
         estado.idx = (estado.idx - 1 + estado.lista.length) % estado.lista.length;
         const c = estado.lista[estado.idx];
-        // Feedback visual inmediato
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
@@ -397,36 +426,30 @@
         estado.shuffle = !estado.shuffle;
         guardarEstado();
         toggleClass('btn-shuffle', 'active', estado.shuffle);
+        notificarEstado();
     }
 
     function toggleRepeat() {
         estado.repeat = !estado.repeat;
         guardarEstado();
         toggleClass('btn-repeat', 'active', estado.repeat);
+        notificarEstado();
     }
 
     function setVolumen(valor) {
-        // valor: 0-100 (del input range) o 0.0-1.0
         const vol = valor > 1 ? valor / 100 : valor;
         audio.volume = vol;
         estado.volumen = vol;
         guardarEstado();
-
-        // Actualizar ícono de volumen
         const volBtn = document.getElementById('vol-btn');
         if (volBtn) {
             volBtn.classList.toggle('muted', vol === 0);
-            // Restaurar SVG original si no hay icono emoji
             if (!volBtn.querySelector('svg')) {
                 volBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
             }
         }
-
-        // Actualizar variable CSS --vol-pct para el fill del slider
         const volSlider = document.getElementById('vol-slider');
-        if (volSlider) {
-            volSlider.style.setProperty('--vol-pct', Math.round(vol * 100) + '%');
-        }
+        if (volSlider) volSlider.style.setProperty('--vol-pct', Math.round(vol * 100) + '%');
     }
 
     function seekTo(event) {
@@ -437,212 +460,156 @@
         audio.currentTime = pct * audio.duration;
     }
 
-    // ── 6. EVENTOS DEL AUDIO NATIVO ───────────────────────────────────────
-    audio.addEventListener('timeupdate', actualizarProgreso);
+    // ── LISTENERS DEL AUDIO NATIVO (una sola vez por instancia) ───────────
+    function registerAudioListeners() {
+        if (window.__soundlyAudioListenersAttached) return;
+        window.__soundlyAudioListenersAttached = true;
 
-    audio.addEventListener('ended', () => {
-        if (estado.repeat) {
-            audio.currentTime = 0;
-            audio.play().catch(() => {});
-        } else {
-            // Verificar si es la última canción (y no está en shuffle)
-            const esUltima = (!estado.shuffle && estado.idx === estado.lista.length - 1);
-            
-            if (esUltima) {
-                // Si es la última, pasamos a la primera pero pausamos
-                estado.playing = false;
-                siguiente();
+        audio.addEventListener('timeupdate', actualizarProgreso);
+
+        audio.addEventListener('ended', () => {
+            if (estado.repeat) {
+                audio.currentTime = 0;
+                audio.play().catch(() => {});
             } else {
-                // Forzamos auto-play para la siguiente canción
-                // (esto evita que el reproductor se trabe si se disparó un evento 'pause' por el final de pista)
-                estado.playing = true;
-                siguiente();
+                const esUltima = (!estado.shuffle && estado.idx === estado.lista.length - 1);
+                if (esUltima) {
+                    estado.playing = false;
+                    siguiente();
+                } else {
+                    estado.playing = true;
+                    siguiente();
+                }
             }
-        }
-    });
+        });
 
-    // Quitar estado de carga cuando el audio puede reproducirse
-    audio.addEventListener('canplay', () => {
-        setLoadingState(false);
-    });
+        audio.addEventListener('canplay', () => setLoadingState(false));
+        audio.addEventListener('waiting', () => setLoadingState(true));
+        audio.addEventListener('playing', () => { setLoadingState(false); estado.playing = true; actualizarUI(); });
+        audio.addEventListener('play',  () => { estado.playing = true;  actualizarUI(); notificarEstado(); });
+        audio.addEventListener('pause', () => { estado.playing = false; actualizarUI(); notificarEstado(); });
 
-    // Mostrar carga si el buffer se agota durante la reproducción
-    audio.addEventListener('waiting', () => {
-        setLoadingState(true);
-    });
-
-    audio.addEventListener('playing', () => {
-        setLoadingState(false);
-        estado.playing = true;
-        actualizarUI();
-    });
-
-    audio.addEventListener('play',  () => { estado.playing = true;  actualizarUI(); });
-    audio.addEventListener('pause', () => { estado.playing = false; actualizarUI(); });
-
-    audio.addEventListener('error', () => {
-        const codigo = audio.error?.code;
-        // Código 4 = MEDIA_ELEMENT_ERROR: No soportado / URL inválida / CORS
-        const msg = codigo === 4
-            ? 'Preview no disponible para esta canción (formato no compatible o CORS).'
-            : 'Error al cargar el audio. Intentá con otra canción.';
-        console.error('[SoundlyPlayer] Error de audio (código', codigo, '):', audio.error);
-        mostrarToastError(msg);
-        estado.playing = false;
-        setLoadingState(false);
-        actualizarUI();
-    });
-
-    // ── 7. NOTIFICACIONES ENTRE MÓDULOS ──────────────────────────────────
-    // Cualquier controlador puede suscribirse a cambios de canción:
-    //   window.addEventListener('soundly:cancion-cambio', e => { ... e.detail ... })
-    function notificarCambio() {
-        const c = estado.lista[estado.idx];
-        window.dispatchEvent(new CustomEvent('soundly:cancion-cambio', { detail: { cancion: c, idx: estado.idx } }));
-    }
-
-    // ── 8. REGISTRO DE REPRODUCCIÓN (CU-07) ──────────────────────────────
-    async function registrarReproduccion(cancionId) {
-        try {
-            await fetch(`${window.SoundlyConfig.API_BASE_URL}/canciones/${cancionId}/reproducir`, { method: 'POST' });
-        } catch (e) { /* silencioso — no interrumpir la UX */ }
-    }
-
-    // ── 8b. TOAST DE ERROR NO INVASIVO ───────────────────────────────────
-    // Muestra un mensaje flotante sobre el reproductor por 3 segundos.
-    // No interrumpe ninguna navegación ni estado del reproductor.
-    function mostrarToastError(mensaje) {
-        // Reutilizar toast existente o crear uno nuevo
-        let toast = document.getElementById('sp-toast-error');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'sp-toast-error';
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            // Estilos inline para ser autónomo (no depende de ningún CSS externo)
-            Object.assign(toast.style, {
-                position:        'fixed',
-                bottom:          '100px',      // justo encima del footer del reproductor
-                left:            '50%',
-                transform:       'translateX(-50%)',
-                background:      'rgba(20, 10, 40, 0.92)',
-                backdropFilter:  'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border:          '1px solid rgba(167, 139, 250, 0.35)',
-                color:           '#e9d5ff',
-                padding:         '10px 20px',
-                borderRadius:    '999px',
-                fontSize:        '0.82rem',
-                fontWeight:      '500',
-                boxShadow:       '0 4px 20px rgba(0,0,0,0.5)',
-                zIndex:          '9999',
-                transition:      'opacity 0.3s ease',
-                pointerEvents:   'none',
-                whiteSpace:      'nowrap',
-            });
-            document.body.appendChild(toast);
-        }
-
-        // Limpiar timer anterior si el toast ya estaba visible
-        clearTimeout(toast._timer);
-
-        toast.textContent = `⚠️  ${mensaje}`;
-        toast.style.opacity = '1';
-        toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
-    }
-
-    // ── 9. RESTAURAR ESTADO AL NAVEGAR ───────────────────────────────────
-    // Recupera la sesión anterior. Si la música estaba sonando, 
-    // intenta darle play() exactamente desde donde se quedó.
-    function initReproductor() {
-        cargarEstadoGuardado();
-        if (estado.lista.length > 0) {
-            const c = estado.lista[estado.idx];
-            
-            // 1. Restauramos UI inmediatamente
+        audio.addEventListener('error', () => {
+            const codigo = audio.error?.code;
+            const msg = codigo === 4
+                ? 'Preview no disponible para esta canción (formato no compatible o CORS).'
+                : 'Error al cargar el audio. Intentá con otra canción.';
+            console.error('[SoundlyPlayer] Error de audio (código', codigo, '):', audio.error);
+            mostrarToastError(msg);
+            estado.playing = false;
+            setLoadingState(false);
             actualizarUI();
-            setTexto('np-title',  c.titulo);
-            setTexto('np-artist', c.artista);
-            const npArt = document.getElementById('np-art');
-            if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
-
-            // 2. Cargar audio y posicionarlo en el currentTime exacto
-            // Verificamos que el reproductor no se reinicie si el audio src ya es correcto
-            if (c.src) {
-                const proxyUrl = construirProxyUrl(c.src, c.id);
-                // Si el audio recién se inicializa en esta página, lo cargamos
-                if (audio.src !== proxyUrl && audio.src !== window.location.href) {
-                    cargarEnAudio(c, estado.currentTime);
-                }
-
-                // 3. Retomar reproducción solo si estaba en 'play' al momento de cambiar de página
-                if (estado.playing) {
-                    // Nota: Los navegadores pueden bloquear este autoplay (NotAllowedError) 
-                    // si el usuario no ha interactuado con la página.
-                    audio.play().then(() => {
-                        actualizarUI();
-                    }).catch(err => {
-                        console.warn('[SoundlyPlayer] Autoplay bloqueado por el navegador tras recargar:', err);
-                        estado.playing = false;
-                        actualizarUI();
-                    });
-                }
-            }
-        }
+        });
     }
-    
-    // Llamar a initReproductor automáticamente al cargar
-    // También actualiza la visibilidad al restaurar estado entre páginas
-    initReproductor();
-    // Visibilidad inicial: si hay estado guardado, el footer debe aparecer
-    // aunque el audio aún no haya empezado (puede estar pausado o en buffer)
-    actualizarVisibilidad();
 
-    // ── 10. INICIALIZAR EVENTOS DEL FOOTER ───────────────────────────────
-    // Se conecta automáticamente con los botones del footer player-bar
-    document.addEventListener('DOMContentLoaded', () => {
-        // Botones de control
-        document.getElementById('btn-play')    ?.addEventListener('click', togglePlay);
-        document.getElementById('btn-next')    ?.addEventListener('click', siguiente);
-        document.getElementById('btn-prev')    ?.addEventListener('click', anterior);
-        document.getElementById('btn-shuffle') ?.addEventListener('click', toggleShuffle);
-        document.getElementById('btn-repeat')  ?.addEventListener('click', toggleRepeat);
-        document.getElementById('progress-track')?.addEventListener('click', seekTo);
+    // ── EVENT BUS: vistas → reproductor ───────────────────────────────────
+    function registerEventBus() {
+        if (window.__soundlyEventBusRegistered) return;
+        window.__soundlyEventBusRegistered = true;
 
-        // Volumen — inicializar slider y fill dinámico
-        const volSlider = document.getElementById('vol-slider');
-        if (volSlider) {
-            const pct = Math.round(estado.volumen * 100);
-            volSlider.value = pct;
-            // Establecer variable CSS inicial para el fill del slider
-            volSlider.style.setProperty('--vol-pct', pct + '%');
-            volSlider.addEventListener('input', e => setVolumen(Number(e.target.value)));
-        }
+        window.addEventListener('soundly:reproducir', e => {
+            if (e.detail?.cancion) reproducir(e.detail.cancion);
+        });
+        window.addEventListener('soundly:reproducir-lista', e => {
+            if (e.detail?.lista) reproducirLista(e.detail.lista, e.detail.indice ?? 0);
+        });
+        window.addEventListener('soundly:toggle-play', () => togglePlay());
+        window.addEventListener('soundly:siguiente',   () => siguiente());
+        window.addEventListener('soundly:anterior',    () => anterior());
+        window.addEventListener('soundly:toggle-shuffle', () => toggleShuffle());
+        window.addEventListener('soundly:toggle-repeat',  () => toggleRepeat());
+        window.addEventListener('soundly:set-volumen', e => {
+            if (e.detail?.valor !== undefined) setVolumen(e.detail.valor);
+        });
+        window.addEventListener('soundly:seek', e => {
+            if (e.detail?.event) seekTo(e.detail.event);
+        });
+        window.addEventListener('soundly:vista-cambiada', () => syncUI());
+    }
 
-        // Mute al hacer clic en el ícono de volumen
-        const volBtn = document.getElementById('vol-btn');
-        if (volBtn) {
-            volBtn.addEventListener('click', () => {
+    // ── CONTROLES DEL FOOTER (delegación — sobrevive al inject SPA) ───────
+    function registerGlobalControls() {
+        if (window.__soundlyControlsRegistered) return;
+        window.__soundlyControlsRegistered = true;
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#btn-play'))    { togglePlay();    return; }
+            if (e.target.closest('#btn-next'))    { siguiente();     return; }
+            if (e.target.closest('#btn-prev'))    { anterior();      return; }
+            if (e.target.closest('#btn-shuffle')) { toggleShuffle(); return; }
+            if (e.target.closest('#btn-repeat'))  { toggleRepeat();  return; }
+            if (e.target.closest('#progress-track')) { seekTo(e);    return; }
+            if (e.target.closest('#vol-btn')) {
+                const volBtn = document.getElementById('vol-btn');
                 if (audio.muted) {
                     audio.muted = false;
                     setVolumen(estado.volumen || 0.8);
-                    volBtn.classList.remove('muted');
+                    volBtn?.classList.remove('muted');
                 } else {
                     audio.muted = true;
-                    volBtn.classList.add('muted');
-                    const vs = document.getElementById('vol-slider');
-                    if (vs) vs.style.setProperty('--vol-pct', '0%');
+                    volBtn?.classList.add('muted');
+                    document.getElementById('vol-slider')?.style.setProperty('--vol-pct', '0%');
                 }
+            }
+        });
+
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'vol-slider') setVolumen(Number(e.target.value));
+        });
+    }
+
+    // ── BOOTSTRAP: restaurar solo en cold start (recarga completa) ────────
+    function bootstrapPlayback() {
+        if (audioEstaActivo()) {
+            estado.playing = !audio.paused;
+            syncUI();
+            return;
+        }
+
+        cargarEstadoGuardado();
+        audio.volume = estado.volumen;
+
+        if (!estado.lista.length) {
+            syncUI();
+            return;
+        }
+
+        const c = estado.lista[estado.idx];
+        if (!c?.src) {
+            syncUI();
+            return;
+        }
+
+        if (esMismaFuenteActiva(c)) {
+            syncUI();
+            return;
+        }
+
+        cargarEnAudio(c, estado.currentTime || 0);
+        if (estado.playing) {
+            audio.play().then(() => syncUI()).catch(err => {
+                console.warn('[SoundlyPlayer] Autoplay bloqueado tras recarga:', err);
+                estado.playing = false;
+                syncUI();
             });
+        } else {
+            syncUI();
         }
+    }
 
-        // Restaurar UI si hay estado guardado
-        if (estado.lista.length > 0) {
-            actualizarUI();
-        }
-    });
+    // ── PERSISTENCIA ──────────────────────────────────────────────────────
+    window.addEventListener('beforeunload', guardarEstado);
+    setInterval(() => {
+        if (!audio.paused && audio.currentTime > 0) guardarEstado();
+    }, 5000);
 
-    // ── 11. EXPONER API PÚBLICA ───────────────────────────────────────────
+    // ── INICIALIZACIÓN ────────────────────────────────────────────────────
+    registerAudioListeners();
+    registerEventBus();
+    registerGlobalControls();
+    bootstrapPlayback();
+
+    // ── API PÚBLICA (retrocompatibilidad) ─────────────────────────────────
     window.SoundlyPlayer = {
         reproducir,
         reproducirLista,
@@ -654,9 +621,26 @@
         setVolumen,
         seekTo,
         adaptarCancion,
+        syncUI,
         getEstado: () => ({ ...estado }),
         getCancionActual: () => estado.lista[estado.idx] || null,
         getAudio: () => audio,
     };
+
+    window.SoundlyEvents = {
+        reproducir(cancion) {
+            window.dispatchEvent(new CustomEvent('soundly:reproducir', { detail: { cancion } }));
+        },
+        reproducirLista(lista, indice = 0) {
+            window.dispatchEvent(new CustomEvent('soundly:reproducir-lista', { detail: { lista, indice } }));
+        },
+        togglePlay()  { window.dispatchEvent(new CustomEvent('soundly:toggle-play')); },
+        siguiente()   { window.dispatchEvent(new CustomEvent('soundly:siguiente')); },
+        anterior()    { window.dispatchEvent(new CustomEvent('soundly:anterior')); },
+        setVolumen(v) { window.dispatchEvent(new CustomEvent('soundly:set-volumen', { detail: { valor: v } })); },
+    };
+
+    window.__soundlyPlayerCore = { syncUI, bootstrapPlayback };
+    window.__soundlyPlayerInitialized = true;
 
 })();

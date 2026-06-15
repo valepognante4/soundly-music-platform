@@ -1,22 +1,40 @@
 /**
  * navegacion.js — Soundly
  * ─────────────────────────────────────────────────────────────────────────────
- * SPA navigation — carga secciones sin recargar la página completa.
+ * SPA navigation — carga vistas sin recargar la página completa.
  *
- * GARANTÍA DE AUDIO: el footer #global-player-bar vive en app.html, FUERA
- * del contenedor #app. Nunca se toca en ningún fetch/inject. El objeto Audio
- * del reproductor global persiste durante toda la sesión sin interrupciones.
+ * GARANTÍA DE AUDIO: el footer #global-player-bar vive en index.html (shell),
+ * FUERA del contenedor #content. El objeto Audio singleton en
+ * reproductor-global.js persiste durante toda la sesión.
  *
  * Flujo:
  *   1. Clic en link interno → preventDefault → navegarA(url)
- *   2. fetch(url) → extraer .main-content → inyectar en #app
- *   3. ejecutarControlador(url) → llama window.initXxx() del controlador
+ *   2. cargarVista(nombre) → fetch vista.html → inyectar en #content
+ *   3. ejecutarControlador() → llama window.initXxx() del controlador
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+const ARCHIVO_VISTA = {
+    home:      'home.html',
+    busqueda:  'busqueda.html',
+    favoritos: 'favoritos.html',
+    playlist:  'playlist.html',
+    player:    'player.html',
+};
+
+/** IDs que ya existen en el shell y no deben duplicarse desde las vistas. */
+const IDS_SHELL = new Set([
+    'content',
+    'global-player-bar',
+    'full-screen-player',
+    'modal-crear-playlist',
+    'view-modals',
+]);
+
+let _vistaActual = null;
+
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ── Interceptar clics en links internos ────────────────────────────────
     document.body.addEventListener('click', (e) => {
         const a = e.target.closest('a');
         if (!a) return;
@@ -24,98 +42,186 @@ document.addEventListener('DOMContentLoaded', () => {
         const href = a.getAttribute('href');
         if (!href) return;
 
-        // Pasar links externos, anclajes, target="_blank"
         if (href.startsWith('http') || href.startsWith('#') || a.target === '_blank') return;
 
-        // Páginas que deben navegar fuera del shell SPA (auth)
         const paginasExternas = ['landing.html', 'login.html', 'register.html', 'reset-password.html'];
         if (paginasExternas.some(p => href.includes(p))) return;
 
-        // Páginas que deben recargar completo (tienen su propio layout diferente)
-        // playlist.html con ?id= forzar recarga completa para evitar conflictos de estado
-        if (href.includes('playlist.html') && href.includes('?id=')) {
-            return; // navegación nativa para el detalle de playlist
-        }
+        if (!document.getElementById('content')) return;
 
         e.preventDefault();
 
-        // Evitar recargar la misma sección
         const url = new URL(a.href, window.location.origin);
         if (url.pathname === window.location.pathname && url.search === window.location.search) return;
 
         navegarA(a.href);
     });
 
-    // ── Botón atrás/adelante del navegador ────────────────────────────────
     window.addEventListener('popstate', () => {
-        cargarSeccion(window.location.href);
+        const vista = vistaDesdeUrl(window.location.href);
+        if (vista) cargarVista(vista);
     });
 
-    // ── Marcar link activo en sidebar ─────────────────────────────────────
-    actualizarSidebarActivo(window.location.href);
+    if (document.getElementById('content')) {
+        const vistaInicial = vistaDesdeUrl(window.location.href) || 'home';
+        cargarVista(vistaInicial);
+    }
 });
 
-// ─── NAVEGAR A UNA URL ────────────────────────────────────────────────────────
-async function navegarA(url) {
-    history.pushState(null, '', url);
-    await cargarSeccion(url);
+// ─── RESOLVER VISTA DESDE URL ─────────────────────────────────────────────────
+
+function vistaDesdeUrl(url) {
+    try {
+        const pathname = new URL(url, window.location.origin).pathname;
+
+        for (const [nombre, archivo] of Object.entries(ARCHIVO_VISTA)) {
+            if (pathname.endsWith(archivo)) return nombre;
+        }
+
+        if (pathname.endsWith('index.html') || pathname.endsWith('app.html') ||
+            pathname.endsWith('/') || pathname === '') {
+            return 'home';
+        }
+    } catch (e) {
+        console.warn('[Navegacion] vistaDesdeUrl error:', e);
+    }
+    return null;
 }
 
-// ─── CARGAR SECCIÓN SIN RECARGAR PÁGINA ──────────────────────────────────────
-async function cargarSeccion(url) {
-    const appContainer = document.querySelector('#app');
-    if (!appContainer) {
-        console.error('[Navegacion] No se encontró #app');
-        window.location.href = url;
+function archivoDesdeVista(nombreVista) {
+    if (ARCHIVO_VISTA[nombreVista]) return ARCHIVO_VISTA[nombreVista];
+    if (nombreVista.endsWith('.html')) return nombreVista;
+    return `${nombreVista}.html`;
+}
+
+// ─── NAVEGAR A UNA URL ────────────────────────────────────────────────────────
+
+async function navegarA(url) {
+    history.pushState(null, '', url);
+    const vista = vistaDesdeUrl(url);
+    if (vista) {
+        await cargarVista(vista);
+        actualizarSidebarActivo(url);
+    }
+}
+
+// ─── CARGAR VISTA (API PRINCIPAL) ─────────────────────────────────────────────
+
+async function cargarVista(nombreVista) {
+    const contentEl = document.getElementById('content');
+    if (!contentEl) {
+        console.error('[Navegacion] No se encontró #content');
+        window.location.href = archivoDesdeVista(nombreVista);
         return;
     }
 
-    // Indicador visual de transición (no afecta al reproductor)
-    appContainer.style.opacity = '0.4';
-    appContainer.style.transition = 'opacity 0.15s ease';
+    const archivo = archivoDesdeVista(nombreVista);
+
+    contentEl.style.opacity = '0.4';
+    contentEl.style.transition = 'opacity 0.15s ease';
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(archivo);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const html = await response.text();
         const doc  = new DOMParser().parseFromString(html, 'text/html');
 
-        const nuevoContenido = doc.querySelector('.main-content');
-        if (!nuevoContenido) throw new Error('No se encontró .main-content');
+        aplicarClaseBody(doc);
 
-        // Inyectar solo el contenido interno (el footer #global-player-bar queda intacto)
-        appContainer.innerHTML = nuevoContenido.innerHTML;
+        const contenido = extraerContenidoVista(doc, nombreVista);
+        if (!contenido) throw new Error(`No se encontró contenido en ${archivo}`);
 
-        // Restaurar opacidad con fade-in suave
+        contentEl.innerHTML = contenido;
+
+        inyectarModalesVista(doc);
+
         requestAnimationFrame(() => {
-            appContainer.style.opacity = '1';
+            contentEl.style.opacity = '1';
         });
 
-        // Actualizar título de la pestaña
         if (doc.title) document.title = doc.title;
 
-        // Marcar link activo en sidebar
-        actualizarSidebarActivo(url);
+        _vistaActual = nombreVista;
 
-        // Inicializar el controlador JS correspondiente
-        ejecutarControlador(url);
+        const urlRef = Object.entries(ARCHIVO_VISTA).find(([, f]) => f === archivo);
+        const urlParaSidebar = urlRef ? archivo : archivo;
+        actualizarSidebarActivo(
+            new URL(urlParaSidebar, window.location.origin).href
+        );
+
+        ejecutarControlador(archivo);
+
+        window.dispatchEvent(new CustomEvent('soundly:vista-cambiada', {
+            detail: { vista: nombreVista, url: archivo },
+        }));
 
     } catch (error) {
-        console.error('[Navegacion] Error al cargar sección:', error);
-        // Fallback: recarga dura si algo falla (el reproductor guardó estado en beforeunload)
+        console.error('[Navegacion] Error al cargar vista:', error);
+        window.location.href = archivo;
+    }
+}
+
+// ─── EXTRAER CONTENIDO DE LA VISTA ───────────────────────────────────────────
+
+function extraerContenidoVista(doc, nombreVista) {
+    if (nombreVista === 'player') {
+        const panel = doc.querySelector('.main-panel');
+        if (panel) return panel.innerHTML;
+    }
+
+    const main = doc.querySelector('main.main-content') || doc.querySelector('main');
+    if (main) return main.innerHTML;
+
+    return null;
+}
+
+function aplicarClaseBody(doc) {
+    const clasesVista = doc.body.className.trim();
+    const clases = new Set(clasesVista.split(/\s+/).filter(Boolean));
+    clases.add('home-layout');
+    document.body.className = [...clases].join(' ');
+}
+
+function inyectarModalesVista(doc) {
+    const contenedor = document.getElementById('view-modals');
+    if (!contenedor) return;
+
+    contenedor.innerHTML = '';
+
+    doc.body.querySelectorAll('.modal-overlay').forEach(modal => {
+        if (!modal.id || IDS_SHELL.has(modal.id)) return;
+        contenedor.appendChild(modal.cloneNode(true));
+    });
+}
+
+// ─── CARGAR SECCIÓN (alias retrocompatible) ──────────────────────────────────
+
+async function cargarSeccion(url) {
+    const vista = vistaDesdeUrl(url);
+    if (vista) {
+        await cargarVista(vista);
+    } else {
         window.location.href = url;
     }
 }
 
 // ─── ACTUALIZAR LINK ACTIVO EN SIDEBAR ───────────────────────────────────────
+
 function actualizarSidebarActivo(url) {
     try {
         const pathname = new URL(url, window.location.origin).pathname;
+        const esHome = pathname.endsWith('index.html') || pathname.endsWith('app.html') ||
+                       pathname.endsWith('/') || pathname === '';
+
         document.querySelectorAll('.sidebar .nav-link').forEach(link => {
             link.classList.remove('active');
             const linkHref = link.getAttribute('href');
-            if (linkHref && pathname.endsWith(linkHref)) {
+            if (!linkHref) return;
+
+            if (esHome && linkHref.endsWith('home.html')) {
+                link.classList.add('active');
+            } else if (linkHref && pathname.endsWith(linkHref.split('?')[0])) {
                 link.classList.add('active');
             }
         });
@@ -125,38 +231,40 @@ function actualizarSidebarActivo(url) {
 }
 
 // ─── DESPACHAR CONTROLADOR DE LA SECCIÓN ─────────────────────────────────────
-// Llama a la función window.initXxx() expuesta por cada controlador.
-// Estas funciones son idempotentes — se pueden llamar múltiples veces de forma segura.
+
 function ejecutarControlador(url) {
     try {
         const pathname = new URL(url, window.location.origin).pathname;
 
-        if (pathname.endsWith('home.html') || pathname.endsWith('app.html') || pathname.endsWith('/')) {
+        if (pathname.endsWith('home.html')) {
             if (typeof window.initHome === 'function') window.initHome();
-            else console.warn('[Navegacion] window.initHome no está definido aún.');
+            else console.warn('[Navegacion] window.initHome no está definido.');
 
         } else if (pathname.endsWith('busqueda.html')) {
             if (typeof window.initBusqueda === 'function') window.initBusqueda();
-            else console.warn('[Navegacion] window.initBusqueda no está definido aún.');
+            else console.warn('[Navegacion] window.initBusqueda no está definido.');
 
         } else if (pathname.endsWith('favoritos.html')) {
             if (typeof window.initFavoritos === 'function') window.initFavoritos();
-            else console.warn('[Navegacion] window.initFavoritos no está definido aún.');
+            else console.warn('[Navegacion] window.initFavoritos no está definido.');
 
         } else if (pathname.endsWith('playlist.html')) {
             if (typeof window.initPlaylist === 'function') window.initPlaylist();
-            else console.warn('[Navegacion] window.initPlaylist no está definido aún.');
+            else console.warn('[Navegacion] window.initPlaylist no está definido.');
 
         } else if (pathname.endsWith('player.html')) {
             if (typeof window.initPlayer === 'function') window.initPlayer();
-            else console.warn('[Navegacion] window.initPlayer no está definido aún.');
+            else console.warn('[Navegacion] window.initPlayer no está definido.');
         }
     } catch (e) {
         console.error('[Navegacion] ejecutarControlador error:', e);
     }
 }
 
-// ─── EXPONER API PÚBLICA ──────────────────────────────────────────────────────
-window.cargarSeccion         = cargarSeccion;
-window.navegarA              = navegarA;
+// ─── API PÚBLICA ──────────────────────────────────────────────────────────────
+
+window.cargarVista            = cargarVista;
+window.cargarSeccion          = cargarSeccion;
+window.navegarA               = navegarA;
 window.actualizarSidebarActivo = actualizarSidebarActivo;
+window.vistaDesdeUrl          = vistaDesdeUrl;

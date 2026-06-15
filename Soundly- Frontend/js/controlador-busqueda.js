@@ -205,7 +205,9 @@ async function refrescarSidebarPlaylists() {
         // Usamos la vista para renderizar (reutiliza o crea items en el aside)
         // Redirigir a playlist.html cuando hagan click
         Vista.renderizarPlaylists(playlists, 'sidebar-playlists', (playlist) => {
-            window.location.href = `playlist.html?id=${playlist.id}`;
+            const url = `playlist.html?id=${playlist.id}`;
+            if (typeof window.navegarA === 'function') window.navegarA(url);
+            else window.location.href = url;
         });
     } catch (e) {
         console.error('[Sidebar] Error al cargar playlists:', e);

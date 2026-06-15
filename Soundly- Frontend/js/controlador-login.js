@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showConfirmButton: false,
                 timer: 1500
             }).then(() => {
-                window.location.href = 'home.html';
+                window.location.href = 'index.html';
             });
         } else {
             // Mensajes específicos según el motivo del fallo

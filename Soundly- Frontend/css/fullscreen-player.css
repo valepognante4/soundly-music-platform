@@ -1,0 +1,498 @@
+/**
+ * fullscreen-player.css — Soundly
+ * ═══════════════════════════════════════════════════════════════════════════
+ * PANTALLA COMPLETA "NOW PLAYING"
+ *
+ * Overlay glassmorphism que se muestra al hacer clic en la carátula del
+ * footer. Reutiliza las variables CSS globales de player-global.css.
+ *
+ * Apertura: JS cambia display:none → display:flex
+ * Cierre:   botón chevron-down o clic fuera del contenido central
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/* ── OVERLAY RAÍZ ──────────────────────────────────────────────────────── */
+#full-screen-player {
+  display: none;               /* Oculto por defecto — JS lo activa       */
+  position: fixed;
+  inset: 0;
+  z-index: 10001;              /* Por encima del footer (9999) y modales  */
+
+  /* Glassmorphism de fondo */
+  background: rgba(6, 6, 14, 0.92);
+  backdrop-filter: blur(60px) saturate(180%);
+  -webkit-backdrop-filter: blur(60px) saturate(180%);
+
+  /* Layout centrado */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  gap: 0;
+
+  /* Animación de entrada */
+  animation: fsp-slideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  overflow: hidden;
+}
+
+/* Fondo difuminado dinámico — imagen de la carátula detrás */
+#full-screen-player::before {
+  content: '';
+  position: absolute;
+  inset: -80px;
+  background-image: var(--fsp-cover-url);
+  background-size: cover;
+  background-position: center;
+  filter: blur(80px) brightness(0.35) saturate(1.5);
+  opacity: 0.6;
+  z-index: 0;
+  pointer-events: none;
+  transition: background-image 0.6s ease;
+}
+
+/* ── ANIMACIONES ───────────────────────────────────────────────────────── */
+@keyframes fsp-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fsp-slideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+}
+
+#full-screen-player.fsp-closing {
+  animation: fsp-slideDown 0.35s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
+
+@keyframes fsp-vinylSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fsp-pulseGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(167, 139, 250, 0),
+      0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 12px rgba(167, 139, 250, 0.08),
+      0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ── BOTÓN CERRAR (CHEVRON DOWN) ───────────────────────────────────────── */
+.fsp-close-btn {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--sp-muted, rgba(255, 255, 255, 0.45));
+  transition: color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.fsp-close-btn:hover {
+  color: var(--sp-text, #fff);
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(-50%) scale(1.1);
+}
+
+/* ── CONTENIDO CENTRAL ─────────────────────────────────────────────────── */
+.fsp-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  max-width: 420px;
+  width: 100%;
+}
+
+/* ── CARÁTULA GRANDE ───────────────────────────────────────────────────── */
+.fsp-cover-wrapper {
+  position: relative;
+  width: 300px;
+  height: 300px;
+}
+
+.fsp-cover {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transition: border-radius 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.6s ease;
+}
+
+/* Modo reproduciendo: la carátula gira como vinilo */
+.fsp-cover.fsp-spinning {
+  border-radius: 50%;
+  animation: fsp-vinylSpin 20s linear infinite;
+  box-shadow:
+    0 0 0 4px rgba(167, 139, 250, 0.15),
+    0 0 40px rgba(167, 139, 250, 0.15),
+    0 20px 60px rgba(0, 0, 0, 0.5);
+  animation-name: fsp-vinylSpin, fsp-pulseGlow;
+  animation-duration: 20s, 3s;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+/* Pausa: detener animación sin salto visual */
+.fsp-cover.fsp-paused {
+  animation-play-state: paused;
+}
+
+/* ── INFO: TÍTULO Y ARTISTA ────────────────────────────────────────────── */
+.fsp-info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.fsp-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--sp-text, #fff);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s;
+}
+
+/* Título con acento cuando reproduce */
+#full-screen-player.fsp-is-playing .fsp-title {
+  color: var(--sp-accent, #a78bfa);
+}
+
+.fsp-artist {
+  font-size: 0.95rem;
+  color: var(--sp-muted, rgba(255, 255, 255, 0.45));
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── BARRA DE PROGRESO ─────────────────────────────────────────────────── */
+.fsp-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.fsp-time {
+  font-size: 0.75rem;
+  color: var(--sp-muted, rgba(255, 255, 255, 0.45));
+  min-width: 38px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.fsp-progress-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  cursor: pointer;
+  position: relative;
+  transition: height 0.15s;
+}
+
+.fsp-progress-track:hover {
+  height: 7px;
+}
+
+.fsp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sp-accent, #a78bfa), var(--sp-accent-2, #7c3aed));
+  border-radius: 99px;
+  width: 0%;
+  transition: width 0.1s linear;
+  position: relative;
+  pointer-events: none;
+}
+
+/* Thumb dot al hover */
+.fsp-progress-track:hover .fsp-progress-fill::after {
+  opacity: 1;
+}
+
+.fsp-progress-fill::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sp-text, #fff);
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
+}
+
+/* ── CONTROLES ─────────────────────────────────────────────────────────── */
+.fsp-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.fsp-ctrl-btn {
+  background: none;
+  border: none;
+  color: var(--sp-muted, rgba(255, 255, 255, 0.45));
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: color 0.15s, transform 0.12s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.fsp-ctrl-btn:hover {
+  color: var(--sp-text, #fff);
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.1);
+}
+
+.fsp-ctrl-btn.active {
+  color: var(--sp-accent, #a78bfa);
+}
+
+/* Dot indicator debajo del botón activo */
+.fsp-ctrl-btn.active::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  background: var(--sp-accent, #a78bfa);
+  border-radius: 50%;
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Botón play grande */
+.fsp-play-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  background: var(--sp-text, #fff);
+  color: #000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.12s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.fsp-play-btn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sp-accent, #a78bfa), var(--sp-accent-2, #7c3aed));
+  opacity: 0;
+  transition: opacity 0.25s;
+  z-index: -1;
+}
+
+.fsp-play-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.2), 0 6px 30px rgba(0, 0, 0, 0.5);
+}
+
+.fsp-play-btn:hover::before {
+  opacity: 1;
+}
+
+.fsp-play-btn:active {
+  transform: scale(0.96);
+}
+
+/* Play/Pause en verde cuando reproduce */
+#full-screen-player.fsp-is-playing .fsp-play-btn {
+  background: var(--sp-green, #1db954);
+  box-shadow: 0 0 0 4px rgba(29, 185, 84, 0.25), 0 6px 30px rgba(29, 185, 84, 0.3);
+  color: #000;
+}
+
+#full-screen-player.fsp-is-playing .fsp-play-btn::before {
+  background: linear-gradient(135deg, var(--sp-green, #1db954), var(--sp-green-2, #17a349));
+}
+
+/* ── EXTRAS: VOLUMEN ───────────────────────────────────────────────────── */
+.fsp-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.fsp-vol-btn {
+  background: none;
+  border: none;
+  color: var(--sp-muted, rgba(255, 255, 255, 0.45));
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.fsp-vol-btn:hover {
+  color: var(--sp-text, #fff);
+}
+
+.fsp-vol-slider {
+  width: 140px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    var(--sp-accent, #a78bfa) 0%,
+    var(--sp-accent, #a78bfa) var(--fsp-vol-pct, 80%),
+    rgba(255, 255, 255, 0.12) var(--fsp-vol-pct, 80%),
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+  transition: height 0.15s;
+}
+
+.fsp-vol-slider:hover {
+  height: 6px;
+}
+
+.fsp-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sp-text, #fff);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s, background 0.15s;
+}
+
+.fsp-vol-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  background: var(--sp-accent, #a78bfa);
+}
+
+.fsp-vol-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sp-text, #fff);
+  border: none;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  #full-screen-player {
+    padding: 24px 16px;
+  }
+
+  .fsp-cover-wrapper {
+    width: 260px;
+    height: 260px;
+  }
+
+  .fsp-title {
+    font-size: 1.25rem;
+  }
+
+  .fsp-play-btn {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fsp-cover-wrapper {
+    width: 220px;
+    height: 220px;
+  }
+
+  .fsp-title {
+    font-size: 1.1rem;
+  }
+
+  .fsp-artist {
+    font-size: 0.85rem;
+  }
+
+  .fsp-controls {
+    gap: 14px;
+  }
+
+  .fsp-play-btn {
+    width: 50px;
+    height: 50px;
+  }
+
+  .fsp-volume {
+    display: none;
+  }
+}
+
+@media (min-height: 800px) {
+  .fsp-content {
+    gap: 40px;
+  }
+
+  .fsp-cover-wrapper {
+    width: 340px;
+    height: 340px;
+  }
+}

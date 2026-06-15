@@ -23,48 +23,59 @@
 const $_pl = id => document.getElementById(id);
 
 // Estado local de la vista
-let _playlistActual = null;  // objeto playlist adaptado actualmente visible
-let _todasLasCanciones = []; // caché de todas las canciones (para el modal)
+let _playlistActual = null;
+let _todasLasCanciones = [];
+let _playlistAbortController = null;
 
-// ── INICIALIZACIÓN ────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
+// ── INICIALIZACIÓN SPA ────────────────────────────────────────────────────────
 
-    // 1. Verificar sesión activa
+window.initPlaylist = async function initPlaylist() {
+    if (_playlistAbortController) _playlistAbortController.abort();
+    _playlistAbortController = new AbortController();
+    const { signal } = _playlistAbortController;
+
     const usuario = GestorUsuarios.obtenerActivo();
     if (!usuario) {
         window.location.href = 'login.html';
         return;
     }
 
-    // 2. Mostrar nombre en sidebar
     Vista.actualizarNombreUsuario(usuario.apodo || usuario.nombreUsuario || 'Usuario');
+    $_pl('btn-logout')?.addEventListener('click', () => GestorUsuarios.cerrarSesion(), { signal });
 
-    // 3. Botón cerrar sesión
-    $('btn-logout')?.addEventListener('click', () => GestorUsuarios.cerrarSesion());
-
-    // 4. Obtener el ID de la playlist desde ?id=X
     const idPlaylist = new URLSearchParams(window.location.search).get('id');
 
     if (idPlaylist) {
-        await cargarDetallePlaylst(idPlaylist, usuario);
+        await cargarDetallePlaylst(idPlaylist, usuario, signal);
     } else {
         await cargarListaPlaylists(usuario);
     }
 
-    // 5. Inicializar modal de "Crear Playlist"
-    inicializarModalCrearPlaylist(usuario);
+    inicializarModalCrearPlaylist(usuario, signal);
 
-    // 6. Escuchar cambio de canción activa para resaltar fila
     window.addEventListener('soundly:cancion-cambio', ({ detail }) => {
         resaltarCancionActiva(detail.idx);
-    });
+    }, { signal });
+
+    window.addEventListener('soundly:estado-cambio', ({ detail }) => {
+        resaltarCancionActiva(detail.idx);
+    }, { signal });
+};
+
+// ── AUTO-INIT: acceso directo a playlist.html ───────────────────────────────
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (document.getElementById('content')) return;
+    if (window.location.pathname.includes('playlist.html')) {
+        await window.initPlaylist();
+    }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
 // VISTA: DETALLE DE UNA PLAYLIST
 // ═════════════════════════════════════════════════════════════════════════════
 
-async function cargarDetallePlaylst(idPlaylist, usuario) {
+async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
     mostrarCargando();
 
     try {
@@ -83,21 +94,19 @@ async function cargarDetallePlaylst(idPlaylist, usuario) {
         actualizarEstadisticas(playlist.canciones);
 
         // Botón Play All
-        $_pl(btn-play-all')?.addEventListener('click', () => {
+        $_pl('btn-play-all')?.addEventListener('click', () => {
             if (playlist.canciones?.length > 0) {
-                window.SoundlyPlayer?.reproducirLista(playlist.canciones, 0);
+                window.SoundlyEvents?.reproducirLista(playlist.canciones, 0);
             }
-        });
+        }, { signal });
 
-        // Botón lápiz → modal editar nombre
-        $_pl(btn-edit-name')?.addEventListener('click', () => {
+        $_pl('btn-edit-name')?.addEventListener('click', () => {
             abrirModalEditarNombre(idPlaylist, playlist.nombre);
-        });
+        }, { signal });
 
-        // Botón + → modal agregar canción
-        $_pl(btn-add-circle')?.addEventListener('click', async () => {
+        $_pl('btn-add-circle')?.addEventListener('click', async () => {
             await abrirModalAgregarCancion(idPlaylist, playlist.canciones);
-        });
+        }, { signal });
 
     } catch (error) {
         console.error('[Playlist] Error al cargar playlist:', error);
@@ -106,10 +115,10 @@ async function cargarDetallePlaylst(idPlaylist, usuario) {
 }
 
 function actualizarBanner(playlist, usuario) {
-    const nombreEl = $_pl(playlist-name');
+    const nombreEl = $_pl('playlist-name');
     if (nombreEl) nombreEl.textContent = playlist.nombre || 'Mi Playlist';
 
-    const creadorEl = $_pl(nombre-usuario-display');
+    const creadorEl = $_pl('nombre-usuario-display');
     if (creadorEl) {
         creadorEl.textContent = playlist.creador || usuario?.apodo || usuario?.nombreUsuario || 'Tú';
     }
@@ -120,7 +129,7 @@ function actualizarBanner(playlist, usuario) {
  * Agrega botón de quitar canción individual en hover.
  */
 function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
-    const contenedor = $_pl(playlist-list');
+    const contenedor = $_pl('playlist-list');
     if (!contenedor) return;
 
     if (!canciones || canciones.length === 0) {
@@ -134,7 +143,7 @@ function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
                 </button>
             </div>`;
         // Conectar botón del empty state
-        $_pl(btn-empty-add')?.addEventListener('click', async () => {
+        $_pl('btn-empty-add')?.addEventListener('click', async () => {
             await abrirModalAgregarCancion(playlistId, []);
         });
         return;
@@ -189,12 +198,12 @@ function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
         // Play al clic en la fila o botón play
         const accionPlay = (e) => {
             if (e.target.closest('.pl-remove-btn')) return; // no propagar
-            window.SoundlyPlayer?.reproducirLista(canciones, i);
+            window.SoundlyEvents?.reproducirLista(canciones, i);
         };
         item.addEventListener('click', accionPlay);
         item.querySelector('.pl-play-btn').addEventListener('click', e => {
             e.stopPropagation();
-            window.SoundlyPlayer?.reproducirLista(canciones, i);
+            window.SoundlyEvents?.reproducirLista(canciones, i);
         });
 
         // Quitar canción
@@ -217,8 +226,8 @@ function actualizarEstadisticas(canciones) {
     const totalSeg = lista.reduce((acc, c) => acc + (c.duracion || 0), 0);
     const totalMin = Math.floor(totalSeg / 60);
 
-    const elCantidad = $_pl(stat-canciones');
-    const elDuracion = $_pl(stat-duracion');
+    const elCantidad = $_pl('stat-canciones');
+    const elDuracion = $_pl('stat-duracion');
 
     if (elCantidad) elCantidad.textContent = `${lista.length} canción${lista.length !== 1 ? 'es' : ''}`;
     if (elDuracion) elDuracion.textContent = `${totalMin} min`;
@@ -248,14 +257,14 @@ async function cargarListaPlaylists(usuario) {
     const bannerTitleContainer = document.querySelector('.playlist-title-container');
     if (bannerTitleContainer) bannerTitleContainer.innerHTML = '<h1 id="playlist-name">Tus Playlists</h1>';
 
-    const creadorEl = $_pl(nombre-usuario-display');
+    const creadorEl = $_pl('nombre-usuario-display');
     if (creadorEl) creadorEl.textContent = usuario?.apodo || usuario?.nombreUsuario || '';
 
     mostrarCargando();
 
     try {
         const playlists = await GestorPlaylists.listarPorUsuario(usuario.id);
-        const contenedor = $_pl(playlist-list');
+        const contenedor = $_pl('playlist-list');
         if (!contenedor) return;
 
         if (!playlists || playlists.length === 0) {
@@ -269,7 +278,9 @@ async function cargarListaPlaylists(usuario) {
         }
 
         Vista.renderizarPlaylists(playlists, 'playlist-list', (p) => {
-            window.location.href = `playlist.html?id=${p.id}`;
+            const url = `playlist.html?id=${p.id}`;
+            if (typeof window.navegarA === 'function') window.navegarA(url);
+            else window.location.href = url;
         });
 
     } catch (error) {
@@ -303,11 +314,11 @@ async function quitarCancionDePlaylist(playlistId, cancionId, titulo) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 function abrirModalEditarNombre(playlistId, nombreActual) {
-    const modal = $_pl(modal-editar-nombre');
-    const input = $_pl(input-editar-nombre');
-    const btnGuardar = $_pl(btn-guardar-nombre');
-    const btnCancelar = $_pl(btn-cancelar-nombre');
-    const errorDiv = $_pl(editar-nombre-error');
+    const modal = $_pl('modal-editar-nombre');
+    const input = $_pl('input-editar-nombre');
+    const btnGuardar = $_pl('btn-guardar-nombre');
+    const btnCancelar = $_pl('btn-cancelar-nombre');
+    const errorDiv = $_pl('editar-nombre-error');
 
     if (!modal || !input) return;
 
@@ -336,7 +347,7 @@ function abrirModalEditarNombre(playlistId, nombreActual) {
         try {
             const playlistActualizada = await GestorPlaylists.actualizar(playlistId, { nombre: nuevoNombre });
             // Actualizar el título en el banner
-            const nombreEl = $_pl(playlist-name');
+            const nombreEl = $_pl('playlist-name');
             if (nombreEl) nombreEl.textContent = nuevoNombre;
             _playlistActual = playlistActualizada;
             mostrarToast('Nombre actualizado', 'success');
@@ -356,8 +367,8 @@ function abrirModalEditarNombre(playlistId, nombreActual) {
     const btnCancelarNuevo = btnCancelar.cloneNode(true);
     btnCancelar.parentNode.replaceChild(btnCancelarNuevo, btnCancelar);
 
-    $_pl(btn-guardar-nombre').addEventListener('click', guardar);
-    $_pl(btn-cancelar-nombre').addEventListener('click', cerrar);
+    $_pl('btn-guardar-nombre').addEventListener('click', guardar);
+    $_pl('btn-cancelar-nombre').addEventListener('click', cerrar);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') guardar(); if (e.key === 'Escape') cerrar(); });
     modal.addEventListener('click', e => { if (e.target === modal) cerrar(); }, { once: true });
 }
@@ -367,10 +378,10 @@ function abrirModalEditarNombre(playlistId, nombreActual) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 async function abrirModalAgregarCancion(playlistId, cancionesEnPlaylist) {
-    const modal = $_pl(modal-agregar-cancion');
-    const listEl = $_pl(modal-canciones-list');
-    const searchInput = $_pl(modal-buscar-cancion');
-    const btnCerrar = $_pl(btn-cerrar-modal-agregar');
+    const modal = $_pl('modal-agregar-cancion');
+    const listEl = $_pl('modal-canciones-list');
+    const searchInput = $_pl('modal-buscar-cancion');
+    const btnCerrar = $_pl('btn-cerrar-modal-agregar');
 
     if (!modal || !listEl) return;
 
@@ -435,8 +446,8 @@ async function abrirModalAgregarCancion(playlistId, cancionesEnPlaylist) {
         searchInput.value = '';
         const nuevoSearch = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(nuevoSearch, searchInput);
-        $_pl(modal-buscar-cancion').addEventListener('input', e => renderLista(e.target.value));
-        setTimeout(() => $_pl(modal-buscar-cancion')?.focus(), 100);
+        $_pl('modal-buscar-cancion').addEventListener('input', e => renderLista(e.target.value));
+        setTimeout(() => $_pl('modal-buscar-cancion')?.focus(), 100);
     }
 
     const cerrar = () => {
@@ -446,7 +457,7 @@ async function abrirModalAgregarCancion(playlistId, cancionesEnPlaylist) {
     if (btnCerrar) {
         const nuevoBtn = btnCerrar.cloneNode(true);
         btnCerrar.parentNode.replaceChild(nuevoBtn, btnCerrar);
-        $_pl(btn-cerrar-modal-agregar').addEventListener('click', cerrar);
+        $_pl('btn-cerrar-modal-agregar').addEventListener('click', cerrar);
     }
     modal.addEventListener('click', e => { if (e.target === modal) cerrar(); }, { once: true });
 }
@@ -487,29 +498,29 @@ async function agregarCancionDesdModal(playlistId, cancion, idsEnPlaylist, itemE
 // MODAL: CREAR NUEVA PLAYLIST
 // ═════════════════════════════════════════════════════════════════════════════
 
-function inicializarModalCrearPlaylist(usuario) {
-    const modal       = $_pl(modal-crear-playlist');
+function inicializarModalCrearPlaylist(usuario, signal) {
+    const modal       = $_pl('modal-crear-playlist');
     const btnCrear    = document.querySelector('.btn-sidebar-create');
-    const btnGuardar  = $_pl(btn-guardar');
-    const btnCancelar = $_pl(btn-cancelar');
+    const btnGuardar  = $_pl('btn-guardar');
+    const btnCancelar = $_pl('btn-cancelar');
 
     if (!modal) return;
 
     const cerrar = () => {
         modal.classList.remove('visible');
-        const input = $_pl(input-nombre-playlist');
+        const input = $_pl('input-nombre-playlist');
         if (input) input.value = '';
-        const errDiv = $_pl(modal-error-message');
+        const errDiv = $_pl('modal-error-message');
         if (errDiv) errDiv.style.display = 'none';
     };
 
-    btnCrear    ?.addEventListener('click', () => modal.classList.add('visible'));
-    btnCancelar ?.addEventListener('click', cerrar);
-    modal.addEventListener('click', e => { if (e.target === modal) cerrar(); });
+    btnCrear    ?.addEventListener('click', () => modal.classList.add('visible'), { signal });
+    btnCancelar ?.addEventListener('click', cerrar, { signal });
+    modal.addEventListener('click', e => { if (e.target === modal) cerrar(); }, { signal });
 
     btnGuardar?.addEventListener('click', async () => {
-        const nombre = $_pl(input-nombre-playlist')?.value.trim();
-        const errorDiv = $_pl(modal-error-message');
+        const nombre = $_pl('input-nombre-playlist')?.value.trim();
+        const errorDiv = $_pl('modal-error-message');
 
         if (!nombre) {
             if (errorDiv) { errorDiv.textContent = 'Por favor, escribí un nombre.'; errorDiv.style.display = 'block'; }
@@ -523,7 +534,11 @@ function inicializarModalCrearPlaylist(usuario) {
         try {
             const nueva = await GestorPlaylists.crear(nombre, '', usuario.id);
             cerrar();
-            if (nueva?.id) window.location.href = `playlist.html?id=${nueva.id}`;
+            if (nueva?.id) {
+                const url = `playlist.html?id=${nueva.id}`;
+                if (typeof window.navegarA === 'function') window.navegarA(url);
+                else window.location.href = url;
+            }
         } catch (e) {
             console.error('[Playlist] Error al crear playlist:', e);
             if (errorDiv) { errorDiv.textContent = 'No se pudo crear. Intentá de nuevo.'; errorDiv.style.display = 'block'; }
@@ -531,7 +546,7 @@ function inicializarModalCrearPlaylist(usuario) {
             btnGuardar.disabled = false;
             btnGuardar.textContent = 'Guardar';
         }
-    });
+    }, { signal });
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -539,14 +554,14 @@ function inicializarModalCrearPlaylist(usuario) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 function mostrarCargando() {
-    const contenedor = $_pl(playlist-list');
+    const contenedor = $_pl('playlist-list');
     if (contenedor) {
         contenedor.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div></div>`;
     }
 }
 
 function mostrarErrorCarga(mensaje) {
-    const contenedor = $_pl(playlist-list');
+    const contenedor = $_pl('playlist-list');
     if (contenedor) {
         contenedor.innerHTML = `
             <div class="empty-state">
@@ -601,8 +616,8 @@ function escaparHtml(str) {
 }
 
 // ── COMPATIBILIDAD: funciones globales del reproductor ────────────────────────
-function togglePlay()  { window.SoundlyPlayer?.togglePlay(); }
-function nextSong()    { window.SoundlyPlayer?.siguiente(); }
-function prevSong()    { window.SoundlyPlayer?.anterior(); }
-function seekTo(e)     { window.SoundlyPlayer?.seekTo(e); }
-function setVol(v)     { window.SoundlyPlayer?.setVolumen(v); }
+function togglePlay()  { window.SoundlyEvents?.togglePlay(); }
+function nextSong()    { window.SoundlyEvents?.siguiente(); }
+function prevSong()    { window.SoundlyEvents?.anterior(); }
+function seekTo(e)     { window.dispatchEvent(new CustomEvent('soundly:seek', { detail: { event: e } })); }
+function setVol(v)     { window.SoundlyEvents?.setVolumen(v); }

@@ -3,27 +3,30 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * CONTROLADOR DE LA PÁGINA PLAYER / FAVORITOS / PLAYLIST (MVC)
  *
- * Centraliza la lógica para las vistas que muestran listas de canciones:
- *   - player.html     → lista completa
- *   - favoritos.html  → canciones favoritas del usuario
- *   - playlist.html   → canciones de una playlist específica
- *
- * Toda reproducción se delega a window.SoundlyPlayer (reproductor-global.js).
- * El renderizado se delega a Vista (vista.js).
- * Los datos se obtienen desde GestorCanciones / GestorPlaylists (modelo.js).
- *
- * Dependencias (en el HTML, antes de este script):
- *   config.js → modelo.js → modelo-canciones.js → reproductor-global.js → vista.js
+ * Comunicación con el reproductor vía Event Bus (window.SoundlyEvents).
+ * Expone window.initPlayer() e window.initFavoritos() para el shell SPA.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-// ── HELPER ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-// ── INICIALIZACIÓN ────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
+let _playerAbortController = null;
 
-    // 1. Verificar sesión
+// ── INICIALIZACIÓN SPA ────────────────────────────────────────────────────────
+
+window.initPlayer = async function initPlayer() {
+    await _initVista('player');
+};
+
+window.initFavoritos = async function initFavoritos() {
+    await _initVista('favoritos');
+};
+
+async function _initVista(tipoVista) {
+    if (_playerAbortController) _playerAbortController.abort();
+    _playerAbortController = new AbortController();
+    const { signal } = _playerAbortController;
+
     const usuario = GestorUsuarios.obtenerActivo();
     if (!usuario) {
         window.location.href = 'login.html';
@@ -31,81 +34,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     Vista.actualizarNombreUsuario(usuario.apodo || usuario.nombreUsuario || 'Usuario');
-    $('btn-logout')?.addEventListener('click', () => GestorUsuarios.cerrarSesion());
+    $('btn-logout')?.addEventListener('click', () => GestorUsuarios.cerrarSesion(), { signal });
 
-    // 2. Decidir qué vista cargar según la URL
-    const ruta = window.location.pathname;
-
-    if (ruta.includes('favoritos.html')) {
+    if (tipoVista === 'favoritos') {
         await cargarVistaFavoritos(usuario);
-    } else if (ruta.includes('playlist.html')) {
+    } else if (tipoVista === 'playlist') {
         const idPlaylist = new URLSearchParams(window.location.search).get('id');
         await cargarVistaPlaylist(idPlaylist, usuario);
     } else {
-        // player.html: todas las canciones
         await cargarVistaPlayer();
     }
 
-    // 3. Actualizar estadísticas si existen en el HTML
     sincronizarEstadisticas();
+    inicializarModalCrearPlaylistPlayer(usuario, signal);
 
-    // 4. Inicializar modal de crear playlist
-    inicializarModalCrearPlaylistPlayer(usuario);
-
-    // 5. Escuchar cambios de canción para actualizar el resaltado en la lista
     window.addEventListener('soundly:cancion-cambio', ({ detail }) => {
         resaltarCancionActiva(detail.idx);
-    });
+    }, { signal });
 
-    // 6. Escuchar click en el botón de "Me Gusta"
+    window.addEventListener('soundly:estado-cambio', ({ detail }) => {
+        resaltarCancionActiva(detail.idx);
+    }, { signal });
+
     const btnLike = document.querySelector('.btn-like');
-    if (btnLike) {
-        btnLike.addEventListener('click', toggleLike);
+    if (btnLike) btnLike.addEventListener('click', toggleLike, { signal });
+
+    const idxActual = window.SoundlyPlayer?.getEstado?.()?.idx ?? -1;
+    if (idxActual >= 0) resaltarCancionActiva(idxActual);
+}
+
+// ── AUTO-INIT: acceso directo a player.html / favoritos.html ──────────────────
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const ruta = window.location.pathname;
+    if (document.getElementById('content')) return;
+
+    if (ruta.includes('favoritos.html')) {
+        await _initVista('favoritos');
+    } else if (ruta.includes('player.html')) {
+        await _initVista('player');
     }
 });
 
 // ── LÓGICA DE FAVORITOS ────────────────────────────────────────────────────────
+
 async function toggleLike(event) {
     const btn = event.currentTarget;
     const cancionId = btn.getAttribute('data-id');
     const usuario = GestorUsuarios.obtenerActivo() || (typeof currentUser !== 'undefined' ? currentUser : null);
-    
-    if (!cancionId) {
-        alert('No hay ninguna canción seleccionada.');
-        return;
-    }
-    
-    if (!usuario || !usuario.id) {
-        alert('Debes iniciar sesión para agregar a favoritos.');
-        return;
-    }
+
+    if (!cancionId) { alert('No hay ninguna canción seleccionada.'); return; }
+    if (!usuario || !usuario.id) { alert('Debes iniciar sesión para agregar a favoritos.'); return; }
 
     try {
         const response = await fetch(`/api/canciones/${cancionId}/favorito/usuario/${usuario.id}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' },
         });
 
         if (response.ok) {
             const icon = btn.querySelector('i');
             if (icon) {
-                if (icon.classList.contains('far')) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas');
-                    // Opcional: mostrar un feedback visual temporal (toast o animación)
-                } else {
-                    icon.classList.remove('fas');
-                    icon.classList.add('far');
-                }
+                icon.classList.toggle('far');
+                icon.classList.toggle('fas');
             }
         } else {
-            console.error('Error al cambiar favorito, status:', response.status);
             alert('No se pudo actualizar el estado de favorito.');
         }
     } catch (error) {
-        console.error('Error de red al intentar dar Me Gusta:', error);
+        console.error('[Player] Error de red al dar Me Gusta:', error);
         alert('Ocurrió un error de red al intentar conectarse con el servidor.');
     }
 }
@@ -117,21 +114,16 @@ async function cargarVistaPlayer() {
     if (contenedor) contenedor.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div></div>';
 
     const canciones = await GestorCanciones.obtenerTodas();
-    const idxActual = window.SoundlyPlayer.getEstado().idx;
+    const idxActual = window.SoundlyPlayer?.getEstado?.()?.idx ?? -1;
 
     Vista.renderizarListaCanciones(
         canciones,
         'playlist-list',
         idxActual,
-        (cancion, idx) => window.SoundlyPlayer.reproducirLista(canciones, idx)
+        (cancion, idx) => window.SoundlyEvents.reproducirLista(canciones, idx)
     );
 
     calcularEstadisticasPlaylist(canciones);
-
-    // Si no hay nada reproduciendo, cargar la primera canción sin autoplay
-    if (canciones.length > 0 && !window.SoundlyPlayer.getEstado().playing) {
-        // No llamamos .play(), solo dejamos que el usuario inicie
-    }
 }
 
 async function cargarVistaFavoritos(usuario) {
@@ -140,13 +132,12 @@ async function cargarVistaFavoritos(usuario) {
 
     try {
         const favoritos = await GestorCanciones.obtenerFavoritos(usuario.id);
-
         if ($('playlist-name')) $('playlist-name').textContent = 'Canciones Favoritas';
 
         Vista.renderizarTarjetasFavoritas(
             favoritos,
             'playlist-list',
-            (cancion, idx) => window.SoundlyPlayer.reproducirLista(favoritos, idx),
+            (cancion, idx) => window.SoundlyEvents.reproducirLista(favoritos, idx),
             toggleLike
         );
 
@@ -159,7 +150,6 @@ async function cargarVistaFavoritos(usuario) {
 
 async function cargarVistaPlaylist(idPlaylist, usuario) {
     if (!idPlaylist) {
-        // Sin ID: mostrar todas las playlists del usuario
         await cargarListaPlaylists(usuario);
         return;
     }
@@ -171,7 +161,6 @@ async function cargarVistaPlaylist(idPlaylist, usuario) {
         const playlist = await GestorPlaylists.obtenerDetalle(idPlaylist);
         if (!playlist) throw new Error('Playlist no encontrada');
 
-        // Nombre editable
         const nombreEl = $('playlist-name');
         if (nombreEl) {
             nombreEl.textContent = playlist.nombre;
@@ -188,12 +177,11 @@ async function cargarVistaPlaylist(idPlaylist, usuario) {
             playlist.canciones,
             'playlist-list',
             -1,
-            (cancion, idx) => window.SoundlyPlayer.reproducirLista(playlist.canciones, idx)
+            (cancion, idx) => window.SoundlyEvents.reproducirLista(playlist.canciones, idx)
         );
 
         calcularEstadisticasPlaylist(playlist.canciones);
 
-        // Botón agregar canción
         document.querySelector('.btn-add-circle')?.addEventListener('click', () => {
             mostrarModalAgregarCancion(idPlaylist, playlist.canciones);
         });
@@ -208,7 +196,11 @@ async function cargarListaPlaylists(usuario) {
     try {
         const playlists = await GestorPlaylists.listarPorUsuario(usuario.id);
         Vista.renderizarPlaylists(playlists, 'playlist-list', (p) => {
-            window.location.href = `playlist.html?id=${p.id}`;
+            if (typeof window.navegarA === 'function') {
+                window.navegarA(`playlist.html?id=${p.id}`);
+            } else {
+                window.location.href = `playlist.html?id=${p.id}`;
+            }
         });
     } catch (e) {
         console.error('[Player] Error al cargar playlists:', e);
@@ -217,49 +209,33 @@ async function cargarListaPlaylists(usuario) {
 
 // ─── FUNCIONES AUXILIARES ─────────────────────────────────────────────────────
 
-/**
- * Resalta la fila de la canción actualmente en reproducción.
- */
 function resaltarCancionActiva(idxActivo) {
-    const items = document.querySelectorAll('.playlist-item');
-    items.forEach((el, j) => el.classList.toggle('active', j === idxActivo));
+    document.querySelectorAll('.playlist-item').forEach((el, j) => {
+        el.classList.toggle('active', j === idxActivo);
+    });
 }
 
-/**
- * Calcula y muestra estadísticas de la lista (total tiempo, cantidad).
- */
 function calcularEstadisticasPlaylist(canciones) {
     const totalSeg = canciones.reduce((acc, c) => acc + (c.duracion || 0), 0);
     const totalMin = Math.floor(totalSeg / 60);
-
     const elCantidad = $('stat-canciones') || $('playlist-song-count');
     const elDuracion = $('stat-duracion')  || $('playlist-duration');
-
     if (elCantidad) elCantidad.textContent = `${canciones.length} canciones`;
     if (elDuracion) elDuracion.textContent = `${totalMin} min`;
 }
 
-/**
- * Sincroniza los elementos de estadísticas con el estado del reproductor.
- */
 function sincronizarEstadisticas() {
-    const cancionActual = window.SoundlyPlayer.getCancionActual();
+    const cancionActual = window.SoundlyPlayer?.getCancionActual?.();
     if (!cancionActual) return;
-
-    // Si la página de player tiene info de "ahora reproduciendo" extra, actualizarla aquí
     const genreBadge = $('genre-badge');
     if (genreBadge) genreBadge.textContent = cancionActual.genero || '';
 }
 
-/**
- * Modal para agregar canciones a una playlist existente.
- */
 async function mostrarModalAgregarCancion(playlistId) {
     const todasLasCanciones = await GestorCanciones.obtenerTodas();
     const nombre = prompt(
         `¿Qué canción querés agregar?\n\n${todasLasCanciones.slice(0, 10).map((c, i) => `${i+1}. ${c.titulo} — ${c.artista}`).join('\n')}\n\nEscribí el número:`
     );
-
     const num = parseInt(nombre, 10);
     if (!isNaN(num) && todasLasCanciones[num - 1]) {
         const cancion = todasLasCanciones[num - 1];
@@ -268,21 +244,16 @@ async function mostrarModalAgregarCancion(playlistId) {
             alert(`✓ "${cancion.titulo}" agregada a la playlist.`);
             await cargarVistaPlaylist(playlistId, GestorUsuarios.obtenerActivo());
         } catch (e) {
-            console.error('[Player] Error al agregar canción:', e);
             alert('No se pudo agregar la canción. Intentá de nuevo.');
         }
     }
 }
 
-/**
- * Modal de crear playlist (reutilizable en esta página también).
- */
-function inicializarModalCrearPlaylistPlayer(usuario) {
+function inicializarModalCrearPlaylistPlayer(usuario, signal) {
     const modal       = $('modal-crear-playlist');
     const btnCrear    = document.querySelector('.btn-sidebar-create');
     const btnGuardar  = $('btn-guardar');
     const btnCancelar = $('btn-cancelar');
-
     if (!modal) return;
 
     const cerrarModal = () => {
@@ -291,9 +262,9 @@ function inicializarModalCrearPlaylistPlayer(usuario) {
         if (input) input.value = '';
     };
 
-    btnCrear   ?.addEventListener('click', () => { modal.style.display = 'flex'; });
-    btnCancelar?.addEventListener('click', cerrarModal);
-    modal.addEventListener('click', e => { if (e.target === modal) cerrarModal(); });
+    btnCrear   ?.addEventListener('click', () => { modal.style.display = 'flex'; }, { signal });
+    btnCancelar?.addEventListener('click', cerrarModal, { signal });
+    modal.addEventListener('click', e => { if (e.target === modal) cerrarModal(); }, { signal });
 
     btnGuardar?.addEventListener('click', async () => {
         const nombre = $('input-nombre-playlist')?.value.trim();
@@ -303,27 +274,41 @@ function inicializarModalCrearPlaylistPlayer(usuario) {
             return;
         }
         if (errorDiv) errorDiv.style.display = 'none';
-
         try {
             const nueva = await GestorPlaylists.crear(nombre, usuario.id);
             cerrarModal();
-            if (nueva?.id) window.location.href = `playlist.html?id=${nueva.id}`;
+            if (nueva?.id) {
+                const url = `playlist.html?id=${nueva.id}`;
+                if (typeof window.navegarA === 'function') window.navegarA(url);
+                else window.location.href = url;
+            }
         } catch (e) {
-            console.error('[Player] Error al crear playlist:', e);
             if (errorDiv) { errorDiv.textContent = 'No se pudo crear. Intentá de nuevo.'; errorDiv.style.display = 'block'; }
         }
-    });
+    }, { signal });
 }
 
-// ── COMPATIBILIDAD: funciones globales que usa el HTML inline ─────────────────
-function togglePlay()  { window.SoundlyPlayer?.togglePlay(); }
-function nextSong()    { window.SoundlyPlayer?.siguiente(); }
-function prevSong()    { window.SoundlyPlayer?.anterior(); }
-function seekTo(e)     { window.SoundlyPlayer?.seekTo(e); }
+// ── COMPATIBILIDAD: funciones globales del HTML inline ────────────────────────
+function togglePlay()  { window.SoundlyEvents?.togglePlay(); }
+function nextSong()    { window.SoundlyEvents?.siguiente(); }
+function prevSong()    { window.SoundlyEvents?.anterior(); }
+function seekTo(e)     { window.dispatchEvent(new CustomEvent('soundly:seek', { detail: { event: e } })); }
 function toggleMute()  {
     const audio = window.SoundlyPlayer?.getAudio();
     if (!audio) return;
     audio.muted = !audio.muted;
-    $('vol-btn').textContent = audio.muted ? '🔇' : '🔊';
+    const volBtn = $('vol-btn');
+    if (volBtn) volBtn.textContent = audio.muted ? '🔇' : '🔊';
 }
-function setVol(v) { window.SoundlyPlayer?.setVolumen(v); }
+function setVol(v) { window.SoundlyEvents?.setVolumen(v); }
+
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'np-art') {
+        const fsp = document.getElementById('full-screen-player');
+        if (fsp) fsp.style.display = 'flex';
+    }
+    if (e.target && (e.target.id === 'fsp-close' || e.target.closest('#fsp-close'))) {
+        const fsp = document.getElementById('full-screen-player');
+        if (fsp) fsp.style.display = 'none';
+    }
+});

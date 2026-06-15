@@ -86,7 +86,7 @@ const Vista = {
                     onPlay(c, i);
                 } else {
                     // Comportamiento por defecto: usar el reproductor global
-                    window.SoundlyPlayer?.reproducirLista(canciones, i);
+                    window.SoundlyEvents?.reproducirLista(canciones, i);
                 }
             };
 
@@ -149,7 +149,7 @@ const Vista = {
 
             card.addEventListener('click', () => {
                 if (typeof onPlay === 'function') onPlay(c, i);
-                else window.SoundlyPlayer?.reproducirLista(canciones, i);
+                else window.SoundlyEvents?.reproducirLista(canciones, i);
             });
 
             contenedor.appendChild(card);
@@ -201,7 +201,7 @@ const Vista = {
                 if (e.target.closest('.fav-card-like')) return;
                 
                 if (typeof onPlay === 'function') onPlay(c, i);
-                else window.SoundlyPlayer?.reproducirLista(canciones, i);
+                else window.SoundlyEvents?.reproducirLista(canciones, i);
             });
 
             // Like callback
@@ -305,7 +305,7 @@ const Vista = {
 
             const accionPlay = (e) => {
                 e?.stopPropagation();
-                window.SoundlyPlayer?.reproducirLista(resultados, i);
+                window.SoundlyEvents?.reproducirLista(resultados, i);
             };
 
             card.querySelector('.search-card-play-btn').addEventListener('click', accionPlay);

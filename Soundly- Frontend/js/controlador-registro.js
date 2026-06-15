@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const resultado = await GestorUsuarios.registrar(usuario);
         if (resultado.exito) {
             Swal.fire({ icon: 'success', title: '¡Bienvenida!', text: 'Registro exitoso', background: '#121212', color: '#fff', timer: 2000 });
-            setTimeout(() => window.location.href = 'home.html', 2000);
+            setTimeout(() => window.location.href = 'index.html', 2000);
         } else {
             Swal.fire({ icon: 'error', title: 'Error en el registro', text: resultado.mensaje, background: '#121212', color: '#fff' });
         }
