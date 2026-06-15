@@ -23,6 +23,23 @@ public class CancionController {
         this.dynamicSourcingService = dynamicSourcingService;
     }
 
+    /**
+     * CU-LISTADO: Devuelve el catálogo completo de canciones disponibles.
+     * GET /api/canciones
+     *
+     * Este endpoint es consumido por:
+     *   - GestorCanciones.obtenerTodas() en modelo.js
+     *   - El modal de "Agregar Canción" en playlist.html (buscador inicial)
+     *
+     * Reutiliza obtenerCancionesDestacadas() que internamente ejecuta
+     * findAllWithArtista() con JOIN FETCH para evitar el problema N+1.
+     */
+    @GetMapping
+    public ResponseEntity<List<CancionDTO>> listarTodas() {
+        List<CancionDTO> canciones = cancionService.obtenerCancionesDestacadas();
+        return ResponseEntity.ok(canciones);
+    }
+
     @GetMapping("/buscar")
     public ResponseEntity<List<CancionDTO>> buscarCanciones(
             @RequestParam(required = false) String titulo,

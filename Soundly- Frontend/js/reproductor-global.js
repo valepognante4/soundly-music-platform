@@ -63,11 +63,13 @@
             const raw = sessionStorage.getItem(STORAGE_KEY);
             if (!raw) return;
             const saved = JSON.parse(raw);
-            estado.lista   = saved.lista   || [];
-            estado.idx     = saved.idx     || 0;
-            estado.shuffle = saved.shuffle || false;
-            estado.repeat  = saved.repeat  || false;
-            estado.volumen = saved.volumen !== undefined ? saved.volumen : 0.8;
+            estado.lista       = saved.lista       || [];
+            estado.idx         = saved.idx         || 0;
+            estado.shuffle     = saved.shuffle     || false;
+            estado.repeat      = saved.repeat      || false;
+            estado.volumen     = saved.volumen !== undefined ? saved.volumen : 0.8;
+            estado.playing     = saved.playing     || false;
+            estado.currentTime = saved.currentTime || 0;
         } catch (e) {
             console.warn('[SoundlyPlayer] No se pudo restaurar el estado:', e);
         }
@@ -76,14 +78,19 @@
     function guardarEstado() {
         try {
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-                lista:   estado.lista,
-                idx:     estado.idx,
-                shuffle: estado.shuffle,
-                repeat:  estado.repeat,
-                volumen: estado.volumen,
+                lista:       estado.lista,
+                idx:         estado.idx,
+                shuffle:     estado.shuffle,
+                repeat:      estado.repeat,
+                volumen:     estado.volumen,
+                playing:     estado.playing,
+                currentTime: audio.currentTime // Guardar tiempo exacto
             }));
         } catch (e) { /* quota exceeded — ignorar */ }
     }
+
+    // Captura el estado exacto milisegundos antes de que la página se descargue
+    window.addEventListener('beforeunload', guardarEstado);
 
     // ── 3. ELEMENTO AUDIO NATIVO ──────────────────────────────────────────
     const audio = new Audio();
@@ -415,7 +422,19 @@
             audio.currentTime = 0;
             audio.play().catch(() => {});
         } else {
-            siguiente();
+            // Verificar si es la última canción (y no está en shuffle)
+            const esUltima = (!estado.shuffle && estado.idx === estado.lista.length - 1);
+            
+            if (esUltima) {
+                // Si es la última, pasamos a la primera pero pausamos
+                estado.playing = false;
+                siguiente();
+            } else {
+                // Forzamos auto-play para la siguiente canción
+                // (esto evita que el reproductor se trabe si se disparó un evento 'pause' por el final de pista)
+                estado.playing = true;
+                siguiente();
+            }
         }
     });
 
@@ -510,16 +529,47 @@
     }
 
     // ── 9. RESTAURAR ESTADO AL NAVEGAR ───────────────────────────────────
-    // Si hay una canción en sessionStorage y el audio no está reproduciendo,
-    // restauramos la UI sin reiniciar el audio (evita corte).
-    cargarEstadoGuardado();
-    if (estado.lista.length > 0) {
-        const c = estado.lista[estado.idx];
-        // Restauramos la UI del footer inmediatamente (sin autoplay por política del browser)
-        actualizarUI();
-        setTexto('np-title',  c.titulo);
-        setTexto('np-artist', c.artista);
+    // Recupera la sesión anterior. Si la música estaba sonando, 
+    // intenta darle play() exactamente desde donde se quedó.
+    function initReproductor() {
+        cargarEstadoGuardado();
+        if (estado.lista.length > 0) {
+            const c = estado.lista[estado.idx];
+            
+            // 1. Restauramos UI inmediatamente
+            actualizarUI();
+            setTexto('np-title',  c.titulo);
+            setTexto('np-artist', c.artista);
+            const npArt = document.getElementById('np-art');
+            if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
+
+            // 2. Cargar audio y posicionarlo en el currentTime exacto
+            // Verificamos que el reproductor no se reinicie si el audio src ya es correcto
+            if (c.src) {
+                const proxyUrl = construirProxyUrl(c.src, c.id);
+                // Si el audio recién se inicializa en esta página, lo cargamos
+                if (audio.src !== proxyUrl && audio.src !== window.location.href) {
+                    cargarEnAudio(c, estado.currentTime);
+                }
+
+                // 3. Retomar reproducción solo si estaba en 'play' al momento de cambiar de página
+                if (estado.playing) {
+                    // Nota: Los navegadores pueden bloquear este autoplay (NotAllowedError) 
+                    // si el usuario no ha interactuado con la página.
+                    audio.play().then(() => {
+                        actualizarUI();
+                    }).catch(err => {
+                        console.warn('[SoundlyPlayer] Autoplay bloqueado por el navegador tras recargar:', err);
+                        estado.playing = false;
+                        actualizarUI();
+                    });
+                }
+            }
+        }
     }
+    
+    // Llamar a initReproductor automáticamente al cargar
+    initReproductor();
 
     // ── 10. INICIALIZAR EVENTOS DEL FOOTER ───────────────────────────────
     // Se conecta automáticamente con los botones del footer player-bar
