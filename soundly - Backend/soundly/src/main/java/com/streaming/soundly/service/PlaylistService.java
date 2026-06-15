@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PlaylistService implements IPlaylistService {
@@ -23,8 +24,8 @@ public class PlaylistService implements IPlaylistService {
     private final CancionRepository cancionRepository;
     private final UsuarioRepository usuarioRepository;
 
-    public PlaylistService(PlaylistRepository playlistRepository, 
-                           CancionRepository cancionRepository, 
+    public PlaylistService(PlaylistRepository playlistRepository,
+                           CancionRepository cancionRepository,
                            UsuarioRepository usuarioRepository) {
         this.playlistRepository = playlistRepository;
         this.cancionRepository = cancionRepository;
@@ -34,6 +35,9 @@ public class PlaylistService implements IPlaylistService {
     @Override
     @Transactional
     public PlaylistDTO crearPlaylist(PlaylistRequestDTO dto) {
+        if (dto.getUsuarioId() == null) {
+            throw new IllegalArgumentException("El ID del usuario es obligatorio para crear una playlist");
+        }
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
@@ -52,11 +56,22 @@ public class PlaylistService implements IPlaylistService {
     public PlaylistDTO modificarNombre(Long id, String nuevoNombre) {
         Playlist playlist = playlistRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist no encontrada"));
-        
+
         playlist.setNombre(nuevoNombre);
-        // Si quisieras cambiar descripción también podrías pasarlo, pero por ahora modificamos el nombre
         playlist = playlistRepository.save(playlist);
-        
+
+        return PlaylistMapper.toDTO(playlist);
+    }
+
+    /**
+     * CU: Obtener el detalle completo de una playlist por su ID.
+     * Devuelve la playlist con su lista de canciones mapeadas.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public PlaylistDTO obtenerDetalle(Long id) {
+        Playlist playlist = playlistRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Playlist no encontrada con ID: " + id));
         return PlaylistMapper.toDTO(playlist);
     }
 
@@ -77,6 +92,10 @@ public class PlaylistService implements IPlaylistService {
         Cancion cancion = cancionRepository.findById(cancionId)
                 .orElseThrow(() -> new EntityNotFoundException("Canción no encontrada"));
 
+        if (playlist.getCanciones() == null) {
+            playlist.setCanciones(new ArrayList<>());
+        }
+
         if (!playlist.getCanciones().contains(cancion)) {
             playlist.getCanciones().add(cancion);
             playlist = playlistRepository.save(playlist);
@@ -93,7 +112,7 @@ public class PlaylistService implements IPlaylistService {
         Cancion cancion = cancionRepository.findById(cancionId)
                 .orElseThrow(() -> new EntityNotFoundException("Canción no encontrada"));
 
-        if (playlist.getCanciones().contains(cancion)) {
+        if (playlist.getCanciones() != null && playlist.getCanciones().contains(cancion)) {
             playlist.getCanciones().remove(cancion);
             playlist = playlistRepository.save(playlist);
         }
@@ -107,6 +126,6 @@ public class PlaylistService implements IPlaylistService {
         // Devuelve las playlists pertenecientes al usuario mapeadas a DTO
         return playlistRepository.findByUsuarioId(usuarioId).stream()
                 .map(PlaylistMapper::toDTO)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 }

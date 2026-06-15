@@ -5,18 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Soundly | Mis Playlists</title>
-    <meta name="description" content="Tus playlists en Soundly">
+    <meta name="description" content="Gestioná y escuchá tus playlists personalizadas en Soundly.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/playlist.css">
+    <link rel="stylesheet" href="css/player-global.css">
 </head>
 
 <body>
 
     <div class="app-wrapper">
 
+        <!-- ════════════════════════════════════════════════════════════════
+             SIDEBAR
+             ════════════════════════════════════════════════════════════════ -->
         <aside class="sidebar">
             <div class="sidebar-top">
                 <a href="index.html" class="brand">
@@ -24,14 +28,14 @@
                     <span class="brand-name">Soundly</span>
                 </a>
                 <nav class="nav-links">
-                    <!-- Icono Inicio -->
+                    <!-- Inicio -->
                     <a href="home.html" class="nav-link">
                         <svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
                             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
                         </svg>
                         Inicio
                     </a>
-                    <!-- Icono Buscar -->
+                    <!-- Buscar -->
                     <a href="busqueda.html" class="nav-link">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
                             <circle cx="11" cy="11" r="8" />
@@ -39,7 +43,7 @@
                         </svg>
                         Buscar
                     </a>
-                    <!-- Icono Tus Me Gusta -->
+                    <!-- Favoritos -->
                     <a href="favoritos.html" class="nav-link">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -51,17 +55,17 @@
 
             <div class="sidebar-library">
                 <div class="lib-header">
-                    <span class="lib-title">TU BIBLIOTECA</span>
+                    <span class="lib-title">Tu Biblioteca</span>
                 </div>
                 <nav class="nav-links">
-                    <!-- Botón Crear Playlist -->
+                    <!-- Crear Playlist -->
                     <button class="nav-link btn-sidebar-create" id="btn-sidebar-create">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
                             <path d="M12 5v14M5 12h14" />
                         </svg>
                         Crear Playlist
                     </button>
-                    <!-- Botón Tus Playlists -->
+                    <!-- Tus Playlists -->
                     <a href="playlist.html" class="nav-link active">
                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
                             <path d="M9 18V5l12-2v13"></path>
@@ -74,8 +78,8 @@
                 <!-- Playlists del usuario (cargadas dinámicamente) -->
                 <div id="sidebar-playlists" style="margin-top: 10px;"></div>
             </div>
-            
-            <!-- Contenedor del Botón Cerrar Sesión al fondo -->
+
+            <!-- Botón Cerrar Sesión -->
             <div class="sidebar-bottom">
                 <button class="logout-btn" id="btn-logout">
                     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
@@ -88,37 +92,44 @@
             </div>
         </aside>
 
+        <!-- ════════════════════════════════════════════════════════════════
+             CONTENIDO PRINCIPAL
+             ════════════════════════════════════════════════════════════════ -->
         <main class="main-content">
 
+            <!-- BANNER (encabezado visual de la playlist) -->
             <header class="hero-banner blue-banner">
-                <div class="banner-icon"><i class="fas fa-music"></i></div>
+                <div class="banner-icon">
+                    <i class="fas fa-music"></i>
+                </div>
 
                 <div class="banner-text">
-                    <span class="banner-type">Playlist pública</span>
+                    <span class="banner-type">Playlist</span>
                     <div class="playlist-title-container">
-                        <!-- Editable inline con blur-to-save -->
-                        <h1 id="playlist-name">Nombre de tu Playlist</h1>
-                        <button id="btn-edit-name" aria-label="Editar nombre">
+                        <h1 id="playlist-name">Mis Playlists</h1>
+                        <button id="btn-edit-name" aria-label="Editar nombre de la playlist" title="Editar nombre">
                             <i class="fas fa-pencil-alt"></i>
                         </button>
                     </div>
                     <p id="playlist-meta-info">
-                        Creador: <span id="nombre-usuario-display"></span>
+                        Creada por <span id="nombre-usuario-display"></span>
                     </p>
                 </div>
             </header>
 
+            <!-- BARRA DE ACCIONES -->
             <section class="action-buttons">
-                <button class="btn-play-big" id="btn-play-all" aria-label="Reproducir playlist">
+                <button class="btn-play-big" id="btn-play-all" aria-label="Reproducir toda la playlist">
                     <i class="fas fa-play"></i>
                 </button>
-                <button class="btn-add-circle" aria-label="Agregar canción">
+                <button class="btn-add-circle" id="btn-add-circle" aria-label="Agregar canción a la playlist">
                     <i class="fas fa-plus"></i>
                 </button>
                 <span id="stat-canciones" class="stat-badge">0 canciones</span>
                 <span id="stat-duracion"  class="stat-badge">0 min</span>
             </section>
 
+            <!-- TABLA DE CANCIONES -->
             <section class="playlist-container">
                 <div class="playlist-header-row">
                     <span>#</span>
@@ -128,7 +139,7 @@
                     <span><i class="far fa-clock"></i></span>
                     <span></span>
                 </div>
-                <!-- Vista.renderizarListaCanciones() inyecta aquí -->
+                <!-- controlador-playlist.js inyecta aquí las canciones -->
                 <div id="playlist-list"></div>
             </section>
 
@@ -205,26 +216,79 @@
 
     </footer>
 
-    <!-- Modal Crear Playlist -->
-    <div id="modal-crear-playlist" class="modal-overlay">
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MODAL — CREAR NUEVA PLAYLIST
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="modal-crear-playlist" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-crear-titulo">
         <div class="modal-content">
-            <h2>Crear Nueva Playlist</h2>
-            <input type="text" id="input-nombre-playlist" placeholder="Nombre de la playlist" autocomplete="off">
+            <h2 id="modal-crear-titulo">Crear Nueva Playlist</h2>
+            <input type="text" id="input-nombre-playlist" placeholder="Nombre de la playlist" autocomplete="off" maxlength="80">
             <div id="modal-error-message"></div>
             <div class="modal-actions">
                 <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
-                <button id="btn-guardar" class="btn-primario">Guardar</button>
+                <button id="btn-guardar"  class="btn-primario">Guardar</button>
             </div>
         </div>
     </div>
 
-    <!-- ORDEN DE CARGA OBLIGATORIO -->
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MODAL — EDITAR NOMBRE DE LA PLAYLIST
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="modal-editar-nombre" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-editar-titulo">
+        <div class="modal-content" style="max-width:420px;">
+            <h2 id="modal-editar-titulo">
+                <i class="fas fa-pencil-alt" style="color:var(--accent);margin-right:8px;"></i>
+                Editar nombre
+            </h2>
+            <input type="text" id="input-editar-nombre" placeholder="Nuevo nombre" autocomplete="off" maxlength="80">
+            <div id="editar-nombre-error" style="display:none;color:#ff6b6b;font-size:0.85rem;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.25);border-radius:8px;padding:8px 12px;"></div>
+            <div class="modal-actions">
+                <button id="btn-cancelar-nombre" class="btn-secundario">Cancelar</button>
+                <button id="btn-guardar-nombre"  class="btn-primario">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MODAL — AGREGAR CANCIÓN A LA PLAYLIST
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="modal-agregar-cancion" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-agregar-titulo">
+        <div class="modal-content" style="max-width:540px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <h2 id="modal-agregar-titulo">
+                    <i class="fas fa-music" style="color:var(--accent);margin-right:8px;"></i>
+                    Agregar canción
+                </h2>
+                <button id="btn-cerrar-modal-agregar" style="background:transparent;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all 0.2s;" 
+                        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--muted)'"
+                        aria-label="Cerrar modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Barra de búsqueda -->
+            <div class="modal-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="modal-buscar-cancion" placeholder="Buscar por título o artista…" autocomplete="off">
+            </div>
+
+            <!-- Lista de canciones scrollable -->
+            <div id="modal-canciones-list">
+                <!-- renderizado por controlador-playlist.js -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         ORDEN DE CARGA OBLIGATORIO
+         ══════════════════════════════════════════════════════════════════════ -->
     <script src="js/config.js"></script>
     <script src="js/modelo.js"></script>
     <script src="js/modelo-canciones.js"></script>
     <script src="js/reproductor-global.js"></script>
     <script src="js/vista.js"></script>
-    <script src="js/controlador-player.js"></script>
+    <script src="js/controlador-playlist.js"></script>
+
 </body>
 
 </html>

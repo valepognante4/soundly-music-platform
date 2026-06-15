@@ -7,6 +7,7 @@ import java.util.List;
 public interface IPlaylistService {
     PlaylistDTO crearPlaylist(PlaylistRequestDTO dto);
     PlaylistDTO modificarNombre(Long id, String nuevoNombre);
+    PlaylistDTO obtenerDetalle(Long id);
     void eliminarPlaylist(Long id);
     PlaylistDTO agregarCancion(Long playlistId, Long cancionId);
     PlaylistDTO eliminarCancion(Long playlistId, Long cancionId);
