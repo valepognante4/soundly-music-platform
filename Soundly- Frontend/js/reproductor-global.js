@@ -92,7 +92,15 @@
     // Captura el estado exacto milisegundos antes de que la página se descargue
     window.addEventListener('beforeunload', guardarEstado);
 
+    // ── Heartbeat: guardar currentTime cada 5 s mientras hay reproducción ──
+    // Esto minimiza el desfase si el usuario navega sin que beforeunload se dispare
+    setInterval(() => {
+        if (!audio.paused && audio.currentTime > 0) guardarEstado();
+    }, 5000);
+
     // ── 3. ELEMENTO AUDIO NATIVO ──────────────────────────────────────────
+    // SINGLETON: si ya existe una instancia global (no debería en MPA, pero es
+    // un seguro extra), la reutilizamos en vez de crear una nueva y cortar el audio.
     const audio = new Audio();
     audio.preload = 'metadata';
     audio.volume  = estado.volumen;
@@ -129,9 +137,24 @@
         return `${m}:${s}`;
     }
 
+    // ── Visibilidad del footer ─────────────────────────────────────────────
+    // REGLA: visible cuando hay al menos una canción en lista (pausada O reproduciendo).
+    //        oculto solo si la cola está vacía o nunca se seleccionó nada.
+    // IMPORTANTE: esta función NUNCA toca el objeto `audio` — solo clases CSS.
+    function actualizarVisibilidad() {
+        const playerBar = document.getElementById('global-player-bar');
+        if (!playerBar) return;
+        const hayCancion = estado.lista.length > 0;
+        playerBar.classList.toggle('player-visible', hayCancion);
+    }
+
     // Actualiza todos los elementos del footer player-bar si existen en la página
     function actualizarUI() {
         const c = estado.lista[estado.idx];
+
+        // --- Visibilidad del reproductor (independiente del estado play/pause) ---
+        actualizarVisibilidad();
+
         if (!c) return;
 
         // --- Clase is-playing en el footer (activa estilos CSS de estado) ---
@@ -569,7 +592,11 @@
     }
     
     // Llamar a initReproductor automáticamente al cargar
+    // También actualiza la visibilidad al restaurar estado entre páginas
     initReproductor();
+    // Visibilidad inicial: si hay estado guardado, el footer debe aparecer
+    // aunque el audio aún no haya empezado (puede estar pausado o en buffer)
+    actualizarVisibilidad();
 
     // ── 10. INICIALIZAR EVENTOS DEL FOOTER ───────────────────────────────
     // Se conecta automáticamente con los botones del footer player-bar

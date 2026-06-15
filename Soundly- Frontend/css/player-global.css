@@ -85,8 +85,27 @@ body {
   padding: 0 20px;
   gap: 12px;
 
-  /* Entrada suave */
-  animation: playerSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* ── VISIBILIDAD DINÁMICA ──────────────────────────────────────────────
+     Estado inicial: oculto. JS agrega .player-visible cuando hay canción.
+     Esto NUNCA toca el objeto Audio — solo cambia propiedades visuales.
+     ──────────────────────────────────────────────────────────────────── */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity    0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    transform  0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    pointer-events 0s linear 0.35s;
+}
+
+/* El reproductor se vuelve visible cuando JS agrega esta clase */
+#global-player-bar.player-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition:
+    opacity    0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    transform  0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Línea de acento superior */
@@ -846,6 +865,15 @@ body.home-layout #global-player-bar {
   grid-column: 1/3;
   grid-row: 2;
   height: var(--sp-player-h);
+  /* En home-layout el transform no desplaza el layout — se resetea */
+  transform: translateY(0) !important;
+}
+
+/* En home-layout, oculto significa que no ocupa espacio visual
+   pero mantiene su celda en el grid para no romper el layout */
+body.home-layout #global-player-bar:not(.player-visible) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

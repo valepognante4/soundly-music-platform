@@ -10,6 +10,9 @@
  *   - Conectar eventos de UI al Reproductor Global
  *   - Modal de Crear Playlist
  *
+ * Expone window.initHome() para que el sistema SPA (navegacion.js) pueda
+ * reinicializar la sección al navegar sin recargar la página.
+ *
  * Dependencias (deben cargarse antes en el HTML, en este orden):
  *   1. config.js
  *   2. modelo.js            (GestorUsuarios, GestorCanciones, GestorPlaylists)
@@ -20,7 +23,20 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-document.addEventListener('DOMContentLoaded', async () => {
+// AbortController para limpiar event listeners al re-inicializar la sección
+let _homeAbortController = null;
+
+// ── FUNCIÓN DE INICIALIZACIÓN PRINCIPAL ──────────────────────────────────────
+// Expuesta como window.initHome para que navegacion.js la llame en cada
+// navegación a home. Puede ejecutarse múltiples veces de forma segura.
+window.initHome = async function initHome() {
+
+    // Cancelar listeners de la inicialización anterior (evita duplicados)
+    if (_homeAbortController) {
+        _homeAbortController.abort();
+    }
+    _homeAbortController = new AbortController();
+    const { signal } = _homeAbortController;
 
     // ── 1. VERIFICAR SESIÓN ───────────────────────────────────────────────
     const usuario = GestorUsuarios.obtenerActivo();
@@ -35,17 +51,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const greetingEl = document.getElementById('greeting');
     if (greetingEl) greetingEl.textContent = obtenerSaludo();
 
-    // Botón logout
+    // Botón logout (solo conectar si no fue conectado ya — usa signal)
     document.getElementById('btn-logout')?.addEventListener('click', () => {
         GestorUsuarios.cerrarSesion();
-    });
+    }, { signal });
 
     // ── 3. CARGAR CANCIONES DESDE EL BACKEND ─────────────────────────────
     let todasLasCanciones = [];
     let recomendadas      = [];
 
     try {
-        // Carga en paralelo: todas las canciones + recomendadas
         [todasLasCanciones, recomendadas] = await Promise.all([
             GestorCanciones.obtenerTodas(),
             GestorCanciones.obtenerRecomendadas(),
@@ -63,7 +78,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── 4. RENDERIZAR SECCIONES ───────────────────────────────────────────
 
-    // Sección "Recomendados para vos"
     if (document.getElementById('cards-recomendados')) {
         Vista.renderizarTarjetasCanciones(
             recomendadas.slice(0, 4),
@@ -72,7 +86,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
-    // Sección "Más de lo que te gusta" (siguientes canciones)
     if (document.getElementById('cards-mas')) {
         Vista.renderizarTarjetasCanciones(
             recomendadas.slice(4, 8),
@@ -81,15 +94,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
-    // Sección "Quick picks" — las primeras 5 en el grid superior
     renderizarQuickGrid(todasLasCanciones.slice(0, 5));
-
-    // Cargar playlists del usuario en el sidebar
     cargarPlaylistsSidebar(usuario.id);
 
-    // ── 5. SINCRONIZAR ESTADO DEL REPRODUCTOR CON EL FOOTER ──────────────
-    // Si ya había una canción en reproducción (sessionStorage), el reproductor
-    // global ya se restauró. Solo actualizamos el like si aplica.
+    // ── 5. SINCRONIZAR ESTADO DEL REPRODUCTOR ────────────────────────────
     const cancionActual = window.SoundlyPlayer.getCancionActual();
     if (cancionActual && usuario) {
         actualizarBotonLike(cancionActual.id, usuario.id);
@@ -108,17 +116,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) {
             console.error('[Home] Error al actualizar favorito:', e);
         }
-    });
+    }, { signal });
 
     // Actualizar botón like cuando cambia la canción
     window.addEventListener('soundly:cancion-cambio', async (e) => {
         const { cancion } = e.detail;
         if (cancion && usuario) actualizarBotonLike(cancion.id, usuario.id);
-    });
+    }, { signal });
 
     // ── 7. MODAL CREAR PLAYLIST ───────────────────────────────────────────
-    inicializarModalCrearPlaylist(usuario);
+    inicializarModalCrearPlaylist(usuario, signal);
+};
 
+// ─── AUTO-INIT: Solo cuando se accede directamente a home.html (no via SPA) ──
+document.addEventListener('DOMContentLoaded', () => {
+    const path = window.location.pathname;
+    // En app.html el SPA llama initHome() manualmente via navegarA
+    // En home.html (acceso directo) lo inicializamos aquí
+    if (path.includes('home.html') || path.endsWith('/') || path.endsWith('index.html')) {
+        window.initHome();
+    }
 });
 
 // ─── FUNCIONES AUXILIARES ─────────────────────────────────────────────────────
@@ -130,10 +147,6 @@ function obtenerSaludo() {
     return 'Buenas noches';
 }
 
-/**
- * Renderiza el quick-grid superior con los accesos rápidos dinámicos.
- * Mantiene la primera tarjeta de "Canciones Favoritas" estática.
- */
 function renderizarQuickGrid(canciones) {
     const grid = document.getElementById('quick-grid-dinamico');
     if (!grid || canciones.length === 0) return;
@@ -144,8 +157,8 @@ function renderizarQuickGrid(canciones) {
         div.className = 'quick-card';
         div.id = `quick-${c.id}`;
         div.innerHTML = `
-            <img class="quick-thumb" 
-                 src="${c.img}" 
+            <img class="quick-thumb"
+                 src="${c.img}"
                  alt="${c.titulo}"
                  onerror="this.src='https://placehold.co/48x48/1a1a2e/a78bfa?text=♪'">
             <span class="quick-label">${c.titulo}</span>
@@ -157,9 +170,6 @@ function renderizarQuickGrid(canciones) {
     });
 }
 
-/**
- * Carga las playlists del usuario y las renderiza en el sidebar.
- */
 async function cargarPlaylistsSidebar(usuarioId) {
     if (!usuarioId) return;
     try {
@@ -188,20 +198,12 @@ async function cargarPlaylistsSidebar(usuarioId) {
     }
 }
 
-/**
- * Actualiza el estado visual del botón like según si la canción es favorita.
- * (Implementación futura: GET /api/usuarios/{id}/favoritos y verificar)
- */
 async function actualizarBotonLike(cancionId, usuarioId) {
-    // Placeholder: en el futuro harías un check al backend
     const btn = document.getElementById('np-like');
-    if (btn) btn.textContent = '♡'; // Siempre sin like por defecto
+    if (btn) btn.textContent = '♡';
 }
 
-/**
- * Inicializa el modal de creación de playlists.
- */
-function inicializarModalCrearPlaylist(usuario) {
+function inicializarModalCrearPlaylist(usuario, signal) {
     const modal       = document.getElementById('modal-crear-playlist');
     const btnCrear    = document.querySelector('.btn-sidebar-create');
     const btnGuardar  = document.getElementById('btn-guardar');
@@ -213,19 +215,19 @@ function inicializarModalCrearPlaylist(usuario) {
         modal.style.display = 'none';
         const input = document.getElementById('input-nombre-playlist');
         if (input) input.value = '';
-        Vista.ocultarError('modal-error-message');
+        Vista.ocultarError?.('modal-error-message');
     };
 
-    btnCrear   ?.addEventListener('click', () => { modal.style.display = 'flex'; });
-    btnCancelar?.addEventListener('click', cerrarModal);
-    modal      .addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); });
+    btnCrear   ?.addEventListener('click', () => { modal.style.display = 'flex'; }, { signal });
+    btnCancelar?.addEventListener('click', cerrarModal, { signal });
+    modal      .addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); }, { signal });
 
     btnGuardar?.addEventListener('click', async () => {
         const input    = document.getElementById('input-nombre-playlist');
         const nombre   = input?.value.trim();
 
         if (!nombre) {
-            Vista.mostrarError('modal-error-message', 'Por favor, escribí un nombre.');
+            Vista.mostrarError?.('modal-error-message', 'Por favor, escribí un nombre.');
             return;
         }
 
@@ -237,13 +239,12 @@ function inicializarModalCrearPlaylist(usuario) {
             }
         } catch (error) {
             console.error('[Home] Error al crear playlist:', error);
-            Vista.mostrarError('modal-error-message', 'No se pudo crear la playlist. Intentá de nuevo.');
+            Vista.mostrarError?.('modal-error-message', 'No se pudo crear la playlist. Intentá de nuevo.');
         }
-    });
+    }, { signal });
 }
 
-// ── COMPATIBILIDAD: funciones globales que usa el HTML inline ─────────────────
-// (onclick="selectSong(0)" en las quick-cards hardcodeadas)
+// ── COMPATIBILIDAD: funciones globales del reproductor ────────────────────────
 function selectSong(idx) {
     const canciones = window._soundlyCancionesCache || [];
     if (canciones[idx]) window.SoundlyPlayer?.reproducirLista(canciones, idx);

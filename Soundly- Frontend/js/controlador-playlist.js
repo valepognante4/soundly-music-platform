@@ -17,8 +17,10 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-// ── HELPER ────────────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
+// ── HELPER ─────────────────────────────────────────────────────────────────────────────
+// Alias local $_pl para evitar colisión con controlador-player.js que también
+// define const $ en el scope global cuando ambos corren en app.html.
+const $_pl = id => document.getElementById(id);
 
 // Estado local de la vista
 let _playlistActual = null;  // objeto playlist adaptado actualmente visible
@@ -81,19 +83,19 @@ async function cargarDetallePlaylst(idPlaylist, usuario) {
         actualizarEstadisticas(playlist.canciones);
 
         // Botón Play All
-        $('btn-play-all')?.addEventListener('click', () => {
+        $_pl(btn-play-all')?.addEventListener('click', () => {
             if (playlist.canciones?.length > 0) {
                 window.SoundlyPlayer?.reproducirLista(playlist.canciones, 0);
             }
         });
 
         // Botón lápiz → modal editar nombre
-        $('btn-edit-name')?.addEventListener('click', () => {
+        $_pl(btn-edit-name')?.addEventListener('click', () => {
             abrirModalEditarNombre(idPlaylist, playlist.nombre);
         });
 
         // Botón + → modal agregar canción
-        $('btn-add-circle')?.addEventListener('click', async () => {
+        $_pl(btn-add-circle')?.addEventListener('click', async () => {
             await abrirModalAgregarCancion(idPlaylist, playlist.canciones);
         });
 
@@ -104,10 +106,10 @@ async function cargarDetallePlaylst(idPlaylist, usuario) {
 }
 
 function actualizarBanner(playlist, usuario) {
-    const nombreEl = $('playlist-name');
+    const nombreEl = $_pl(playlist-name');
     if (nombreEl) nombreEl.textContent = playlist.nombre || 'Mi Playlist';
 
-    const creadorEl = $('nombre-usuario-display');
+    const creadorEl = $_pl(nombre-usuario-display');
     if (creadorEl) {
         creadorEl.textContent = playlist.creador || usuario?.apodo || usuario?.nombreUsuario || 'Tú';
     }
@@ -118,7 +120,7 @@ function actualizarBanner(playlist, usuario) {
  * Agrega botón de quitar canción individual en hover.
  */
 function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
-    const contenedor = $('playlist-list');
+    const contenedor = $_pl(playlist-list');
     if (!contenedor) return;
 
     if (!canciones || canciones.length === 0) {
@@ -132,7 +134,7 @@ function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
                 </button>
             </div>`;
         // Conectar botón del empty state
-        $('btn-empty-add')?.addEventListener('click', async () => {
+        $_pl(btn-empty-add')?.addEventListener('click', async () => {
             await abrirModalAgregarCancion(playlistId, []);
         });
         return;
@@ -215,8 +217,8 @@ function actualizarEstadisticas(canciones) {
     const totalSeg = lista.reduce((acc, c) => acc + (c.duracion || 0), 0);
     const totalMin = Math.floor(totalSeg / 60);
 
-    const elCantidad = $('stat-canciones');
-    const elDuracion = $('stat-duracion');
+    const elCantidad = $_pl(stat-canciones');
+    const elDuracion = $_pl(stat-duracion');
 
     if (elCantidad) elCantidad.textContent = `${lista.length} canción${lista.length !== 1 ? 'es' : ''}`;
     if (elDuracion) elDuracion.textContent = `${totalMin} min`;
@@ -246,14 +248,14 @@ async function cargarListaPlaylists(usuario) {
     const bannerTitleContainer = document.querySelector('.playlist-title-container');
     if (bannerTitleContainer) bannerTitleContainer.innerHTML = '<h1 id="playlist-name">Tus Playlists</h1>';
 
-    const creadorEl = $('nombre-usuario-display');
+    const creadorEl = $_pl(nombre-usuario-display');
     if (creadorEl) creadorEl.textContent = usuario?.apodo || usuario?.nombreUsuario || '';
 
     mostrarCargando();
 
     try {
         const playlists = await GestorPlaylists.listarPorUsuario(usuario.id);
-        const contenedor = $('playlist-list');
+        const contenedor = $_pl(playlist-list');
         if (!contenedor) return;
 
         if (!playlists || playlists.length === 0) {
@@ -301,11 +303,11 @@ async function quitarCancionDePlaylist(playlistId, cancionId, titulo) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 function abrirModalEditarNombre(playlistId, nombreActual) {
-    const modal = $('modal-editar-nombre');
-    const input = $('input-editar-nombre');
-    const btnGuardar = $('btn-guardar-nombre');
-    const btnCancelar = $('btn-cancelar-nombre');
-    const errorDiv = $('editar-nombre-error');
+    const modal = $_pl(modal-editar-nombre');
+    const input = $_pl(input-editar-nombre');
+    const btnGuardar = $_pl(btn-guardar-nombre');
+    const btnCancelar = $_pl(btn-cancelar-nombre');
+    const errorDiv = $_pl(editar-nombre-error');
 
     if (!modal || !input) return;
 
@@ -334,7 +336,7 @@ function abrirModalEditarNombre(playlistId, nombreActual) {
         try {
             const playlistActualizada = await GestorPlaylists.actualizar(playlistId, { nombre: nuevoNombre });
             // Actualizar el título en el banner
-            const nombreEl = $('playlist-name');
+            const nombreEl = $_pl(playlist-name');
             if (nombreEl) nombreEl.textContent = nuevoNombre;
             _playlistActual = playlistActualizada;
             mostrarToast('Nombre actualizado', 'success');
@@ -354,8 +356,8 @@ function abrirModalEditarNombre(playlistId, nombreActual) {
     const btnCancelarNuevo = btnCancelar.cloneNode(true);
     btnCancelar.parentNode.replaceChild(btnCancelarNuevo, btnCancelar);
 
-    $('btn-guardar-nombre').addEventListener('click', guardar);
-    $('btn-cancelar-nombre').addEventListener('click', cerrar);
+    $_pl(btn-guardar-nombre').addEventListener('click', guardar);
+    $_pl(btn-cancelar-nombre').addEventListener('click', cerrar);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') guardar(); if (e.key === 'Escape') cerrar(); });
     modal.addEventListener('click', e => { if (e.target === modal) cerrar(); }, { once: true });
 }
@@ -365,10 +367,10 @@ function abrirModalEditarNombre(playlistId, nombreActual) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 async function abrirModalAgregarCancion(playlistId, cancionesEnPlaylist) {
-    const modal = $('modal-agregar-cancion');
-    const listEl = $('modal-canciones-list');
-    const searchInput = $('modal-buscar-cancion');
-    const btnCerrar = $('btn-cerrar-modal-agregar');
+    const modal = $_pl(modal-agregar-cancion');
+    const listEl = $_pl(modal-canciones-list');
+    const searchInput = $_pl(modal-buscar-cancion');
+    const btnCerrar = $_pl(btn-cerrar-modal-agregar');
 
     if (!modal || !listEl) return;
 
@@ -433,8 +435,8 @@ async function abrirModalAgregarCancion(playlistId, cancionesEnPlaylist) {
         searchInput.value = '';
         const nuevoSearch = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(nuevoSearch, searchInput);
-        $('modal-buscar-cancion').addEventListener('input', e => renderLista(e.target.value));
-        setTimeout(() => $('modal-buscar-cancion')?.focus(), 100);
+        $_pl(modal-buscar-cancion').addEventListener('input', e => renderLista(e.target.value));
+        setTimeout(() => $_pl(modal-buscar-cancion')?.focus(), 100);
     }
 
     const cerrar = () => {
@@ -444,7 +446,7 @@ async function abrirModalAgregarCancion(playlistId, cancionesEnPlaylist) {
     if (btnCerrar) {
         const nuevoBtn = btnCerrar.cloneNode(true);
         btnCerrar.parentNode.replaceChild(nuevoBtn, btnCerrar);
-        $('btn-cerrar-modal-agregar').addEventListener('click', cerrar);
+        $_pl(btn-cerrar-modal-agregar').addEventListener('click', cerrar);
     }
     modal.addEventListener('click', e => { if (e.target === modal) cerrar(); }, { once: true });
 }
@@ -486,18 +488,18 @@ async function agregarCancionDesdModal(playlistId, cancion, idsEnPlaylist, itemE
 // ═════════════════════════════════════════════════════════════════════════════
 
 function inicializarModalCrearPlaylist(usuario) {
-    const modal       = $('modal-crear-playlist');
+    const modal       = $_pl(modal-crear-playlist');
     const btnCrear    = document.querySelector('.btn-sidebar-create');
-    const btnGuardar  = $('btn-guardar');
-    const btnCancelar = $('btn-cancelar');
+    const btnGuardar  = $_pl(btn-guardar');
+    const btnCancelar = $_pl(btn-cancelar');
 
     if (!modal) return;
 
     const cerrar = () => {
         modal.classList.remove('visible');
-        const input = $('input-nombre-playlist');
+        const input = $_pl(input-nombre-playlist');
         if (input) input.value = '';
-        const errDiv = $('modal-error-message');
+        const errDiv = $_pl(modal-error-message');
         if (errDiv) errDiv.style.display = 'none';
     };
 
@@ -506,8 +508,8 @@ function inicializarModalCrearPlaylist(usuario) {
     modal.addEventListener('click', e => { if (e.target === modal) cerrar(); });
 
     btnGuardar?.addEventListener('click', async () => {
-        const nombre = $('input-nombre-playlist')?.value.trim();
-        const errorDiv = $('modal-error-message');
+        const nombre = $_pl(input-nombre-playlist')?.value.trim();
+        const errorDiv = $_pl(modal-error-message');
 
         if (!nombre) {
             if (errorDiv) { errorDiv.textContent = 'Por favor, escribí un nombre.'; errorDiv.style.display = 'block'; }
@@ -537,14 +539,14 @@ function inicializarModalCrearPlaylist(usuario) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 function mostrarCargando() {
-    const contenedor = $('playlist-list');
+    const contenedor = $_pl(playlist-list');
     if (contenedor) {
         contenedor.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div></div>`;
     }
 }
 
 function mostrarErrorCarga(mensaje) {
-    const contenedor = $('playlist-list');
+    const contenedor = $_pl(playlist-list');
     if (contenedor) {
         contenedor.innerHTML = `
             <div class="empty-state">

@@ -12,9 +12,19 @@ const ControladorBusqueda = {
     state: {
         query:         '',
         debounceTimer: null,
+        initialized:   false,  // guarda contra doble init
     },
 
     init() {
+        // Evitar registrar múltiples listeners si la sección es visitada más de una vez
+        if (this.state.initialized) {
+            // Solo re-enfocar el input, no re-bind de eventos
+            const input = document.getElementById('search-input');
+            if (input) input.focus();
+            return;
+        }
+        this.state.initialized = true;
+
         const input      = document.getElementById('search-input');
         const clearBtn   = document.getElementById('search-clear-btn');
         const categorias = document.getElementById('categories-section');
@@ -99,12 +109,25 @@ const ControladorBusqueda = {
     },
 };
 
-// ─── INICIALIZAR ──────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ─── EXPONER PARA SPA (navegacion.js) ───────────────────────────────────────
+let _busquedaAbortController = null;
+
+window.initBusqueda = function initBusqueda() {
+    // Resetear el flag de inicialización para que init() vuelva a bindear
+    // los listeners en el nuevo DOM inyectado por el SPA
+    ControladorBusqueda.state.initialized = false;
     ControladorBusqueda.init();
 
-    // Modal de crear playlist (compartido con home)
+    // Modal compartido
     inicializarModalCrearPlaylistGlobal();
+};
+
+// ─── AUTO-INIT: Solo acceso directo a busqueda.html ──────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.pathname.includes('busqueda.html')) {
+        ControladorBusqueda.init();
+        inicializarModalCrearPlaylistGlobal();
+    }
 });
 
 /**

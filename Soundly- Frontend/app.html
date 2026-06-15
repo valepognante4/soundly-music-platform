@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/busqueda.css">
+    <link rel="stylesheet" href="css/favoritos.css">
+    <link rel="stylesheet" href="css/playlist.css">
+    <link rel="stylesheet" href="css/player.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/player-global.css">
+    <link rel="icon" type="image/png" href="images/soundly-logo-2048px.png">
+
+</head>
+
+<body class="home-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <a href="index.html" class="brand">
+                <img src="images/soundly-logo-2048px.png" alt="Soundly">
+                <span class="brand-name">Soundly</span>
+            </a>
+            <nav class="nav-links">
+                <!-- Icono Inicio -->
+                <a href="home.html" class="nav-link active">
+                    <svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                    </svg>
+                    Inicio
+                </a>
+                <!-- Icono Buscar -->
+                <a href="busqueda.html" class="nav-link">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    Buscar
+                </a>
+                <!-- Icono Tus Me Gusta -->
+                <a href="favoritos.html" class="nav-link">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
+                        <path
+                            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    Tus Me Gusta
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-library">
+            <div class="lib-header">
+                <span class="lib-title">TU BIBLIOTECA</span>
+            </div>
+            <nav class="nav-links">
+                <!-- Botón Crear Playlist -->
+                <button class="nav-link btn-sidebar-create" id="btn-sidebar-create">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Crear Playlist
+                </button>
+                <!-- Botón Tus Playlists -->
+                <a href="playlist.html" class="nav-link">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
+                        <path d="M9 18V5l12-2v13"></path>
+                        <circle cx="6" cy="18" r="3"></circle>
+                        <circle cx="18" cy="16" r="3"></circle>
+                    </svg>
+                    Tus Playlists
+                </a>
+            </nav>
+            <!-- Playlists del usuario (cargadas dinámicamente) -->
+            <div id="sidebar-playlists" style="margin-top: 10px;"></div>
+        </div>
+        
+        <!-- Contenedor del Botón Cerrar Sesión al fondo -->
+        <div class="sidebar-bottom">
+            <button class="logout-btn" id="btn-logout">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Cerrar sesión
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content" id="app">
+        <!-- El contenido dinámico de las secciones se inyectará aquí -->
+    </main>
+
+    <!-- REPRODUCTOR GLOBAL — INICIALMENTE OCULTO -->
+    <footer id="global-player-bar" role="complementary" aria-label="Reproductor de música">
+
+        <!-- Columna izq: Now Playing -->
+        <div class="gp-now-playing">
+            <img id="np-art"
+                 src="https://placehold.co/52x52/1a1a2e/a78bfa?text=♪"
+                 alt="Portada del álbum">
+            <div class="gp-np-info">
+                <div id="np-title">Seleccioná una canción</div>
+                <div id="np-artist">—</div>
+            </div>
+            <button id="np-like" aria-label="Me gusta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Columna central: Controles + Barra de progreso -->
+        <div class="gp-center">
+            <div class="gp-ctrl-row">
+                <button class="gp-ctrl-btn" id="btn-shuffle" data-action="shuffle" aria-label="Aleatorio">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                        <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
+                    </svg>
+                </button>
+                <button class="gp-ctrl-btn" id="btn-prev" data-action="prev" aria-label="Anterior">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                    </svg>
+                </button>
+                <button id="btn-play" aria-label="Reproducir / Pausar">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                </button>
+                <button class="gp-ctrl-btn" id="btn-next" data-action="next" aria-label="Siguiente">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                    </svg>
+                </button>
+                <button class="gp-ctrl-btn" id="btn-repeat" data-action="repeat" aria-label="Repetir">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                        <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="gp-progress-row">
+                <span class="gp-time" id="p-current">0:00</span>
+                <div id="progress-track" role="progressbar" aria-label="Progreso de reproducción">
+                    <div id="p-fill"></div>
+                </div>
+                <span class="gp-time" id="p-total">0:00</span>
+            </div>
+        </div>
+
+        <!-- Columna der: Volumen -->
+        <div class="gp-extras">
+            <button id="vol-btn" aria-label="Volumen">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+            </button>
+            <input type="range" id="vol-slider" min="0" max="100" value="80" aria-label="Control de volumen">
+        </div>
+
+    </footer>
+    
+    <!-- Modal genérico para crear playlist -->
+    <div id="modal-crear-playlist" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 class="modal-title">Crear Playlist</h2>
+            <div id="modal-error-message" class="modal-error-message" style="display: none;"></div>
+            <input type="text" id="input-nombre-playlist" class="modal-input" placeholder="Nombre de la playlist" autocomplete="off">
+            <div class="modal-buttons">
+                <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
+                <button id="btn-guardar" class="btn-primario">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORDEN DE CARGA OBLIGATORIO -->
+    <script src="js/config.js"></script>
+    <script src="js/modelo.js"></script>
+    <script src="js/modelo-canciones.js"></script>
+    <script src="js/reproductor-global.js"></script>
+    <script src="js/navegacion.js"></script>
+    <script src="js/vista.js"></script>
+    <script src="js/controlador-home.js"></script>
+    <script src="js/controlador-busqueda.js"></script>
+    <script src="js/controlador-playlist.js"></script>
+    <script src="js/controlador-player.js"></script>
+    
+    <script>
+        // Shell SPA: cargar sección home al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            // Navegar a home.html como primera sección activa
+            if (typeof window.navegarA === 'function') {
+                window.navegarA('home.html');
+            }
+        });
+    </script>
+
+</body>
+</html>
