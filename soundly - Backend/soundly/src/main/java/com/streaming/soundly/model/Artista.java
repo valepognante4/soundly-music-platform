@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
-
+import java.util.Set;
+import java.util.Objects;
 @Getter
 @Setter
 @Entity
@@ -31,10 +32,10 @@ public class Artista {
     private Genero genero;
 
     @OneToMany(mappedBy = "artista", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Cancion> canciones = new java.util.ArrayList<>();
+    private Set<Cancion> canciones = new java.util.HashSet<>();
 
     @OneToMany(mappedBy = "artista", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Album> albumes = new java.util.ArrayList<>();
+    private Set<Album> albumes = new java.util.HashSet<>();
 
     // Métodos de conveniencia para asegurar la bidireccionalidad
     public void addCancion(Cancion cancion) {
@@ -45,5 +46,18 @@ public class Artista {
     public void removeCancion(Cancion cancion) {
         this.canciones.remove(cancion);
         cancion.setArtista(null);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Artista)) return false;
+        Artista artista = (Artista) o;
+        return id != null && id.equals(artista.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

@@ -10,10 +10,11 @@ public class AlbumMapper {
         if (album == null) return null;
 
         String portada = album.getImagenUrl();
-        if ((portada == null || portada.isBlank())
-                && album.getCanciones() != null
-                && !album.getCanciones().isEmpty()) {
-            portada = album.getCanciones().get(0).getImagenUrl();
+
+        if ((portada == null || portada.isBlank()) && album.getCanciones() != null) {
+            if (!album.getCanciones().isEmpty()) {
+                portada = album.getCanciones().iterator().next().getImagenUrl();
+            }
         }
 
         Long artistaId = null;

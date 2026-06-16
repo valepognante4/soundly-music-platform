@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
-
+import java.util.Set;
+import java.util.Objects;
 @Getter
 @Setter
 @Entity
@@ -36,5 +37,18 @@ public class Album {
     private Artista artista;
     
     @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Cancion> canciones = new java.util.ArrayList<>();
+    private Set<Cancion> canciones = new java.util.HashSet<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Album)) return false;
+        Album album = (Album) o;
+        return id != null && id.equals(album.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
