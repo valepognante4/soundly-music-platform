@@ -608,6 +608,7 @@
     registerEventBus();
     registerGlobalControls();
     bootstrapPlayback();
+    initUIEnhancements();
 
     // ── API PÚBLICA (retrocompatibilidad) ─────────────────────────────────
     window.SoundlyPlayer = {
@@ -642,5 +643,123 @@
 
     window.__soundlyPlayerCore = { syncUI, bootstrapPlayback };
     window.__soundlyPlayerInitialized = true;
+
+    // ── MEJORAS UI: FULLSCREEN PLAYER & PROFILE DROPDOWN ─────────────────
+    function initUIEnhancements() {
+        if (window.__soundlyUIEnhancementsInit) return;
+        window.__soundlyUIEnhancementsInit = true;
+
+        const profileDropdown = document.createElement('div');
+        profileDropdown.id = 'profile-dropdown';
+        profileDropdown.className = 'profile-dropdown';
+        
+        const storedUser = JSON.parse(sessionStorage.getItem('usuarioLogueado') || sessionStorage.getItem('soundly_usuario') || 'null');
+        const userEmail = storedUser?.email || 'usuario@soundly.com';
+        profileDropdown.innerHTML = `<div style="font-weight: 600; margin-bottom: 4px;">Mi Perfil</div><div style="font-size: 12px; color: var(--sp-muted);">${userEmail}</div>`;
+        document.body.appendChild(profileDropdown);
+
+        const fsOverlay = document.createElement('div');
+        fsOverlay.id = 'fs-player-overlay';
+        fsOverlay.innerHTML = `
+            <button class="fs-close-btn" id="fs-close-btn" aria-label="Cerrar reproductor">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </button>
+            <img class="fs-art" id="fs-art" src="https://placehold.co/320x320/1a1a2e/a78bfa?text=♪" alt="Portada">
+            <div class="fs-info">
+                <div class="fs-title" id="fs-title">Seleccioná una canción</div>
+                <div class="fs-artist" id="fs-artist">—</div>
+            </div>
+            <div class="fs-progress-row">
+                <span class="fs-time" id="fs-current">0:00</span>
+                <div class="fs-progress-track" id="fs-progress-track">
+                    <div class="fs-progress-fill" id="fs-progress-fill"></div>
+                </div>
+                <span class="fs-time" id="fs-total">0:00</span>
+            </div>
+            <div class="fs-controls">
+                <button id="fs-btn-prev" aria-label="Anterior">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                </button>
+                <button class="fs-play-btn" id="fs-btn-play" aria-label="Reproducir / Pausar">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><polygon points="5,3 19,12 5,21"/></svg>
+                </button>
+                <button id="fs-btn-next" aria-label="Siguiente">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </button>
+            </div>
+        `;
+        document.body.appendChild(fsOverlay);
+
+        document.addEventListener('click', (e) => {
+            const chip = e.target.closest('.user-chip');
+            if (chip) {
+                const rect = chip.getBoundingClientRect();
+                profileDropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+                profileDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+                profileDropdown.classList.toggle('show');
+            } else if (!e.target.closest('#profile-dropdown')) {
+                profileDropdown.classList.remove('show');
+            }
+
+            const playerBar = e.target.closest('#global-player-bar');
+            if (playerBar && !e.target.closest('button') && !e.target.closest('.gp-progress-row') && !e.target.closest('.gp-extras')) {
+                fsOverlay.classList.add('show');
+                syncFsUI();
+            }
+
+            if (e.target.closest('#fs-close-btn')) {
+                fsOverlay.classList.remove('show');
+            }
+
+            if (e.target.closest('#fs-btn-play')) window.SoundlyEvents.togglePlay();
+            if (e.target.closest('#fs-btn-prev')) window.SoundlyEvents.anterior();
+            if (e.target.closest('#fs-btn-next')) window.SoundlyEvents.siguiente();
+            
+            const fsTrack = e.target.closest('#fs-progress-track');
+            if (fsTrack && window.__soundlyAudioInstance.duration) {
+                const rect = fsTrack.getBoundingClientRect();
+                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                window.__soundlyAudioInstance.currentTime = pct * window.__soundlyAudioInstance.duration;
+            }
+        });
+        
+        window.addEventListener('soundly:estado-cambio', syncFsUI);
+        window.addEventListener('soundly:cancion-cambio', syncFsUI);
+        window.addEventListener('soundly:ui-sync', syncFsUI);
+        
+        const audio = window.__soundlyAudioInstance;
+        audio.addEventListener('timeupdate', () => {
+            if (!fsOverlay.classList.contains('show')) return;
+            const cur = audio.currentTime || 0;
+            const tot = audio.duration || 0;
+            document.getElementById('fs-current').textContent = formatTime(cur);
+            document.getElementById('fs-total').textContent = formatTime(tot);
+            const pct = tot > 0 ? (cur / tot) * 100 : 0;
+            document.getElementById('fs-progress-fill').style.width = pct + '%';
+        });
+    }
+
+    function syncFsUI() {
+        const overlay = document.getElementById('fs-player-overlay');
+        if (!overlay || !overlay.classList.contains('show')) return;
+        const state = window.__soundlyEstado;
+        const c = state.lista[state.idx];
+        if (c) {
+            document.getElementById('fs-title').textContent = c.titulo;
+            document.getElementById('fs-artist').textContent = c.artista;
+            document.getElementById('fs-art').src = c.img;
+        }
+        const playBtnSvg = state.playing
+            ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+            : '<polygon points="5,3 19,12 5,21"/>';
+        document.getElementById('fs-btn-play').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">${playBtnSvg}</svg>`;
+    }
+    
+    function formatTime(s) {
+        if (!s || isNaN(s)) return '0:00';
+        return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    }
 
 })();

@@ -99,47 +99,9 @@
         </div>
 
         <div class="section">
-            <h1 class="greeting" id="greeting">Buenas tardes</h1>
+            <h1 class="greeting" id="ver-todos-title" style="margin-bottom: 24px;">Ver todos</h1>
 
-            <div class="quick-grid">
-                <!-- Tarjeta estática: Canciones Favoritas -->
-                <div class="quick-card" id="quick-favoritas">
-                    <a href="favoritos.html" class="card-link-wrapper" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;width:100%">
-                        <div class="quick-thumb icon-thumb"
-                            style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#a78bfa,#7c3aed);">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                            </svg>
-                        </div>
-                        <span class="quick-label">Canciones Favoritas</span>
-                    </a>
-                </div>
-                <!-- Quick cards dinámicas desde el backend -->
-                <div id="quick-grid-dinamico" style="display:contents"></div>
-            </div>
-
-            <div class="section-header"><span class="section-title">Recomendados para vos</span><a class="see-all"
-                    href="player.html">Ver todo</a></div>
-            <!-- Tarjetas cargadas dinámicamente por controlador-home.js -->
-            <div class="cards-grid" id="cards-recomendados">
-                <div class="loading-placeholder">Cargando...</div>
-            </div>
-
-            <div class="section-header"><span class="section-title">Artistas recomendados</span></div>
-            <div class="cards-grid" id="cards-artistas">
-                <div class="loading-placeholder">Cargando...</div>
-            </div>
-
-            <div class="section-header"><span class="section-title">Álbumes</span><a class="see-all"
-                    href="todos-los-albumes.html">Ver todo</a></div>
-            <div class="cards-grid" id="cards-albumes">
-                <div class="loading-placeholder">Cargando...</div>
-            </div>
-
-            <div class="section-header"><span class="section-title">Más de lo que te gusta</span><a class="see-all"
-                    href="player.html">Ver todo</a></div>
-            <!-- Tarjetas cargadas dinámicamente por controlador-home.js -->
-            <div class="cards-grid" id="cards-mas">
+            <div class="cards-grid" id="ver-todos-grid">
                 <div class="loading-placeholder">Cargando...</div>
             </div>
         </div>
@@ -225,7 +187,7 @@
     <script src="js/modelo-canciones.js"></script>
     <script src="js/reproductor-global.js"></script>
     <script src="js/vista.js"></script>
-    <script src="js/controlador-home.js"></script>
+    <script src="js/controlador-ver-todos.js"></script>
 
 
 </body>

@@ -1092,3 +1092,167 @@ body.home-layout #global-player-bar:not(.player-visible) {
 
   .gp-extras { display: none; }
 }
+/* -- PROFILE DROPDOWN -------------------------------------------------- */
+.profile-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--sp-glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--sp-glass-edge);
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  color: var(--sp-text);
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: all 0.2s ease;
+  z-index: 10000;
+  min-width: 150px;
+  text-align: center;
+}
+
+.profile-dropdown.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.user-chip {
+  position: relative;
+  cursor: pointer;
+}
+
+/* -- FULLSCREEN PLAYER OVERLAY ----------------------------------------- */
+#fs-player-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(40px) saturate(200%);
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(100%);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  color: white;
+}
+
+#fs-player-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.fs-close-btn {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  color: var(--sp-muted);
+  cursor: pointer;
+  padding: 10px;
+  transition: color 0.2s;
+}
+
+.fs-close-btn:hover {
+  color: white;
+}
+
+.fs-art {
+  width: 320px;
+  height: 320px;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  object-fit: cover;
+  margin-bottom: 40px;
+}
+
+.fs-info {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.fs-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.fs-artist {
+  font-size: 18px;
+  color: var(--sp-muted);
+}
+
+.fs-controls {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.fs-controls button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.fs-controls button:hover {
+  transform: scale(1.1);
+}
+
+.fs-play-btn {
+  width: 64px;
+  height: 64px;
+  background: var(--sp-text) !important;
+  color: var(--sp-bg) !important;
+  border-radius: 50%;
+}
+
+.fs-progress-row {
+  width: 80%;
+  max-width: 600px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fs-time {
+  font-size: 12px;
+  color: var(--sp-muted);
+  min-width: 40px;
+  text-align: center;
+}
+
+.fs-progress-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+
+.fs-progress-fill {
+  height: 100%;
+  background: var(--sp-accent);
+  border-radius: 3px;
+  width: 0%;
+  pointer-events: none;
+}
