@@ -68,91 +68,115 @@
             return;
         }
 
-        // We will collect all songs from all albums here, 
-        // to pass the list to SoundlyEvents.reproducirLista so the user can play any song and skip to the next
         const todasLasCanciones = [];
-        let indexGlobal = 0;
-
+        
         artista.albumes.forEach(album => {
-            if (!album.canciones || album.canciones.length === 0) return;
-
-            // Header for the Album
-            const section = document.createElement('div');
-            section.className = 'album-section';
-            
-            const htmlHeader = `
-                <div class="album-section-header" style="cursor:pointer;" onclick="if(window.navegarA) window.navegarA('album.html?id=${album.id}'); else window.location.href='album.html?id=${album.id}';">
-                    <img src="${album.portada || 'https://placehold.co/150x150/1a1a2e/a78bfa?text=Album'}" alt="${album.nombre}" class="album-section-cover" onerror="this.src='https://placehold.co/64x64/1a1a2e/a78bfa?text=Album'">
-                    <div>
-                        <h2 class="album-section-title">${album.nombre}</h2>
-                        <span class="album-section-year">Álbum</span>
-                    </div>
-                </div>
-                <div class="playlist-header-row">
-                    <span>#</span>
-                    <span></span>
-                    <span>Título</span>
-                    <span>Género</span>
-                    <span><i class="far fa-clock"></i></span>
-                    <span></span>
-                </div>
-            `;
-            
-            section.innerHTML = htmlHeader;
-            
-            // Songs inside the Album
-            album.canciones.forEach((cDto, indexInAlbum) => {
-                // Adapt song properties for reproductor
+            if (!album.canciones) return;
+            album.canciones.forEach(cDto => {
                 const cancionAdaptada = {
                     id: cDto.id,
                     titulo: cDto.titulo,
-                    artista: artista.nombre, // use main artist's name
+                    artista: artista.nombre,
                     duracion: cDto.duracion,
-                    img: album.portada || cDto.imagenUrl || artista.fotoUrl,
-                    src: cDto.audioUrl || '',
+                    img: album.portada || cDto.imagenUrl || artista.fotoUrl || 'https://placehold.co/48x48/1a1a2e/a78bfa?text=♪',
+                    src: cDto.archivoUrl || cDto.audioUrl || '',
                     genero: cDto.genero || artista.genero || 'Desconocido',
                     addedAt: cDto.addedAt
                 };
-                
                 todasLasCanciones.push(cancionAdaptada);
-                const i = indexGlobal++; // captured index for reproducing list
+            });
+        });
 
-                const divRow = document.createElement('div');
-                divRow.className = 'playlist-item';
-                divRow.dataset.id = cancionAdaptada.id;
+        // 1. Mostrar todas las canciones en una sola tabla vertical
+        const songsSection = document.createElement('div');
+        songsSection.className = 'album-section';
+        songsSection.innerHTML = `
+            <div class="playlist-header-row">
+                <span>#</span>
+                <span></span>
+                <span>Título</span>
+                <span>Género</span>
+                <span><i class="far fa-clock"></i></span>
+                <span></span>
+            </div>
+        `;
+        
+        todasLasCanciones.forEach((cancion, idx) => {
+            const divRow = document.createElement('div');
+            divRow.className = 'playlist-item';
+            divRow.dataset.id = cancion.id;
 
-                divRow.innerHTML = `
-                    <div class="pl-num">${indexInAlbum + 1}</div>
-                    <div class="pl-thumb-container" style="position:relative;">
-                        <img src="${cancionAdaptada.img}" alt="${cancionAdaptada.titulo}" class="pl-thumb" onerror="this.src='https://placehold.co/48x48/1a1a2e/a78bfa?text=♪'">
-                    </div>
-                    <div class="pl-info">
-                        <span class="pl-title">${cancionAdaptada.titulo}</span>
-                        <span class="pl-artist">${cancionAdaptada.artista}</span>
-                    </div>
-                    <div class="pl-genre">${cancionAdaptada.genero}</div>
-                    <div class="pl-dur">${cancionAdaptada.duracion}</div>
-                    <div class="pl-actions" style="display:flex;align-items:center;gap:4px;">
-                        <button class="pl-play-btn" aria-label="Reproducir" title="Reproducir">
-                            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5,3 19,12 5,21"/></svg>
-                        </button>
-                        <button class="pl-remove-btn" title="Me gusta"><i class="far fa-heart"></i></button>
-                    </div>
-                `;
+            divRow.innerHTML = `
+                <div class="pl-num">${idx + 1}</div>
+                <div class="pl-thumb-container" style="position:relative;">
+                    <img src="${cancion.img}" alt="${cancion.titulo}" class="pl-thumb" onerror="this.src='https://placehold.co/48x48/1a1a2e/a78bfa?text=♪'">
+                </div>
+                <div class="pl-info">
+                    <span class="pl-title">${cancion.titulo}</span>
+                    <span class="pl-artist">${cancion.artista}</span>
+                </div>
+                <div class="pl-genre">${cancion.genero}</div>
+                <div class="pl-dur">${cancion.duracion}</div>
+                <div class="pl-actions" style="display:flex;align-items:center;gap:4px;">
+                    <button class="pl-play-btn" aria-label="Reproducir" title="Reproducir">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                    <button class="pl-remove-btn" title="Me gusta"><i class="far fa-heart"></i></button>
+                </div>
+            `;
 
-                // Play event
-                divRow.addEventListener('click', (e) => {
-                    if (e.target.closest('.pl-actions')) return; // Ignore if clicking actions
-                    if (window.SoundlyEvents && window.SoundlyEvents.reproducirLista) {
-                        window.SoundlyEvents.reproducirLista(todasLasCanciones, i);
-                    }
-                });
-
-                section.appendChild(divRow);
+            divRow.addEventListener('click', (e) => {
+                if (e.target.closest('.pl-actions')) return;
+                if (window.SoundlyEvents && window.SoundlyEvents.reproducirLista) {
+                    window.SoundlyEvents.reproducirLista(todasLasCanciones, idx);
+                }
             });
 
-            container.appendChild(section);
+            songsSection.appendChild(divRow);
         });
+
+        container.appendChild(songsSection);
+
+        // 2. Mostrar la fila de álbumes abajo
+        const albumsSection = document.createElement('div');
+        albumsSection.innerHTML = '<h2 style="margin-top: 32px; margin-bottom: 16px; padding: 0 32px; font-size: 1.5rem; font-weight: 700;">Álbumes</h2>';
+        
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '20px';
+        row.style.padding = '0 32px 48px 32px';
+        row.style.overflowX = 'auto';
+        row.style.scrollbarWidth = 'none'; // Firefox
+        
+        artista.albumes.forEach(album => {
+            const albumCard = document.createElement('div');
+            albumCard.style.minWidth = '130px';
+            albumCard.style.width = '130px';
+            albumCard.style.cursor = 'pointer';
+            albumCard.style.textAlign = 'center';
+            albumCard.style.transition = 'transform 0.2s';
+            
+            albumCard.onmouseover = () => albumCard.style.transform = 'scale(1.05)';
+            albumCard.onmouseout = () => albumCard.style.transform = 'scale(1)';
+            
+            albumCard.onclick = () => {
+                if(window.navegarA) window.navegarA(`album.html?id=${album.id}`); 
+                else window.location.href = `album.html?id=${album.id}`;
+            };
+            
+            albumCard.innerHTML = `
+                <img src="${album.portada || 'https://placehold.co/130x130/1a1a2e/a78bfa?text=Album'}" 
+                     alt="${album.nombre}" 
+                     style="width: 130px; height: 130px; border-radius: 8px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" 
+                     onerror="this.src='https://placehold.co/130x130/1a1a2e/a78bfa?text=Album'">
+                <div style="font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">${album.nombre}</div>
+                <div style="color: var(--muted); font-size: 0.85rem;">Álbum</div>
+            `;
+            row.appendChild(albumCard);
+        });
+        
+        albumsSection.appendChild(row);
+        container.appendChild(albumsSection);
     }
 
     // Expose explicitly to window

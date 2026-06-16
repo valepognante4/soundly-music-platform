@@ -3,6 +3,7 @@ package com.streaming.soundly.mapper;
 import com.streaming.soundly.dto.ArtistaDTO;
 import com.streaming.soundly.external.dto.ExternalArtistaDTO;
 import com.streaming.soundly.model.Artista;
+import java.util.stream.Collectors;
 
 public class ArtistaMapper {
     public static ArtistaDTO toDTO(Artista a) {
@@ -18,7 +19,7 @@ public class ArtistaMapper {
             dto.setTitulosCanciones(
                 a.getCanciones().stream()
                  .map(com.streaming.soundly.model.Cancion::getTitulo)
-                 .toList()
+                 .collect(Collectors.toList())
             );
         } else {
             dto.setTitulosCanciones(new java.util.ArrayList<>());
@@ -37,7 +38,7 @@ public class ArtistaMapper {
                 .genero(a.getGenero() != null ? a.getGenero().getNombre() : null)
                 .biografia(null) // Biography is not in the entity yet
                 .albumes(a.getAlbumes() != null ? 
-                    a.getAlbumes().stream().map(AlbumMapper::toDTO).toList() : 
+                    a.getAlbumes().stream().map(AlbumMapper::toDTO).collect(Collectors.toList()) : 
                     new java.util.ArrayList<>())
                 .build();
     }

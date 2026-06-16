@@ -34,7 +34,7 @@ public class AlbumMapper {
                         ? album.getCanciones().stream()
                                 .map(CancionMapper::toDTO)
                                 .collect(Collectors.toList())
-                        : java.util.Collections.emptyList())
+                        : new java.util.ArrayList<>())
                 .build();
     }
 }
