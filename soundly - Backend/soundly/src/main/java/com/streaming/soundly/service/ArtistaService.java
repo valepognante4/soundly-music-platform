@@ -390,4 +390,12 @@ public class ArtistaService implements IArtistaService {
         }
         return procesados;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.streaming.soundly.dto.ArtistaDetalleDTO obtenerDetalle(Long id) {
+        Artista artista = artistaRepository.findByIdWithAlbumesAndCanciones(id)
+                .orElseThrow(() -> new EntityNotFoundException("Artista no encontrado con el ID: " + id));
+        return ArtistaMapper.toDetalleDTO(artista);
+    }
 }

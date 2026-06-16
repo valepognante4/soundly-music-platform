@@ -17,4 +17,12 @@ public interface ArtistaRepository extends JpaRepository<Artista, Long> {
     Optional<Artista> findByNombre(String nombre);
 
     List<Artista> findByGeneroIsNull();
+
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT DISTINCT a FROM Artista a
+            LEFT JOIN FETCH a.albumes al
+            LEFT JOIN FETCH al.canciones
+            WHERE a.id = :id
+            """)
+    Optional<Artista> findByIdWithAlbumesAndCanciones(@org.springframework.data.repository.query.Param("id") Long id);
 }

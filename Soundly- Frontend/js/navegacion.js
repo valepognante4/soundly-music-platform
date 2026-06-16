@@ -20,6 +20,9 @@ const ARCHIVO_VISTA = {
     favoritos: 'favoritos.html',
     playlist:  'playlist.html',
     player:    'player.html',
+    album:     'album.html',
+    artista:   'artista.html',
+    'todos-los-albumes': 'todos-los-albumes.html',
 };
 
 /** IDs que ya existen en el shell y no deben duplicarse desde las vistas. */
@@ -251,6 +254,18 @@ function ejecutarControlador(url) {
         } else if (pathname.endsWith('playlist.html')) {
             if (typeof window.initPlaylist === 'function') window.initPlaylist();
             else console.warn('[Navegacion] window.initPlaylist no está definido.');
+
+        } else if (pathname.endsWith('album.html')) {
+            if (typeof window.initAlbum === 'function') window.initAlbum();
+            else console.warn('[Navegacion] window.initAlbum no está definido.');
+
+        } else if (pathname.endsWith('artista.html')) {
+            if (typeof window.initArtista === 'function') window.initArtista();
+            else console.warn('[Navegacion] window.initArtista no está definido.');
+
+        } else if (pathname.endsWith('todos-los-albumes.html')) {
+            if (typeof window.initTodosLosAlbumes === 'function') window.initTodosLosAlbumes();
+            else console.warn('[Navegacion] window.initTodosLosAlbumes no está definido.');
 
         } else if (pathname.endsWith('player.html')) {
             if (typeof window.initPlayer === 'function') window.initPlayer();

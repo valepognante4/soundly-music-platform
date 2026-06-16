@@ -26,6 +26,21 @@ public class ArtistaMapper {
 
         return dto;
     }
+
+    public static com.streaming.soundly.dto.ArtistaDetalleDTO toDetalleDTO(Artista a) {
+        if (a == null) return null;
+
+        return com.streaming.soundly.dto.ArtistaDetalleDTO.builder()
+                .id(a.getId())
+                .nombre(a.getNombre())
+                .fotoUrl(a.getFotoUrl())
+                .genero(a.getGenero() != null ? a.getGenero().getNombre() : null)
+                .biografia(null) // Biography is not in the entity yet
+                .albumes(a.getAlbumes() != null ? 
+                    a.getAlbumes().stream().map(AlbumMapper::toDTO).toList() : 
+                    new java.util.ArrayList<>())
+                .build();
+    }
     public static Artista toEntity(ExternalArtistaDTO externalDto) {
         if (externalDto == null) return null;
 

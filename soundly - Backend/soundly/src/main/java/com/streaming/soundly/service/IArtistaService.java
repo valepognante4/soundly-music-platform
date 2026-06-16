@@ -14,4 +14,5 @@ public interface IArtistaService {
     void importarArtistaYCanciones(Long idDeezer);
     List<ArtistaDTO> listarTodos();
     int actualizarGenerosNulos();
+    com.streaming.soundly.dto.ArtistaDetalleDTO obtenerDetalle(Long id);
 }

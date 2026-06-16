@@ -94,6 +94,25 @@ window.initHome = async function initHome() {
         );
     }
 
+    if (document.getElementById('cards-artistas')) {
+        try {
+            const artistas = await GestorArtistas.obtenerTodos();
+            renderizarArtistas(artistas, 5);
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    if (document.getElementById('cards-albumes')) {
+        try {
+            const albums = await window.fetchAlbums();
+            renderizarAlbums(albums, 5); // Limitar a 5 álbumes en Home
+        } catch (e) {
+            console.error('[Home] Error al cargar álbumes:', e);
+            document.getElementById('cards-albumes').innerHTML = '<p style="color:var(--muted)">No hay álbumes disponibles</p>';
+        }
+    }
+
     renderizarQuickGrid(todasLasCanciones.slice(0, 5));
     cargarPlaylistsSidebar(usuario.id);
 
@@ -143,6 +162,106 @@ function obtenerSaludo() {
     if (h < 12) return 'Buenos días';
     if (h < 19) return 'Buenas tardes';
     return 'Buenas noches';
+}
+
+function renderizarArtistas(artistas, limit = null) {
+    const contenedor = document.getElementById('cards-artistas');
+    if (!contenedor) return;
+
+    if (!artistas || artistas.length === 0) {
+        contenedor.innerHTML = '<p style="color:var(--muted)">No hay artistas disponibles</p>';
+        return;
+    }
+
+    contenedor.innerHTML = '';
+    const artistasAMostrar = limit ? artistas.slice(0, limit) : artistas;
+
+    artistasAMostrar.forEach((artista) => {
+        const card = document.createElement('div');
+        card.className = 'song-card artist-card fade-in';
+        card.style.cursor = 'pointer';
+
+        card.innerHTML = `
+            <div class="card-image-wrapper">
+                <img src="${artista.foto || 'https://placehold.co/150x150/1a1a2e/a78bfa?text=Artista'}" 
+                     alt="${artista.nombre}" 
+                     class="card-image"
+                     onerror="this.src='https://placehold.co/150x150/1a1a2e/a78bfa?text=Artista'">
+                <div class="play-overlay">
+                    <button class="play-btn-circle" aria-label="Ver artista">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <polygon points="5,3 19,12 5,21"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="card-info" style="text-align: center;">
+                <h3 class="card-title">${artista.nombre}</h3>
+                <p class="card-artist">Artista</p>
+            </div>
+        `;
+
+        card.addEventListener('click', () => {
+            if (typeof window.navegarA === 'function') {
+                window.navegarA('artista.html?id=' + artista.id);
+            } else {
+                window.location.href = 'artista.html?id=' + artista.id;
+            }
+        });
+
+        contenedor.appendChild(card);
+    });
+}
+
+function renderizarAlbums(albums, limit = null) {
+    const contenedor = document.getElementById('cards-albumes');
+    if (!contenedor) return;
+
+    if (!albums || albums.length === 0) {
+        contenedor.innerHTML = '<p style="color:var(--muted)">No hay álbumes disponibles</p>';
+        return;
+    }
+
+    contenedor.innerHTML = '';
+    
+    // Si se pasa un límite, cortamos el array
+    const albumsAMostrar = limit ? albums.slice(0, limit) : albums;
+    
+    albumsAMostrar.forEach((album) => {
+        const card = document.createElement('div');
+        card.className = 'song-card fade-in';
+        card.style.cursor = 'pointer';
+        
+        card.innerHTML = `
+            <div class="card-image-wrapper">
+                <img src="${album.portada || 'https://placehold.co/150x150/1a1a2e/a78bfa?text=Album'}" 
+                     alt="Portada de ${album.nombre}" 
+                     class="card-image"
+                     onerror="this.src='https://placehold.co/150x150/1a1a2e/a78bfa?text=Album'">
+                <div class="play-overlay">
+                    <button class="play-btn-circle" aria-label="Ver álbum">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <polygon points="5,3 19,12 5,21"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="card-info">
+                <h3 class="card-title">${album.nombre}</h3>
+                <p class="card-artist">${album.artista || 'Varios Artistas'}</p>
+            </div>
+        `;
+        
+        card.addEventListener('click', () => {
+            if (typeof window.navegarA === 'function') {
+                window.navegarA('album.html?id=' + album.id);
+            } else {
+                window.location.href = 'album.html?id=' + album.id;
+            }
+        });
+        
+        contenedor.appendChild(card);
+    });
 }
 
 function renderizarQuickGrid(canciones) {

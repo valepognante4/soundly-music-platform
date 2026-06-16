@@ -320,6 +320,11 @@ const GestorArtistas = {
         const data = await apiFetch(`/artistas/${id}`).catch(() => null);
         return adaptarArtista(data);
     },
+
+    /** Obtiene el detalle de un artista con sus álbumes y canciones. GET /api/artistas/{id} */
+    async obtenerDetalle(id) {
+        return await apiFetch(`/artistas/${id}`).catch(() => null);
+    }
 };
 
 // ═════════════════════════════════════════════════════════════════════════════

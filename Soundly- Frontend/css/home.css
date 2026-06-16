@@ -593,3 +593,46 @@ body {
     letter-spacing: 0.05em;
     margin-top: 20px;
 }
+
+/* ─── SCROLL HORIZONTAL PARA ARTISTAS ─── */
+#cards-artistas {
+    display: flex;
+    overflow-x: auto;
+    gap: 18px;
+    padding-bottom: 8px; /* Espacio para que no corte sombras */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+#cards-artistas::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+#cards-artistas .song-card {
+    flex: 0 0 180px; /* Ancho fijo para las tarjetas al hacer scroll */
+}
+
+/* ─── ARTISTA CARD (CIRCULAR) ─── */
+.artist-card .card-image-wrapper {
+    border-radius: 50% !important; /* Fuerza el círculo */
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.artist-card .card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover !important;
+    transition: transform 0.4s ease;
+}
+
+.artist-card:hover .card-image {
+    transform: scale(1.1);
+}
+
+/* Redondear el botón de play por si acaso */
+.artist-card .play-overlay {
+    border-radius: 50% !important;
+}
