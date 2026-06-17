@@ -78,11 +78,14 @@ window.initHome = async function initHome() {
 
     // ── 4. RENDERIZAR SECCIONES ───────────────────────────────────────────
 
+    // Desordenar recomendaciones para que sean dinámicas cada vez
+    const shuffledRecomendadas = [...recomendadas].sort(() => Math.random() - 0.5);
+
     if (document.getElementById('cards-recomendados')) {
         Vista.renderizarTarjetasCanciones(
-            recomendadas.slice(0, 4),
+            shuffledRecomendadas.slice(0, 4),
             'cards-recomendados',
-            (cancion, idx) => window.SoundlyEvents.reproducirLista(recomendadas, idx)
+            (cancion, idx) => window.SoundlyEvents.reproducirLista(shuffledRecomendadas, idx)
         );
     }    
     // Eliminar bloque duplicado
@@ -90,7 +93,8 @@ window.initHome = async function initHome() {
     if (document.getElementById('cards-artistas')) {
         try {
             const artistas = await GestorArtistas.obtenerTodos();
-            renderizarArtistas(artistas, 5);
+            const shuffledArtistas = [...artistas].sort(() => Math.random() - 0.5);
+            renderizarArtistas(shuffledArtistas, 5);
         } catch(e) {
             console.error(e);
         }
@@ -107,7 +111,8 @@ window.initHome = async function initHome() {
         }
     }
 
-    renderizarQuickGrid(todasLasCanciones.slice(0, 5));
+    const shuffledTodas = [...todasLasCanciones].sort(() => Math.random() - 0.5);
+    renderizarQuickGrid(shuffledTodas.slice(0, 5));
     cargarPlaylistsSidebar(usuario.id);
 
     // ── 5. SINCRONIZAR ESTADO DEL REPRODUCTOR ────────────────────────────

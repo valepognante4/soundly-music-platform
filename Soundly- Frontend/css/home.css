@@ -328,11 +328,16 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .card-sub {
     font-size: 0.78rem;
     color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 /* PLAYER BAR */
@@ -635,21 +640,23 @@ body {
     margin-top: 20px;
 }
 
-/* ─── GRID ESTANDARIZADO PARA ARTISTAS, ÁLBUMES Y RECOMENDADOS ─── */
+/* ─── GRID ESTANDARIZADO PARA ARTISTAS, ÁLBUMES, RECOMENDADOS Y TODOS LOS ÁLBUMES ─── */
 #cards-artistas,
 #cards-albumes,
-#cards-recomendados {
+#cards-recomendados,
+#cards-todos-albumes {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
     width: 100%;
 }
 
-/* Tarjetas individuales dentro de los grids de artistas y álbumes */
+/* Tarjetas individuales dentro de los grids */
 #cards-artistas .song-card,
 #cards-artistas .artist-card,
 #cards-albumes .song-card,
-#cards-recomendados .music-card {
+#cards-recomendados .music-card,
+#cards-todos-albumes .song-card {
     width: 100% !important;
     max-width: none;
     padding: 12px;
@@ -659,9 +666,10 @@ body {
     flex-direction: column;
 }
 
-/* Imagen wrapper dentro de artistas y álbumes */
+/* Imagen wrapper dentro de tarjetas */
 #cards-artistas .song-card .card-image-wrapper,
-#cards-albumes .song-card .card-image-wrapper {
+#cards-albumes .song-card .card-image-wrapper,
+#cards-todos-albumes .song-card .card-image-wrapper {
     width: 100%;
     aspect-ratio: 1 / 1;
     border-radius: 8px;
@@ -680,15 +688,27 @@ body {
     display: block;
 }
 
-#cards-albumes .song-card .card-title {
+#cards-albumes .song-card .card-title,
+#cards-todos-albumes .song-card .card-title,
+#cards-artistas .card-title {
     font-size: 0.85rem;
     font-weight: 600;
     margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
-#cards-albumes .song-card .card-artist {
+#cards-albumes .song-card .card-artist,
+#cards-todos-albumes .song-card .card-artist,
+#cards-artistas .card-artist {
     font-size: 0.75rem;
     color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 /* ─── ARTISTA CARD (CIRCULAR) ─── */
