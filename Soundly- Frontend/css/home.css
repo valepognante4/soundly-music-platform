@@ -206,6 +206,13 @@ body {
     font-weight: 700;
 }
 
+/* Modificador para títulos grandes de página completa */
+.section-title--lg {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
 .see-all {
     font-size: 0.78rem;
     font-weight: 600;
@@ -221,15 +228,17 @@ body {
     color: var(--text);
 }
 
+/* ─── CONTENEDOR GRID UNIFICADO ─────────────────────────────────────── */
 .cards-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    width: 100%;
 }
 
+/* ─── TARJETA DE MÚSICA UNIFICADA (.music-card) ─────────────────────── */
 .music-card {
-    width: 160px;
-    flex: 0 0 auto;
+    width: 100%;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -256,13 +265,41 @@ body {
     border-color: rgba(29, 185, 84, 0.35);
 }
 
-.card-art {
+/* Imagen de portada dentro de .music-card */
+.music-card .card-art {
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 1 / 1;
     border-radius: 10px;
     object-fit: cover;
     margin-bottom: 14px;
     display: block;
+}
+
+/* Regla universal: TODAS las imágenes de tarjeta respetan aspect-ratio y object-fit */
+.song-card .card-image-wrapper,
+.album-card .card-image-wrapper,
+.music-card .card-image-wrapper {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.song-card .card-image,
+.album-card .card-image,
+.music-card .card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.song-card:hover .card-image,
+.album-card:hover .card-image {
+    transform: scale(1.05);
 }
 
 .card-play-btn {
@@ -598,44 +635,49 @@ body {
     margin-top: 20px;
 }
 
-/* ─── SCROLL HORIZONTAL PARA ARTISTAS Y ÁLBUMES ─── */
-#cards-artistas, #cards-albumes {
-    display: flex;
-    overflow-x: auto;
-    gap: 16px;
-    padding-bottom: 8px; /* Espacio para que no corte sombras */
-    scroll-behavior: smooth;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+/* ─── GRID ESTANDARIZADO PARA ARTISTAS, ÁLBUMES Y RECOMENDADOS ─── */
+#cards-artistas,
+#cards-albumes,
+#cards-recomendados {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    width: 100%;
 }
 
-#cards-artistas::-webkit-scrollbar, #cards-albumes::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
-}
-
-#cards-artistas .song-card, #cards-artistas .artist-card, #cards-albumes .song-card {
-    flex: 0 0 auto; 
-    width: 150px;
-    max-width: 150px;
-    flex-shrink: 0;
+/* Tarjetas individuales dentro de los grids de artistas y álbumes */
+#cards-artistas .song-card,
+#cards-artistas .artist-card,
+#cards-albumes .song-card,
+#cards-recomendados .music-card {
+    width: 100% !important;
+    max-width: none;
     padding: 12px;
-    gap: 10px;
     border-radius: 12px;
     background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
 }
 
+/* Imagen wrapper dentro de artistas y álbumes */
+#cards-artistas .song-card .card-image-wrapper,
 #cards-albumes .song-card .card-image-wrapper {
     width: 100%;
-    aspect-ratio: 1/1;
+    aspect-ratio: 1 / 1;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 8px;
 }
 
-#cards-albumes .song-card .card-image {
+/* object-fit:cover universal para todas las portadas en grids */
+#cards-artistas .card-image,
+#cards-albumes .card-image,
+#cards-recomendados .card-art,
+#cards-todos-albumes .card-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 #cards-albumes .song-card .card-title {

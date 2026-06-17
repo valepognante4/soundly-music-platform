@@ -139,38 +139,30 @@
 
         // 2. Mostrar la fila de álbumes abajo
         const albumsSection = document.createElement('div');
-        albumsSection.innerHTML = '<h2 style="margin-top: 32px; margin-bottom: 16px; padding: 0 32px; font-size: 1.5rem; font-weight: 700;">Álbumes</h2>';
+        albumsSection.innerHTML = '<h2 class="artista-albumes-titulo">Álbumes</h2>';
         
         const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.gap = '20px';
-        row.style.padding = '0 32px 48px 32px';
-        row.style.overflowX = 'auto';
-        row.style.scrollbarWidth = 'none'; // Firefox
+        row.className = 'artista-albumes-row';
         
         artista.albumes.forEach(album => {
             const albumCard = document.createElement('div');
-            albumCard.style.minWidth = '130px';
-            albumCard.style.width = '130px';
-            albumCard.style.cursor = 'pointer';
-            albumCard.style.textAlign = 'center';
-            albumCard.style.transition = 'transform 0.2s';
-            
-            albumCard.onmouseover = () => albumCard.style.transform = 'scale(1.05)';
-            albumCard.onmouseout = () => albumCard.style.transform = 'scale(1)';
-            
+            albumCard.className = 'artista-album-card';
+
+            albumCard.onmouseover = () => albumCard.classList.add('artista-album-card--hover');
+            albumCard.onmouseout  = () => albumCard.classList.remove('artista-album-card--hover');
+
             albumCard.onclick = () => {
                 if(window.navegarA) window.navegarA(`album.html?id=${album.id}`); 
                 else window.location.href = `album.html?id=${album.id}`;
             };
-            
+
             albumCard.innerHTML = `
-                <img src="${album.portada || 'https://placehold.co/130x130/1a1a2e/a78bfa?text=Album'}" 
+                <img class="artista-album-cover"
+                     src="${album.portada || 'https://placehold.co/130x130/1a1a2e/a78bfa?text=Album'}" 
                      alt="${album.nombre}" 
-                     style="width: 130px; height: 130px; border-radius: 8px; object-fit: cover; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" 
                      onerror="this.src='https://placehold.co/130x130/1a1a2e/a78bfa?text=Album'">
-                <div style="font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">${album.nombre}</div>
-                <div style="color: var(--muted); font-size: 0.85rem;">Álbum</div>
+                <div class="artista-album-nombre">${album.nombre}</div>
+                <div class="artista-album-tipo">Álbum</div>
             `;
             row.appendChild(albumCard);
         });

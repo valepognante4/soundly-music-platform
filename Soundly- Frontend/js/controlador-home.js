@@ -387,3 +387,43 @@ function toggleMute() {
     document.getElementById('vol-btn').textContent = audio.muted ? '🔇' : '🔊';
 }
 function setVol(v) { window.SoundlyEvents?.setVolumen(v); }
+
+/**
+ * reproducirCancion(id)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Función global que reproduce una canción por su ID actualizando el
+ * reproductor del footer dinámicamente — SIN cambiar de página.
+ *
+ * Uso desde cualquier tarjeta:  onclick="reproducirCancion(123)"
+ *
+ * Estrategia:
+ *   1. Busca la canción en la caché de canciones cargadas (_soundlyCancionesCache).
+ *   2. Si la encuentra, llama a SoundlyEvents.reproducirLista([cancion], 0).
+ *   3. Si no la encuentra (e.g. vista de álbum), intenta obtenerla del modelo.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+window.reproducirCancion = async function reproducirCancion(id) {
+    if (!id) return;
+
+    // 1. Buscar en caché local (ya cargadas en home)
+    const cache = window._soundlyCancionesCache || [];
+    const cancionEnCache = cache.find(c => String(c.id) === String(id));
+
+    if (cancionEnCache) {
+        const idx = cache.indexOf(cancionEnCache);
+        window.SoundlyEvents?.reproducirLista(cache, idx);
+        return;
+    }
+
+    // 2. Fallback: obtener canción individual del modelo
+    try {
+        const cancion = await GestorCanciones.obtenerPorId(id);
+        if (cancion) {
+            window.SoundlyEvents?.reproducirLista([cancion], 0);
+        } else {
+            console.warn('[reproducirCancion] Canción no encontrada:', id);
+        }
+    } catch (e) {
+        console.error('[reproducirCancion] Error al obtener la canción:', e);
+    }
+};

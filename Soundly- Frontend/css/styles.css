@@ -590,6 +590,17 @@ footer p {
     letter-spacing: -0.5px;
 }
 
+/* Clase utilitaria: logo clicable que redirige al landing */
+.logo-redirect {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    text-decoration: none;
+}
+
+.logo-redirect:hover {
+    opacity: 0.85;
+}
+
 h2 {
     font-size: 1.1rem;
     font-weight: 300;

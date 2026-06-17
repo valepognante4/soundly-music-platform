@@ -225,7 +225,7 @@ body, html {
 
 .playlist-header-row {
     display: grid;
-    grid-template-columns: 48px 48px 1fr 140px 70px 50px;
+    grid-template-columns: 48px 48px 1fr 160px 80px 56px;
     align-items: center;
     padding: 8px 16px;
     border-bottom: 1px solid var(--border);
@@ -235,18 +235,31 @@ body, html {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 4px;
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* Alinear cabeceras de Género y Tiempo a la derecha */
+.playlist-header-row span:nth-child(4) {
+    text-align: right;
+    padding-right: 12px;
+}
+.playlist-header-row span:nth-child(5) {
+    text-align: right;
+    padding-right: 8px;
 }
 
 /* ─── 6. FILAS DE CANCIONES (playlist-item y playlist-row) ─────────────────────────────── */
 .playlist-item, .playlist-row {
     display: grid;
-    grid-template-columns: 48px 48px 1fr 140px 70px 50px;
+    grid-template-columns: 48px 48px 1fr 160px 80px 56px;
     align-items: center;
     padding: 8px 16px;
     border-radius: 10px;
     cursor: pointer;
     transition: background 0.15s ease;
     position: relative;
+    width: 100%;
 }
 
 .playlist-row:hover {
@@ -366,13 +379,16 @@ body, html {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: right;
+    padding-right: 12px;
 }
 
 /* Duración */
 .pl-dur {
     font-size: 0.85rem;
     color: var(--muted);
-    text-align: center;
+    text-align: right;
+    padding-right: 8px;
     font-variant-numeric: tabular-nums;
 }
 
@@ -945,3 +961,55 @@ body, html {
     cursor: pointer;
 }
 
+/* ─── VISTA DE ARTISTA: FILA DE ÁLBUMES ─────────────────────────────────── */
+.artista-albumes-titulo {
+    margin-top: 32px;
+    margin-bottom: 16px;
+    padding: 0 32px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.artista-albumes-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 20px;
+    padding: 0 32px 48px 32px;
+    width: 100%;
+}
+
+.artista-album-card {
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.artista-album-card--hover,
+.artista-album-card:hover {
+    transform: scale(1.05);
+}
+
+.artista-album-cover {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: block;
+}
+
+.artista-album-nombre {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+    color: var(--text);
+}
+
+.artista-album-tipo {
+    color: var(--muted);
+    font-size: 0.85rem;
+}

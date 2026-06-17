@@ -147,10 +147,7 @@ const Vista = {
                 <div class="card-sub">${c.artista}</div>
             `;
 
-            card.addEventListener('click', () => {
-                if (typeof onPlay === 'function') onPlay(c, i);
-                else window.SoundlyEvents?.reproducirLista(canciones, i);
-            });
+            card.setAttribute('onclick', `reproducirCancion(${c.id})`);
 
             contenedor.appendChild(card);
         });
