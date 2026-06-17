@@ -83,11 +83,11 @@ async function toggleLike(event) {
     const cancionId = btn.getAttribute('data-id');
     const usuario = GestorUsuarios.obtenerActivo() || (typeof currentUser !== 'undefined' ? currentUser : null);
 
-    if (!cancionId) { alert('No hay ninguna canción seleccionada.'); return; }
-    if (!usuario || !usuario.id) { alert('Debes iniciar sesión para agregar a favoritos.'); return; }
+    if (!cancionId) { console.warn('No hay ninguna canción seleccionada.'); return; }
+    if (!usuario || !usuario.id) { console.warn('Debes iniciar sesión para agregar a favoritos.'); return; }
 
     try {
-        const response = await fetch(`/api/canciones/${cancionId}/favorito/usuario/${usuario.id}`, {
+        const response = await fetch(`${window.SoundlyConfig.API_BASE_URL}/canciones/${cancionId}/favorito/usuario/${usuario.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
         });
@@ -95,15 +95,15 @@ async function toggleLike(event) {
         if (response.ok) {
             const icon = btn.querySelector('i');
             if (icon) {
-                icon.classList.toggle('far');
-                icon.classList.toggle('fas');
+                const isFas = icon.classList.contains('fas');
+                icon.className = isFas ? 'far fa-heart' : 'fas fa-heart';
+                icon.style.color = isFas ? '' : '#1DB954';
             }
         } else {
-            alert('No se pudo actualizar el estado de favorito.');
+            console.warn('No se pudo actualizar el estado de favorito.');
         }
     } catch (error) {
         console.error('[Player] Error de red al dar Me Gusta:', error);
-        alert('Ocurrió un error de red al intentar conectarse con el servidor.');
     }
 }
 
@@ -124,6 +124,46 @@ async function cargarVistaPlayer() {
     );
 
     calcularEstadisticasPlaylist(canciones);
+    
+    // Cargar metadata si hay parametro id en URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const cancionIdUrl = urlParams.get('id');
+    
+    if (cancionIdUrl) {
+        let cancionObj = window.cancionActual;
+        if (!cancionObj || String(cancionObj.id) !== String(cancionIdUrl)) {
+            cancionObj = canciones.find(c => String(c.id) === String(cancionIdUrl));
+        }
+        
+        if (cancionObj) {
+            window.cancionActual = cancionObj;
+            const npArt = $('album-cover');
+            const npTitle = $('song-title');
+            const npArtist = $('artist-name');
+            const genreBadge = $('genre-badge');
+            
+            if (npArt) npArt.src = cancionObj.img;
+            if (npTitle) npTitle.textContent = cancionObj.titulo;
+            if (npArtist) npArtist.textContent = cancionObj.artista;
+            if (genreBadge) genreBadge.textContent = cancionObj.genero || 'S/G';
+            
+            const btnLike = $('btn-like');
+            if (btnLike) btnLike.setAttribute('data-id', cancionObj.id);
+            
+            const usuario = GestorUsuarios.obtenerActivo();
+            if (usuario) {
+                try {
+                    const favs = await GestorCanciones.obtenerFavoritos(usuario.id);
+                    const esFav = favs.some(f => String(f.id) === String(cancionObj.id));
+                    const icon = $('heart-icon');
+                    if (icon) {
+                        icon.className = esFav ? 'fas fa-heart' : 'far fa-heart';
+                        icon.style.color = esFav ? '#1DB954' : '';
+                    }
+                } catch(e) {}
+            }
+        }
+    }
 }
 
 async function cargarVistaFavoritos(usuario) {
@@ -137,7 +177,14 @@ async function cargarVistaFavoritos(usuario) {
         Vista.renderizarTarjetasFavoritas(
             favoritos,
             'playlist-list',
-            (cancion, idx) => window.SoundlyEvents.reproducirLista(favoritos, idx),
+            (cancion, idx) => {
+                window.cancionActual = cancion;
+                if (typeof window.navegarA === 'function') {
+                    window.navegarA(`player.html?id=${cancion.id}`);
+                } else {
+                    window.location.href = `player.html?id=${cancion.id}`;
+                }
+            },
             toggleLike
         );
 

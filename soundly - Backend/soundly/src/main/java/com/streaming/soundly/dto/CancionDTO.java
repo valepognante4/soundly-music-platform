@@ -16,4 +16,5 @@ public class CancionDTO {
     private String archivoUrl;
     private int contadorReproducciones;
     private String nombreArtista; // En lugar de mandar todo el objeto Artista, solo mandamos su nombre
+    private String genero;
 }

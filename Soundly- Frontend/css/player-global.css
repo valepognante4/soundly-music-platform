@@ -881,6 +881,7 @@ body.home-layout #global-player-bar:not(.player-visible) {
    ══════════════════════════════════════════════════════════════════════════ */
 
 .artist-card {
+  position: relative;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 14px;
@@ -892,6 +893,13 @@ body.home-layout #global-player-bar:not(.player-visible) {
   cursor: pointer;
   transition: background 0.15s, transform 0.2s;
   text-align: center;
+}
+
+.artist-card .btn-like {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
 }
 
 .artist-card:hover {

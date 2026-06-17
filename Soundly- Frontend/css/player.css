@@ -47,7 +47,8 @@ body {
 /* --- PANEL PRINCIPAL (Glassmorphism) --- */
 .main-panel {
     width: 100%;
-    max-width: 960px;
+    max-width: 1300px;
+    height: 90vh;
     background: var(--color-surface);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -96,39 +97,51 @@ body {
     color: white;
 }
 
-/* --- LAYOUT PRINCIPAL (2 columnas) --- */
 .content-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 28px;
-    align-items: start;
+    grid-template-columns: 450px 1fr;
+    gap: 60px;
+    align-items: stretch;
+    flex: 1;
+    overflow: hidden;
 }
 
-/* ─── SECCIÓN DEL REPRODUCTOR ─── */
-.player-section { display: flex; flex-direction: column; }
+.player-section { display: flex; flex-direction: column; justify-content: center; height: 100%; }
 
 .song-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 22px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    text-align: center;
 }
 
 /* Portada del álbum */
 .album-wrapper {
-    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
     overflow: hidden;
     position: relative;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
 }
-.album-wrapper:hover { transform: scale(1.02); }
+.album-wrapper:hover { 
+    transform: scale(1.03); 
+    box-shadow: 0 16px 50px rgba(0,0,0,0.6);
+}
 
 #album-cover {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
     transition: opacity 0.25s ease;
 }
@@ -360,7 +373,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    max-height: 520px;
+    height: 100%;
+    max-height: none;
+    overflow: hidden;
 }
 .playlist-header {
     display: flex;
@@ -472,6 +487,10 @@ body {
     font-size: 0.78rem;
     letter-spacing: 1px;
     z-index: 10;
+}
+
+#global-player-bar {
+    display: none !important;
 }
 
 

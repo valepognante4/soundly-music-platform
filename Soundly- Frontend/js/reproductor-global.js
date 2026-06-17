@@ -653,8 +653,25 @@
         profileDropdown.id = 'profile-dropdown';
         profileDropdown.className = 'profile-dropdown';
         
-        const storedUser = JSON.parse(sessionStorage.getItem('usuarioLogueado') || sessionStorage.getItem('soundly_usuario') || 'null');
-        const userEmail = storedUser?.email || 'usuario@soundly.com';
+        let storedUser = null;
+        try {
+            storedUser = JSON.parse(localStorage.getItem('usuario_activo') || sessionStorage.getItem('usuarioLogueado') || sessionStorage.getItem('soundly_usuario') || 'null');
+        } catch (e) {
+            console.error("Error parsing user info:", e);
+        }
+        
+        const rawEmail = storedUser?.email || storedUser?.correo || 'usuario@soundly.com';
+        
+        // Escape HTML to prevent XSS
+        const escapeHTML = str => String(str).replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag]));
+        const userEmail = escapeHTML(rawEmail);
+
         profileDropdown.innerHTML = `<div style="font-weight: 600; margin-bottom: 4px;">Mi Perfil</div><div style="font-size: 12px; color: var(--sp-muted);">${userEmail}</div>`;
         document.body.appendChild(profileDropdown);
 

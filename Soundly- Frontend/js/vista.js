@@ -174,44 +174,63 @@ const Vista = {
         }
 
         contenedor.innerHTML = '';
+        contenedor.className = ''; // Remove cards-grid
+
         canciones.forEach((c, i) => {
-            const card = document.createElement('div');
-            card.className = 'music-card';
-            card.id = `card-fav-${c.id}`;
-            card.innerHTML = `
-                <img class="card-art" 
-                     src="${c.img}" 
+            const item = document.createElement('div');
+            item.className = 'playlist-item';
+            item.dataset.id = c.id;
+            item.dataset.idx = i;
+
+            const playIconHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5,3 19,12 5,21"/></svg>`;
+
+            item.innerHTML = `
+                <div class="pl-num">${i + 1}</div>
+                <img class="pl-thumb"
+                     src="${c.img}"
                      alt="${c.titulo}"
-                     onerror="this.src='https://placehold.co/300x300/1a1a2e/a78bfa?text=♪'">
-                <div class="card-play-btn" aria-label="Reproducir ${c.titulo}">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-                        <polygon points="5,3 19,12 5,21"/>
-                    </svg>
+                     onerror="this.src='https://placehold.co/48x48/1a1a2e/a78bfa?text=♪'">
+                <div class="pl-info">
+                    <span class="pl-title">${c.titulo}</span>
+                    <span class="pl-artist">${c.artista}</span>
                 </div>
-                <div class="card-title">${c.titulo}</div>
-                <div class="card-sub">${c.artista}</div>
-                <button class="btn-like fav-card-like" data-id="${c.id}" aria-label="Me gusta" style="position: absolute; top: 10px; right: 10px; z-index: 2; padding: 5px; background: rgba(0,0,0,0.5); border-radius: 50%;">
-                    <i class="fas fa-heart"></i>
-                </button>
+                <span class="pl-genre"></span>
+                <span class="pl-dur">${this.fmt(c.duracion)}</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <button class="pl-play-btn fav-card-play"
+                            aria-label="Reproducir ${c.titulo}"
+                            title="Reproducir">
+                        ${playIconHTML}
+                    </button>
+                    <button class="pl-remove-btn fav-card-like"
+                            data-id="${c.id}"
+                            aria-label="Eliminar"
+                            title="Eliminar de favoritos"
+                            style="color: #1DB954;">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
             `;
 
-            // Play callback
-            card.addEventListener('click', (e) => {
-                // Evitar que el clic en el botón de Me gusta dispare el play de la tarjeta
+            // Play callback en la fila y en el botón play
+            const btnPlay = item.querySelector('.fav-card-play');
+            const playHandler = (e) => {
                 if (e.target.closest('.fav-card-like')) return;
-                
+                e.stopPropagation();
                 if (typeof onPlay === 'function') onPlay(c, i);
                 else window.SoundlyEvents?.reproducirLista(canciones, i);
-            });
+            };
+            btnPlay.addEventListener('click', playHandler);
+            item.addEventListener('click', playHandler);
 
-            // Like callback
-            const btnLike = card.querySelector('.fav-card-like');
+            // Like/Remove callback
+            const btnLike = item.querySelector('.fav-card-like');
             btnLike.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (typeof onLike === 'function') onLike(e);
             });
 
-            contenedor.appendChild(card);
+            contenedor.appendChild(item);
         });
     },
 

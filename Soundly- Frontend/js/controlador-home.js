@@ -84,15 +84,8 @@ window.initHome = async function initHome() {
             'cards-recomendados',
             (cancion, idx) => window.SoundlyEvents.reproducirLista(recomendadas, idx)
         );
-    }
-
-    if (document.getElementById('cards-mas')) {
-        Vista.renderizarTarjetasCanciones(
-            recomendadas.slice(4, 8),
-            'cards-mas',
-            (cancion, idx) => window.SoundlyEvents.reproducirLista(recomendadas, idx + 4)
-        );
-    }
+    }    
+    // Eliminar bloque duplicado
 
     if (document.getElementById('cards-artistas')) {
         try {
@@ -106,7 +99,8 @@ window.initHome = async function initHome() {
     if (document.getElementById('cards-albumes')) {
         try {
             const albums = await window.fetchAlbums();
-            renderizarAlbums(albums, 5); // Limitar a 5 álbumes en Home
+            const shuffledAlbums = albums.sort(() => 0.5 - Math.random());
+            renderizarAlbums(shuffledAlbums, 5); // Limitar a 5 álbumes en Home
         } catch (e) {
             console.error('[Home] Error al cargar álbumes:', e);
             document.getElementById('cards-albumes').innerHTML = '<p style="color:var(--muted)">No hay álbumes disponibles</p>';
@@ -323,7 +317,15 @@ async function cargarPlaylistsSidebar(usuarioId) {
 
 async function actualizarBotonLike(cancionId, usuarioId) {
     const btn = document.getElementById('np-like');
-    if (btn) btn.textContent = '♡';
+    if (!btn) return;
+    try {
+        const favoritos = await GestorCanciones.obtenerFavoritos(usuarioId);
+        const esFavorito = favoritos.some(f => String(f.id) === String(cancionId));
+        btn.classList.toggle('liked', esFavorito);
+        btn.textContent = esFavorito ? '♥' : '♡';
+    } catch(e) {
+        console.error('[Home] Error al cargar estado de favorito:', e);
+    }
 }
 
 function inicializarModalCrearPlaylist(usuario, signal) {

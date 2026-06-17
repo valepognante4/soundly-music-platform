@@ -237,8 +237,8 @@ body, html {
     margin-bottom: 4px;
 }
 
-/* ─── 6. FILAS DE CANCIONES (playlist-item) ─────────────────────────────── */
-.playlist-item {
+/* ─── 6. FILAS DE CANCIONES (playlist-item y playlist-row) ─────────────────────────────── */
+.playlist-item, .playlist-row {
     display: grid;
     grid-template-columns: 48px 48px 1fr 140px 70px 50px;
     align-items: center;
@@ -247,6 +247,34 @@ body, html {
     cursor: pointer;
     transition: background 0.15s ease;
     position: relative;
+}
+
+.playlist-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.playlist-row .row-thumb img {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.playlist-row .row-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.playlist-row .song-name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #fff;
+}
+
+.playlist-row .song-artist {
+    font-size: 0.8rem;
+    color: var(--muted);
 }
 
 .playlist-item:hover {

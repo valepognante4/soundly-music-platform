@@ -86,7 +86,7 @@ const ControladorBusqueda = {
             contenedor.innerHTML = `
                 <div class="search-loading-state">
                     <div class="search-spinner"></div>
-                    <p>Buscando en Soundly y Deezer…</p>
+                    <p>Buscando en Soundly</p>
                 </div>`;
         }
 

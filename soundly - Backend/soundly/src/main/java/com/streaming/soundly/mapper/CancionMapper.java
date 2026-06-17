@@ -18,6 +18,10 @@ public class CancionMapper {
         // Lógica para el Artista y la Imagen
         if (cancion.getArtista() != null) {
             dto.setNombreArtista(cancion.getArtista().getNombre());
+            
+            if (cancion.getArtista().getGenero() != null) {
+                dto.setGenero(cancion.getArtista().getGenero().getNombre());
+            }
 
             // Prioridad:
             // 1. Usar la imagen de la canción si existe.
