@@ -113,6 +113,14 @@ const ControladorBusqueda = {
 let _busquedaAbortController = null;
 
 window.initBusqueda = function initBusqueda() {
+    // Verificar sesión y actualizar nombre de usuario en header
+    const usuario = GestorUsuarios.obtenerActivo();
+    if (!usuario) {
+        window.location.href = 'login.html';
+        return;
+    }
+    Vista.actualizarNombreUsuario(usuario.apodo || usuario.nombreUsuario || 'Usuario');
+
     // Resetear el flag de inicialización para que init() vuelva a bindear
     // los listeners en el nuevo DOM inyectado por el SPA
     ControladorBusqueda.state.initialized = false;

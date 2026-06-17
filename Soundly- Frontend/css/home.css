@@ -760,3 +760,39 @@ body {
     display: flex;
     flex-direction: column;
 }
+
+/* Ver todos grid styling */
+#ver-todos-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+    gap: 20px !important;
+    width: 100% !important;
+    justify-content: start !important;
+}
+
+#ver-todos-grid .song-card {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+    background: var(--card-bg) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    cursor: pointer !important;
+}
+
+#ver-todos-grid .song-card .card-image-wrapper {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin-bottom: 8px !important;
+    position: relative !important;
+}
+
+#ver-todos-grid .song-card .card-image {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}

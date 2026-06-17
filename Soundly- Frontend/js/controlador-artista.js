@@ -10,12 +10,12 @@
         abortController = new AbortController();
         const signal = abortController.signal;
 
-        if (typeof GestorUsuarios !== 'undefined') {
-            const user = GestorUsuarios.obtenerActivo();
-            if (!user && document.getElementById('btn-logout')) {
-                // Not authenticated but viewing inside SPA, handle accordingly (maybe redirect or show a banner)
-            }
+        const usuario = GestorUsuarios.obtenerActivo();
+        if (!usuario) {
+            window.location.href = 'login.html';
+            return;
         }
+        Vista.actualizarNombreUsuario(usuario.apodo || usuario.nombreUsuario || 'Usuario');
 
         const params = new URLSearchParams(window.location.search);
         const idStr = params.get('id');

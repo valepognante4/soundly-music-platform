@@ -2,6 +2,14 @@
     'use strict';
 
     function initVerTodos() {
+        // 1. Verificar sesión y actualizar nombre de usuario en header
+        const usuario = GestorUsuarios.obtenerActivo();
+        if (!usuario) {
+            window.location.href = 'login.html';
+            return;
+        }
+        Vista.actualizarNombreUsuario(usuario.apodo || usuario.nombreUsuario || 'Usuario');
+
         const params = new URLSearchParams(window.location.search);
         const tipo = params.get('tipo') || 'mas';
         
