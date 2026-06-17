@@ -23,6 +23,7 @@ const ARCHIVO_VISTA = {
     album:     'album.html',
     artista:   'artista.html',
     'todos-los-albumes': 'todos-los-albumes.html',
+    'ver-todos': 'ver-todos.html',
 };
 
 /** IDs que ya existen en el shell y no deben duplicarse desde las vistas. */
@@ -266,6 +267,10 @@ function ejecutarControlador(url) {
         } else if (pathname.endsWith('todos-los-albumes.html')) {
             if (typeof window.initTodosLosAlbumes === 'function') window.initTodosLosAlbumes();
             else console.warn('[Navegacion] window.initTodosLosAlbumes no está definido.');
+
+        } else if (pathname.endsWith('ver-todos.html')) {
+            if (typeof window.initVerTodos === 'function') window.initVerTodos();
+            else console.warn('[Navegacion] window.initVerTodos no está definido.');
 
         } else if (pathname.endsWith('player.html')) {
             if (typeof window.initPlayer === 'function') window.initPlayer();

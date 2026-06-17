@@ -264,6 +264,13 @@ const GestorCanciones = {
         return (Array.isArray(data) ? data : []).map(adaptarCancion);
     },
 
+    /** Obtiene una canción por su ID. GET /api/canciones/{id} */
+    async obtenerPorId(id) {
+        console.log("[GestorCanciones.obtenerPorId] ID solicitado:", id);
+        const data = await apiFetch(`/canciones/${id}`).catch(() => null);
+        return data ? adaptarCancion(data) : null;
+    },
+
     /** Obtiene canciones recomendadas/destacadas. GET /api/canciones/recomendados */
     async obtenerRecomendadas() {
         const data = await apiFetch('/canciones/recomendados').catch(() => []);

@@ -234,6 +234,7 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
     width: 100%;
+    justify-content: start;
 }
 
 /* ─── TARJETA DE MÚSICA UNIFICADA (.music-card) ─────────────────────── */
@@ -640,8 +641,7 @@ body {
     margin-top: 20px;
 }
 
-/* ─── GRID ESTANDARIZADO PARA ARTISTAS, ÁLBUMES, RECOMENDADOS Y TODOS LOS ÁLBUMES ─── */
-#cards-artistas,
+/* ─── GRID ESTANDARIZADO PARA ÁLBUMES, RECOMENDADOS Y TODOS LOS ÁLBUMES ─── */
 #cards-albumes,
 #cards-recomendados,
 #cards-todos-albumes {
@@ -649,11 +649,10 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 20px;
     width: 100%;
+    justify-content: start;
 }
 
 /* Tarjetas individuales dentro de los grids */
-#cards-artistas .song-card,
-#cards-artistas .artist-card,
 #cards-albumes .song-card,
 #cards-recomendados .music-card,
 #cards-todos-albumes .song-card {
@@ -734,4 +733,30 @@ body {
 /* Redondear el botón de play por si acaso */
 .artist-card .play-overlay {
     border-radius: 50% !important;
+}
+
+/* ─── CARRUSEL HORIZONTAL PARA ARTISTAS ─── */
+#cards-artistas {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 20px;
+    width: 100%;
+    scrollbar-width: none; /* Firefox */
+}
+
+#cards-artistas::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+}
+
+#cards-artistas .song-card,
+#cards-artistas .artist-card {
+    width: 180px !important;
+    flex-shrink: 0;
+    max-width: none;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
 }

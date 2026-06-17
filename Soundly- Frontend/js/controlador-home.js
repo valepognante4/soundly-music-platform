@@ -177,7 +177,7 @@ function renderizarArtistas(artistas, limit = null) {
 
     artistasAMostrar.forEach((artista) => {
         const card = document.createElement('div');
-        card.className = 'song-card artist-card fade-in';
+        card.className = 'song-card fade-in';
         card.style.cursor = 'pointer';
 
         card.innerHTML = `
@@ -194,7 +194,7 @@ function renderizarArtistas(artistas, limit = null) {
                     </button>
                 </div>
             </div>
-            <div class="card-info" style="text-align: center;">
+            <div class="card-info">
                 <h3 class="card-title">${artista.nombre}</h3>
                 <p class="card-artist">Artista</p>
             </div>
@@ -408,6 +408,7 @@ function setVol(v) { window.SoundlyEvents?.setVolumen(v); }
  * ─────────────────────────────────────────────────────────────────────────────
  */
 window.reproducirCancion = async function reproducirCancion(id) {
+    console.log("[reproducirCancion] ID solicitado:", id);
     if (!id) return;
 
     // 1. Buscar en caché local (ya cargadas en home)

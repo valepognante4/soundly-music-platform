@@ -55,21 +55,30 @@
 
         artistas.forEach(artista => {
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = 'song-card fade-in';
+            card.style.cursor = 'pointer';
             card.onclick = () => {
                 if(window.navegarA) window.navegarA(`artista.html?id=${artista.id}`);
                 else window.location.href = `artista.html?id=${artista.id}`;
             };
 
             card.innerHTML = `
-                <div class="card-thumb artist-thumb" style="border-radius:50%; overflow:hidden;">
-                    <img src="${artista.fotoUrl || 'https://placehold.co/150x150/1a1a2e/a78bfa?text=Artista'}" 
-                         alt="${artista.nombre}" style="width:100%; height:100%; object-fit:cover;"
+                <div class="card-image-wrapper">
+                    <img src="${artista.fotoUrl || artista.foto || 'https://placehold.co/150x150/1a1a2e/a78bfa?text=Artista'}" 
+                         alt="${artista.nombre}" class="card-image"
                          onerror="this.src='https://placehold.co/150x150/1a1a2e/a78bfa?text=Artista'">
-                    <button class="card-play-btn"><i class="fas fa-play"></i></button>
+                    <div class="play-overlay">
+                        <button class="play-btn-circle" aria-label="Ver artista">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                <polygon points="5,3 19,12 5,21"></polygon>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <div class="card-title">${artista.nombre}</div>
-                <div class="card-subtitle">Artista</div>
+                <div class="card-info">
+                    <h3 class="card-title">${artista.nombre}</h3>
+                    <p class="card-artist">Artista</p>
+                </div>
             `;
             container.appendChild(card);
         });
@@ -84,7 +93,8 @@
 
         albumes.forEach(album => {
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = 'song-card fade-in';
+            card.style.cursor = 'pointer';
             card.onclick = () => {
                 if(window.navegarA) window.navegarA(`album.html?id=${album.id}`);
                 else window.location.href = `album.html?id=${album.id}`;
@@ -92,14 +102,22 @@
 
             const artistaNombre = album.artistaNombre || album.artista || 'Artista Desconocido';
             card.innerHTML = `
-                <div class="card-thumb" style="border-radius:8px; overflow:hidden;">
+                <div class="card-image-wrapper">
                     <img src="${album.portada || 'https://placehold.co/150x150/1a1a2e/a78bfa?text=Album'}" 
-                         alt="${album.nombre}" style="width:100%; height:100%; object-fit:cover;"
+                         alt="${album.nombre}" class="card-image"
                          onerror="this.src='https://placehold.co/150x150/1a1a2e/a78bfa?text=Album'">
-                    <button class="card-play-btn" onclick="event.stopPropagation(); if(window.SoundlyEvents && album.canciones) window.SoundlyEvents.reproducirLista(album.canciones, 0);"><i class="fas fa-play"></i></button>
+                    <div class="play-overlay">
+                        <button class="play-btn-circle" aria-label="Ver álbum">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                                <polygon points="5,3 19,12 5,21"></polygon>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <div class="card-title">${album.nombre}</div>
-                <div class="card-subtitle">${artistaNombre}</div>
+                <div class="card-info">
+                    <h3 class="card-title">${album.nombre}</h3>
+                    <p class="card-artist">${artistaNombre}</p>
+                </div>
             `;
             container.appendChild(card);
         });
