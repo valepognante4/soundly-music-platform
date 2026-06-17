@@ -240,4 +240,12 @@ public class CancionService implements ICancionService {
         }
         cancionRepository.deleteById(id);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CancionDTO obtenerPorId(Long id) {
+        Cancion cancion = cancionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Canción no encontrada con id: " + id));
+        return CancionMapper.toDTO(cancion);
+    }
 }

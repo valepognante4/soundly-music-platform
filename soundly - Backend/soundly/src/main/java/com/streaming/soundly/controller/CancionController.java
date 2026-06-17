@@ -40,6 +40,12 @@ public class CancionController {
         return ResponseEntity.ok(canciones);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<CancionDTO> obtenerPorId(@PathVariable Long id) {
+        CancionDTO cancion = cancionService.obtenerPorId(id);
+        return ResponseEntity.ok(cancion);
+    }
+
     @GetMapping("/buscar")
     public ResponseEntity<List<CancionDTO>> buscarCanciones(
             @RequestParam(required = false) String titulo,
