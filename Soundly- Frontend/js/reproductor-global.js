@@ -65,14 +65,19 @@
     // ── ADAPTADOR DE DATOS ────────────────────────────────────────────────
     function adaptarCancion(dto) {
         if (!dto) return null;
+        // ── GUARD: si el objeto ya fue adaptado por el Modelo (tiene .img y .src
+        // como campos normalizados), no re-mapear con los campos DTO crudos o
+        // perderemos los valores correctos (img quedaría undefined → placeholder).
+        const yaAdaptado = (dto.img !== undefined && dto.src !== undefined
+                           && dto.imagenUrl === undefined && dto.archivoUrl === undefined);
         return {
             id:       dto.id,
             titulo:   dto.titulo   || 'Sin título',
             artista:  dto.nombreArtista || dto.artista || 'Artista desconocido',
             genero:   dto.genero   || '',
             duracion: dto.duracion || 0,
-            img:      dto.imagenUrl || dto.img || 'https://placehold.co/96x96/1a1a2e/a78bfa?text=♪',
-            src:      dto.archivoUrl || dto.src || '',
+            img:      yaAdaptado ? dto.img  : (dto.imagenUrl  || dto.img  || 'https://placehold.co/96x96/1a1a2e/a78bfa?text=♪'),
+            src:      yaAdaptado ? dto.src  : (dto.archivoUrl || dto.src  || ''),
         };
     }
 
@@ -308,12 +313,23 @@
         const c = adaptarCancion(cancion);
         estado.lista = [c];
         estado.idx   = 0;
+
+        // ── Actualizar UI INMEDIATAMENTE con los datos de la canción ────────
+        // No esperar al .then() de audio.play() para que el footer siempre
+        // refleje la canción seleccionada, incluso si el audio tarda en cargar
+        // o falla por CORS / formato.
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
         if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
+        actualizarVisibilidad();
+
         const cargado = cargarEnAudio(c);
-        if (!cargado) return;
+        if (!cargado) {
+            // Sin src válido: mostramos la canción pero no reproducimos
+            actualizarUI();
+            return;
+        }
         audio.play().then(() => {
             estado.playing = true;
             guardarEstado();
@@ -323,20 +339,37 @@
             console.error('[SoundlyPlayer] Error al reproducir:', err);
             estado.playing = false;
             setLoadingState(false);
+            // Aun con error, dejamos la info de la canción visible en el footer
+            actualizarUI();
             mostrarToastError('No se pudo reproducir la canción. Verificá tu conexión.');
         });
     }
 
     function reproducirLista(listaCrudos, indice = 0) {
+        if (!Array.isArray(listaCrudos) || listaCrudos.length === 0) return;
+
         estado.lista = listaCrudos.map(adaptarCancion);
         estado.idx   = Math.max(0, Math.min(indice, estado.lista.length - 1));
         const c = estado.lista[estado.idx];
+
+        // ── Actualizar UI INMEDIATAMENTE ────────────────────────────────────
+        // El footer debe reflejar la canción seleccionada en el mismo tick del
+        // click, sin depender de que audio.play() resuelva exitosamente.
+        // Esto corrige el bug donde el reproductor se queda en el estado inicial
+        // ('Seleccioná una canción') cuando el audio falla por CORS u otro error.
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
         if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
+        actualizarVisibilidad();
+        console.log('[SoundlyPlayer] reproducirLista → canción seleccionada:', c.titulo, '| img:', c.img, '| src:', c.src);
+
         const cargado = cargarEnAudio(c);
-        if (!cargado) { actualizarUI(); return; }
+        if (!cargado) {
+            // Sin src válido: mostramos la info pero no intentamos reproducir
+            actualizarUI();
+            return;
+        }
         audio.play().then(() => {
             estado.playing = true;
             guardarEstado();
@@ -347,6 +380,8 @@
             console.error('[SoundlyPlayer] Error al reproducir lista:', err);
             estado.playing = false;
             setLoadingState(false);
+            // La info de la canción ya está visible — solo reportamos el error de audio
+            actualizarUI();
             mostrarToastError('No se pudo reproducir la canción. Verificá tu conexión.');
         });
     }
@@ -652,72 +687,118 @@
         if (window.__soundlyUIEnhancementsInit) return;
         window.__soundlyUIEnhancementsInit = true;
 
-        const profileDropdown = document.createElement('div');
-        profileDropdown.id = 'profile-dropdown';
-        profileDropdown.className = 'profile-dropdown';
-        
-        let storedUser = null;
-        try {
-            storedUser = JSON.parse(localStorage.getItem('usuario_activo') || sessionStorage.getItem('usuarioLogueado') || sessionStorage.getItem('soundly_usuario') || 'null');
-        } catch (e) {
-            console.error("Error parsing user info:", e);
+        // ── PROFILE DROPDOWN ────────────────────────────────────────────
+        let existingProfileDropdown = document.getElementById('profile-dropdown');
+        let profileDropdown = existingProfileDropdown;
+
+        if (!profileDropdown) {
+            profileDropdown = document.createElement('div');
+            profileDropdown.id = 'profile-dropdown';
+            profileDropdown.className = 'profile-dropdown';
+            
+            let storedUser = null;
+            try {
+                storedUser = JSON.parse(localStorage.getItem('usuario_activo') || sessionStorage.getItem('usuarioLogueado') || sessionStorage.getItem('soundly_usuario') || 'null');
+            } catch (e) {
+                console.error("Error parsing user info:", e);
+            }
+            
+            const rawEmail = storedUser?.email || storedUser?.correo || 'usuario@soundly.com';
+            
+            // Escape HTML to prevent XSS
+            const escapeHTML = str => String(str).replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag]));
+            const userEmail = escapeHTML(rawEmail);
+
+            profileDropdown.innerHTML = `<div style="font-weight: 600; margin-bottom: 4px;">Mi Perfil</div><div style="font-size: 12px; color: var(--sp-muted);">${userEmail}</div>`;
+            document.body.appendChild(profileDropdown);
         }
+
+        // ── FULLSCREEN PLAYER BUTTONS (DIRECT LISTENERS) ─────────────────
+        const fullScreenPlayer = document.getElementById('full-screen-player');
         
-        const rawEmail = storedUser?.email || storedUser?.correo || 'usuario@soundly.com';
-        
-        // Escape HTML to prevent XSS
-        const escapeHTML = str => String(str).replace(/[&<>'"]/g, tag => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            "'": '&#39;',
-            '"': '&quot;'
-        }[tag]));
-        const userEmail = escapeHTML(rawEmail);
+        // 1. Close button
+        const btnCerrar = document.getElementById('fsp-close');
+        if (btnCerrar) {
+            btnCerrar.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (fullScreenPlayer) {
+                    fullScreenPlayer.classList.add('fsp-closing');
+                    setTimeout(() => {
+                        fullScreenPlayer.style.display = 'none';
+                        fullScreenPlayer.classList.remove('fsp-closing');
+                    }, 350);
+                }
+            });
+        }
 
-        profileDropdown.innerHTML = `<div style="font-weight: 600; margin-bottom: 4px;">Mi Perfil</div><div style="font-size: 12px; color: var(--sp-muted);">${userEmail}</div>`;
-        document.body.appendChild(profileDropdown);
+        // 2. Play/Pause button
+        const btnPlayPause = document.getElementById('fsp-play');
+        if (btnPlayPause) {
+            btnPlayPause.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.SoundlyEvents.togglePlay();
+            });
+        }
 
-        const fsOverlay = document.createElement('div');
-    fsOverlay.id = 'fs-player-overlay';
-    fsOverlay.innerHTML = `
-        <button class="fs-close-btn" id="fs-close-btn" aria-label="Volver al inicio">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                <path d="M6 9l6 6 6-6"/>
-            </svg>
-        </button>
-        <img class="fs-art" id="fs-art" src="https://placehold.co/320x320/1a1a2e/a78bfa?text=♪" alt="Portada">
-        <div class="fs-info">
-            <div class="fs-title" id="fs-title">Seleccioná una canción</div>
-            <div class="fs-artist" id="fs-artist">—</div>
-        </div>
-        <div class="fs-progress-row">
-            <span class="fs-time" id="fs-current">0:00</span>
-            <div class="fs-progress-track" id="fs-progress-track">
-                <div class="fs-progress-fill" id="fs-progress-fill"></div>
-            </div>
-            <span class="fs-time" id="fs-total">0:00</span>
-        </div>
-        <div class="fs-controls">
-            <button id="fs-btn-shuffle" aria-label="Aleatorio" data-action="shuffle">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
-            </button>
-            <button id="fs-btn-prev" aria-label="Anterior">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-            </button>
-            <button class="fs-play-btn" id="fs-btn-play" aria-label="Reproducir / Pausar">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><polygon points="5,3 19,12 5,21"/></svg>
-            </button>
-            <button id="fs-btn-next" aria-label="Siguiente">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-            </button>
-            <button id="fs-btn-repeat" aria-label="Repetir" data-action="repeat">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-            </button>
-        </div>
-    `;
-        document.body.appendChild(fsOverlay);
+        // 3. Previous button
+        const btnAnterior = document.getElementById('fsp-prev');
+        if (btnAnterior) {
+            btnAnterior.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.SoundlyEvents.anterior();
+            });
+        }
 
+        // 4. Next button
+        const btnSiguiente = document.getElementById('fsp-next');
+        if (btnSiguiente) {
+            btnSiguiente.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.SoundlyEvents.siguiente();
+            });
+        }
+
+        // 5. Shuffle button
+        const btnShuffle = document.getElementById('fsp-shuffle');
+        if (btnShuffle) {
+            btnShuffle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.SoundlyEvents.toggleShuffle();
+                syncFSPUI();
+            });
+        }
+
+        // 6. Repeat button
+        const btnRepeat = document.getElementById('fsp-repeat');
+        if (btnRepeat) {
+            btnRepeat.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.SoundlyEvents.toggleRepeat();
+                syncFSPUI();
+            });
+        }
+
+        // 7. Progress track
+        const fspProgressTrack = document.getElementById('fsp-progress-track');
+        if (fspProgressTrack) {
+            fspProgressTrack.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.__soundlyAudioInstance.duration) {
+                    const rect = fspProgressTrack.getBoundingClientRect();
+                    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                    window.__soundlyAudioInstance.currentTime = pct * window.__soundlyAudioInstance.duration;
+                }
+            });
+        }
+
+        // ── GLOBAL CLICK LISTENERS (for profile dropdown and opening fullscreen) ─────────
         document.addEventListener('click', (e) => {
             const chip = e.target.closest('.user-chip');
             if (chip) {
@@ -730,69 +811,87 @@
             }
 
             const playerBar = e.target.closest('#global-player-bar');
-            if (playerBar && !e.target.closest('button') && !e.target.closest('.gp-progress-row') && !e.target.closest('.gp-extras')) {
-                fsOverlay.classList.add('show');
-                syncFsUI();
-            }
-
-            if (e.target.closest('#fs-close-btn')) {
-                // First hide the fullscreen overlay
-                fsOverlay.classList.remove('show');
-                // Then navigate to home using SPA navigation
-                if (typeof window.navegarA === 'function') {
-                    window.navegarA('home.html');
-                } else {
-                    // Fallback to full reload if SPA nav isn't available
-                    window.location.href = 'home.html';
-                }
-            }
-
-            if (e.target.closest('#fs-btn-play')) window.SoundlyEvents.togglePlay();
-            if (e.target.closest('#fs-btn-prev')) window.SoundlyEvents.anterior();
-            if (e.target.closest('#fs-btn-next')) window.SoundlyEvents.siguiente();
-            if (e.target.closest('#fs-btn-shuffle')) { window.SoundlyEvents.toggleShuffle(); syncFsUI(); }
-            if (e.target.closest('#fs-btn-repeat')) { window.SoundlyEvents.toggleRepeat(); syncFsUI(); }
             
-            const fsTrack = e.target.closest('#fs-progress-track');
-            if (fsTrack && window.__soundlyAudioInstance.duration) {
-                const rect = fsTrack.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                window.__soundlyAudioInstance.currentTime = pct * window.__soundlyAudioInstance.duration;
+            // Handle opening fullscreen player (from index.html)
+            if (playerBar && !e.target.closest('button') && !e.target.closest('.gp-progress-row') && !e.target.closest('.gp-extras')) {
+                e.stopPropagation();
+                if (fullScreenPlayer) {
+                    fullScreenPlayer.style.display = 'flex';
+                    fullScreenPlayer.classList.remove('fsp-closing');
+                    syncFSPUI();
+                }
             }
         });
         
-        window.addEventListener('soundly:estado-cambio', syncFsUI);
-        window.addEventListener('soundly:cancion-cambio', syncFsUI);
-        window.addEventListener('soundly:ui-sync', syncFsUI);
+        // Sync fullscreen player UI on state changes
+        window.addEventListener('soundly:estado-cambio', syncFSPUI);
+        window.addEventListener('soundly:cancion-cambio', syncFSPUI);
+        window.addEventListener('soundly:ui-sync', syncFSPUI);
         
         const audio = window.__soundlyAudioInstance;
         audio.addEventListener('timeupdate', () => {
-            if (!fsOverlay.classList.contains('show')) return;
+            const fullScreenPlayer = document.getElementById('full-screen-player');
+            if (!fullScreenPlayer || fullScreenPlayer.style.display === 'none') return;
             const cur = audio.currentTime || 0;
             const tot = audio.duration || 0;
-            document.getElementById('fs-current').textContent = formatTime(cur);
-            document.getElementById('fs-total').textContent = formatTime(tot);
+            document.getElementById('fsp-current').textContent = formatTime(cur);
+            document.getElementById('fsp-total').textContent = formatTime(tot);
             const pct = tot > 0 ? (cur / tot) * 100 : 0;
-            document.getElementById('fs-progress-fill').style.width = pct + '%';
+            document.getElementById('fsp-fill').style.width = pct + '%';
         });
+
+        // Initial sync
+        syncFSPUI();
     }
 
-    function syncFsUI() {
-        const overlay = document.getElementById('fs-player-overlay');
-        if (!overlay || !overlay.classList.contains('show')) return;
+    function syncFSPUI() {
+        const fullScreenPlayer = document.getElementById('full-screen-player');
+        if (!fullScreenPlayer) return;
+        
         const state = window.__soundlyEstado;
         const c = state.lista[state.idx];
+        
         if (c) {
-            document.getElementById('fs-title').textContent = c.titulo;
-            document.getElementById('fs-artist').textContent = c.artista;
-            document.getElementById('fs-art').src = c.img;
+            const fspTitle = document.getElementById('fsp-title');
+            const fspArtist = document.getElementById('fsp-artist');
+            const fspCover = document.getElementById('fsp-cover');
+            
+            if (fspTitle) fspTitle.textContent = c.titulo;
+            if (fspArtist) fspArtist.textContent = c.artista;
+            if (fspCover) fspCover.src = c.img;
         }
-        const playBtnSvg = state.playing
-            ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
-            : '<polygon points="5,3 19,12 5,21"/>';
-        document.getElementById('fs-btn-play').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">${playBtnSvg}</svg>`;
-        document.getElementById('fs-btn-shuffle').style.color = state.shuffle ? '#1db954' : 'rgba(255,255,255,0.45)';
-        document.getElementById('fs-btn-repeat').style.color = state.repeat ? '#1db954' : 'rgba(255,255,255,0.45)';
+        
+        const fspPlayBtn = document.getElementById('fsp-play');
+        if (fspPlayBtn) {
+            const playBtnSvg = state.playing
+                ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+                : '<polygon points="5,3 19,12 5,21"/>';
+            fspPlayBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30">${playBtnSvg}</svg>`;
+        }
+        
+        const fspShuffleBtn = document.getElementById('fsp-shuffle');
+        const fspRepeatBtn = document.getElementById('fsp-repeat');
+        
+        if (fspShuffleBtn) fspShuffleBtn.style.color = state.shuffle ? '#1db954' : 'rgba(255,255,255,0.45)';
+        if (fspRepeatBtn) fspRepeatBtn.style.color = state.repeat ? '#1db954' : 'rgba(255,255,255,0.45)';
+        
+        if (fullScreenPlayer) {
+            if (state.playing) {
+                fullScreenPlayer.classList.add('fsp-is-playing');
+                const cover = document.getElementById('fsp-cover');
+                if (cover) {
+                    cover.classList.add('fsp-spinning');
+                    cover.classList.remove('fsp-paused');
+                }
+            } else {
+                fullScreenPlayer.classList.remove('fsp-is-playing');
+                const cover = document.getElementById('fsp-cover');
+                if (cover) {
+                    cover.classList.remove('fsp-spinning');
+                    cover.classList.add('fsp-paused');
+                }
+            }
+        }
     }
     
     function formatTime(s) {

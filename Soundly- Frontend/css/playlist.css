@@ -153,6 +153,106 @@ body, html {
 }
 
 /* ─── 4. BARRA DE ACCIONES ──────────────────────────────────────────────── */
+.action-buttons,
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 32px;
+}
+
+/* ─── 5. SONG-TABLE (ESTÁNDAR) ───────────────────────────────────────────── */
+.song-table {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0 32px;
+}
+
+.song-table-header {
+    display: grid;
+    grid-template-columns: 48px 1fr 160px 80px;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+
+.song-table-header .col-genre,
+.song-table-header .col-duration {
+    text-align: right;
+}
+
+.song-table-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.song-row {
+    display: grid;
+    grid-template-columns: 48px 1fr 160px 80px;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.song-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.song-row .row-num {
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.song-row .row-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.song-row .row-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song-row .row-artist {
+    font-size: 0.78rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song-row .row-genre {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: right;
+    padding-right: 12px;
+}
+
+.song-row .row-duration {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ─── 4. BARRA DE ACCIONES ──────────────────────────────────────────────── */
 .action-buttons {
     display: flex;
     align-items: center;

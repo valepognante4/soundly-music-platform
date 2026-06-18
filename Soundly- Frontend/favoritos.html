@@ -89,28 +89,30 @@
         </aside>
 
         <main class="main-content">
-            <header class="hero-banner">
-                <div class="banner-icon"><i class="fas fa-heart"></i></div>
-                <div class="banner-text">
-                    <h1>Tus Me Gusta</h1>
-                    <p id="fav-meta-info"></p>
-                </div>
-            </header>
+        <header class="hero-banner">
+            <div class="banner-icon"><i class="fas fa-heart"></i></div>
+            <div class="banner-text">
+                <h1>Tus Me Gusta</h1>
+                <p id="fav-meta-info"></p>
+            </div>
+        </header>
 
-            <section class="playlist-controls">
-                <button class="btn-play-big" id="btn-play-all" aria-label="Reproducir todos los favoritos">
-                    <i class="fas fa-play"></i>
-                </button>
-                <div class="list-view-toggle">
-                    <span>Lista</span> <i class="fas fa-list"></i>
-                </div>
-            </section>
+        <section class="header-actions">
+            <button class="btn-play-big" id="btn-play-all" aria-label="Reproducir todos los favoritos">
+                <i class="fas fa-play"></i>
+            </button>
+        </section>
 
-            <section class="playlist-container">
-                <!-- Vista.renderizarTarjetasFavoritas() inyecta aquí -->
-                <div id="playlist-list" class="cards-grid"></div>
-            </section>
-        </main>
+        <section class="song-table">
+            <div class="song-table-header">
+                <span>#</span>
+                <span>Título</span>
+                <span class="col-genre">Género</span>
+                <span class="col-duration"><i class="far fa-clock"></i></span>
+            </div>
+            <div class="song-table-body" id="playlist-list"></div>
+        </section>
+    </main>
 
     </div>
 
@@ -202,6 +204,7 @@
     <script src="js/modelo-canciones.js"></script>
     <script src="js/reproductor-global.js"></script>
     <script src="js/vista.js"></script>
+    <script src="js/controlador-favoritos.js"></script>
     <script src="js/controlador-player.js"></script>
 </body>
 

@@ -364,13 +364,4 @@ function toggleMute()  {
 }
 function setVol(v) { window.SoundlyEvents?.setVolumen(v); }
 
-document.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'np-art') {
-        const fsp = document.getElementById('full-screen-player');
-        if (fsp) fsp.style.display = 'flex';
-    }
-    if (e.target && (e.target.id === 'fsp-close' || e.target.closest('#fsp-close'))) {
-        const fsp = document.getElementById('full-screen-player');
-        if (fsp) fsp.style.display = 'none';
-    }
-});
+
