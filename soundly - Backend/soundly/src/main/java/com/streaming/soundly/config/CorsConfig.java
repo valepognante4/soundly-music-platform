@@ -10,7 +10,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * Centraliza la política de orígenes permitidos en un único lugar,
  * eliminando la necesidad de @CrossOrigin en cada controlador.
  *
- * Origen permitido: http://127.0.0.1:5500 (Live Server de VS Code)
+ * Orígenes permitidos:
+ * - http://127.0.0.1:5500 (Live Server de VS Code - desarrollo local)
+ * - https://soundly-music-platform-fkqu.vercel.app (Frontend desplegado en Vercel - producción)
  */
 @Configuration
 public class CorsConfig {
@@ -21,13 +23,13 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        // Puerto estándar de Live Server de VS Code
-                        .allowedOrigins("http://127.0.0.1:5500")
+                        // Orígenes permitidos: desarrollo local y producción en Vercel
+                        .allowedOrigins("http://127.0.0.1:5500", "https://soundly-music-platform-fkqu.vercel.app")
                         // Métodos HTTP necesarios para una API REST completa
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-                        // Cabeceras estándar que el frontend puede enviar
-                        .allowedHeaders("*")
-                        // Permitir cookies / tokens de sesión si se necesitan en el futuro
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        // Cabeceras permitidas
+                        .allowedHeaders("Content-Type", "Authorization")
+                        // Permitir cookies / tokens de sesión
                         .allowCredentials(true)
                         // El preflight se cachea por 1 hora (3600 segundos)
                         .maxAge(3600);

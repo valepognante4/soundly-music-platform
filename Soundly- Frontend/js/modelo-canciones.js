@@ -17,7 +17,7 @@
  */
 window.fetchAlbums = async function() {
     try {
-        const response = await fetch('http://localhost:8080/api/albums');
+        const response = await fetch(`${window.SoundlyConfig.API_BASE_URL}/albums`);
         if (!response.ok) throw new Error('Network response was not ok');
         const albums = await response.json();
         return albums;
