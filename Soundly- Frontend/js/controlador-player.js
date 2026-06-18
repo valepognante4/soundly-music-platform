@@ -14,11 +14,12 @@ let _playerAbortController = null;
 
 // ── INICIALIZACIÓN SPA ────────────────────────────────────────────────────────
 
-window.initPlayer = async function initPlayer() {
+// Renombrados para evitar conflictos con otros controladores
+window.initPlayerLegacy = async function initPlayerLegacy() {
     await _initVista('player');
 };
 
-window.initFavoritos = async function initFavoritos() {
+window.initFavoritosLegacy = async function initFavoritosLegacy() {
     await _initVista('favoritos');
 };
 

@@ -78,12 +78,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
     mostrarCargando();
 
-    // Mostrar controles de detalle
+    // Mostrar todos los elementos de la vista de detalle
     const actionBar = document.querySelector('.action-buttons');
     if (actionBar) actionBar.classList.remove('hidden');
 
     const header = document.querySelector('.playlist-header-row');
     if (header) header.classList.remove('hidden');
+
+    const playlistContainer = document.querySelector('.playlist-container');
+    if (playlistContainer) playlistContainer.classList.remove('hidden');
 
     const btnPlayAll = document.querySelector('.btn-play-big');
     if (btnPlayAll) btnPlayAll.classList.remove('hidden');
@@ -99,6 +102,9 @@ async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
 
     const statDuracion = document.getElementById('stat-duracion');
     if (statDuracion) statDuracion.classList.remove('hidden');
+
+    const bannerType = document.querySelector('.banner-type');
+    if (bannerType) bannerType.style.display = 'block';
 
     try {
         const playlist = await GestorPlaylists.obtenerDetalle(idPlaylist);
@@ -270,20 +276,16 @@ function resaltarCancionActiva(idxActivo) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 async function cargarListaPlaylists(usuario) {
-    // Ocultar controles de detalle (solo relevantes cuando hay ?id)
+    // Ocultar TODOS los elementos específicos de la vista de detalle
     const actionBar = document.querySelector('.action-buttons');
     if (actionBar) actionBar.classList.add('hidden');
 
     const header = document.querySelector('.playlist-header-row');
     if (header) header.classList.add('hidden');
 
-    const bannerTitleContainer = document.querySelector('.playlist-title-container');
-    if (bannerTitleContainer) bannerTitleContainer.innerHTML = '<h1 id="playlist-name">Tus Playlists</h1>';
+    const playlistContainer = document.querySelector('.playlist-container');
+    if (playlistContainer) playlistContainer.classList.add('hidden');
 
-    const creadorEl = $_pl('nombre-usuario-display');
-    if (creadorEl) creadorEl.textContent = usuario?.apodo || usuario?.nombreUsuario || '';
-
-    // Ocultar botón play, botón +, botón de edición y stats
     const btnPlayAll = document.querySelector('.btn-play-big');
     if (btnPlayAll) btnPlayAll.classList.add('hidden');
 
@@ -299,11 +301,27 @@ async function cargarListaPlaylists(usuario) {
     const statDuracion = document.getElementById('stat-duracion');
     if (statDuracion) statDuracion.classList.add('hidden');
 
+    const bannerType = document.querySelector('.banner-type');
+    if (bannerType) bannerType.style.display = 'none';
+
+    // Actualizar el banner para la vista general
+    const bannerTitleContainer = document.querySelector('.playlist-title-container');
+    if (bannerTitleContainer) bannerTitleContainer.innerHTML = '<h1 id="playlist-name">Tus Playlists</h1>';
+
+    const creadorEl = $_pl('nombre-usuario-display');
+    if (creadorEl) creadorEl.textContent = usuario?.apodo || usuario?.nombreUsuario || '';
+
+    // Ahora, necesitamos que el contenedor de la lista de playlists se muestre
+    const contenedor = $_pl('playlist-list');
+    if (contenedor) {
+        // Primero quitamos la clase hidden por si acaso
+        contenedor.classList.remove('hidden');
+    }
+
     mostrarCargando();
 
     try {
         const playlists = await GestorPlaylists.listarPorUsuario(usuario.id);
-        const contenedor = $_pl('playlist-list');
         if (!contenedor) return;
 
         if (!playlists || playlists.length === 0) {
@@ -687,6 +705,59 @@ function escaparHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// ── MODAL DE CONFIRMACIÓN PERSONALIZADO ─────────────────────────────────
+function mostrarModalConfirmacion(mensaje, onConfirmar, onCancelar) {
+    let modal = document.getElementById('modal-confirmacion-playlist');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-confirmacion-playlist';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="width: 90%; max-width: 400px; text-align: center;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #fff;">Confirmar eliminación</h2>
+                <p id="modal-confirmacion-mensaje" style="color: #b3b3b3; margin-bottom: 2rem; font-size: 1rem; line-height: 1.5;"></p>
+                <div class="modal-actions" style="gap: 1rem;">
+                    <button id="btn-confirmacion-cancelar" class="btn-secundario" style="min-width: 100px;">Cancelar</button>
+                    <button id="btn-confirmacion-aceptar" class="btn-primario" style="background: #ff4757; min-width: 100px;">Eliminar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    const mensajeEl = document.getElementById('modal-confirmacion-mensaje');
+    const btnCancelar = document.getElementById('btn-confirmacion-cancelar');
+    const btnAceptar = document.getElementById('btn-confirmacion-aceptar');
+
+    if (mensajeEl) mensajeEl.textContent = mensaje;
+
+    // Limpiar listeners anteriores (clonar botones)
+    const nuevoCancelar = btnCancelar.cloneNode(true);
+    btnCancelar.parentNode.replaceChild(nuevoCancelar, btnCancelar);
+    const nuevoAceptar = btnAceptar.cloneNode(true);
+    btnAceptar.parentNode.replaceChild(nuevoAceptar, btnAceptar);
+
+    modal.classList.add('visible');
+
+    // Agregar nuevos listeners
+    document.getElementById('btn-confirmacion-cancelar').addEventListener('click', () => {
+        modal.classList.remove('visible');
+        if (typeof onCancelar === 'function') onCancelar();
+    });
+
+    document.getElementById('btn-confirmacion-aceptar').addEventListener('click', () => {
+        modal.classList.remove('visible');
+        if (typeof onConfirmar === 'function') onConfirmar();
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('visible');
+            if (typeof onCancelar === 'function') onCancelar();
+        }
+    });
 }
 
 // ── COMPATIBILIDAD: funciones globales del reproductor ────────────────────────

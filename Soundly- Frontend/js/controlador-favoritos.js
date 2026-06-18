@@ -48,10 +48,26 @@
             favoritos = [];
         }
 
-        // ── Contador de canciones ──────────────────────────────────────────
-        const metaInfoEl = document.getElementById('fav-meta-info');
-        if (metaInfoEl) {
-            metaInfoEl.textContent = `${favoritos.length} canción${favoritos.length !== 1 ? 'es' : ''}`;
+        // ── Refinar header visual ─────────────────────────────────────────
+        const bannerText = document.querySelector('.banner-text');
+        if (bannerText) {
+            // Inyectar "Playlist" label arriba del título
+            const playlistLabel = document.createElement('span');
+            playlistLabel.style.cssText = 'display:block;font-size:0.875rem;font-weight:500;color:var(--color-text-muted,#9ca3af);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;';
+            playlistLabel.textContent = 'Playlist';
+            
+            // Actualizar título y metadatos
+            const h1 = bannerText.querySelector('h1');
+            const metaInfoEl = document.getElementById('fav-meta-info');
+            
+            if (h1 && !bannerText.firstChild?.textContent?.includes('Playlist')) {
+                bannerText.insertBefore(playlistLabel, h1);
+            }
+            
+            if (metaInfoEl) {
+                const nombreUsuario = usuario.apodo || usuario.nombreUsuario || 'Usuario';
+                metaInfoEl.textContent = `${nombreUsuario} • ${favoritos.length} canción${favoritos.length !== 1 ? 'es' : ''}`;
+            }
         }
 
         // ── Botón "Reproducir todo" ────────────────────────────────────────
