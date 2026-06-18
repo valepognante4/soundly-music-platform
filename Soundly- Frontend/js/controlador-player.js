@@ -193,14 +193,14 @@ async function cargarVistaFavoritos(usuario) {
             favoritos,
             'playlist-list',
             (cancion, idx) => {
-                window.cancionActual = cancion;
-                if (typeof window.navegarA === 'function') {
-                    window.navegarA(`player.html?id=${cancion.id}`);
-                } else {
-                    window.location.href = `player.html?id=${cancion.id}`;
-                }
+                window.SoundlyPlayer.reproducirLista(favoritos, idx);
             },
-            toggleLike
+            async (e) => {
+                const cancionId = e.currentTarget.getAttribute('data-id');
+                if (!cancionId || !usuario) return;
+                await GestorCanciones.toggleFavorito(cancionId, usuario.id);
+                await cargarVistaFavoritos(usuario);
+            }
         );
 
         calcularEstadisticasPlaylist(favoritos);

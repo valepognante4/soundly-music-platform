@@ -9,10 +9,28 @@
  *
  * Flujo:
  *   1. Clic en link interno → preventDefault → navegarA(url)
- *   2. cargarVista(nombre) → fetch vista.html → inyectar en #content
+ *   2. cargarVista(nombre) → fetch vista.html (cache:no-store) → inyectar en #content
  *   3. ejecutarControlador() → llama window.initXxx() del controlador
+ *
+ * ── DEBUGGER SPA ──────────────────────────────────────────────────────────────
+ * Activa logs detallados con:  localStorage.setItem('soundly_debug', '1')
+ * Desactiva con:               localStorage.removeItem('soundly_debug')
  * ─────────────────────────────────────────────────────────────────────────────
  */
+
+// ─── DEBUGGER SPA ─────────────────────────────────────────────────────────────
+const _NAV_DEBUG = localStorage.getItem('soundly_debug') === '1';
+function _navLog(...args) {
+    if (!_NAV_DEBUG) return;
+    const ts = new Date().toISOString().slice(11, 23);
+    console.groupCollapsed(`%c[Navegacion ${ts}]`, 'color:#a78bfa;font-weight:bold', ...args);
+    console.log('📍 URL actual:       ', window.location.href);
+    console.log('📄 Archivo HTML real:', document.location.pathname);
+    console.log('🧠 Vista activa:     ', _vistaActual ?? '(ninguna)');
+    console.log('🎵 Audio singleton:  ', window.__soundlyAudioInstance ?? '(no inicializado)');
+    console.log('🔗 History state:    ', history.state);
+    console.groupEnd();
+}
 
 const ARCHIVO_VISTA = {
     home:      'home.html',
@@ -39,6 +57,15 @@ let _vistaActual = null;
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ── 1. MARCAR EL SPA COMO ACTIVO ─────────────────────────────────────────
+    // Los archivos de ruta (playlist.html, favoritos.html, etc.) leen este flag
+    // para saber si están siendo cargados dentro del SPA (via fetch/DOMParser)
+    // o directamente por el navegador (F5, link externo, bookmark).
+    // DOMParser NO ejecuta scripts, así que el flag solo existe cuando index.html
+    // fue el punto de entrada real.
+    try { sessionStorage.setItem('soundly_spa_active', '1'); } catch (e) {}
+
+    // ── 2. DELEGACIÓN DE CLICS ────────────────────────────────────────────────
     document.body.addEventListener('click', (e) => {
         const a = e.target.closest('a');
         if (!a) return;
@@ -61,13 +88,40 @@ document.addEventListener('DOMContentLoaded', () => {
         navegarA(a.href);
     });
 
+    // ── 3. BOTÓN ATRÁS / ADELANTE ─────────────────────────────────────────────
     window.addEventListener('popstate', () => {
         const vista = vistaDesdeUrl(window.location.href);
         if (vista) cargarVista(vista);
     });
 
     if (document.getElementById('content')) {
+
+        // ── 4. RECUPERACIÓN DE F5 EN RUTAS SPA ───────────────────────────────
+        // Si el usuario presionó F5 en playlist.html?id=123, busqueda.html, etc.,
+        // el "redirect guard" de ese archivo guardó la URL en soundly_redirect
+        // y redirigió aquí. Recuperamos esa URL y navegamos a la vista correcta.
+        const redirectUrl = sessionStorage.getItem('soundly_redirect');
+        if (redirectUrl) {
+            sessionStorage.removeItem('soundly_redirect');
+            _navLog('🔄 Recuperando vista desde redirect:', redirectUrl);
+
+            const vista = vistaDesdeUrl(redirectUrl);
+            const params = (() => {
+                try { return new URL(redirectUrl, window.location.origin).search; } catch (e) { return ''; }
+            })();
+
+            if (vista) {
+                const archivo = archivoDesdeVista(vista);
+                // Restaurar URL con query params (ej: playlist.html?id=123)
+                history.replaceState(null, '', archivo + params);
+                cargarVista(vista);
+                return; // ← salir: no ejecutar la carga normal abajo
+            }
+        }
+
+        // ── 5. CARGA INICIAL NORMAL ────────────────────────────────────────────
         const vistaInicial = vistaDesdeUrl(window.location.href) || 'home';
+        _navLog('🏠 Vista inicial:', vistaInicial);
         cargarVista(vistaInicial);
     }
 });
@@ -124,11 +178,15 @@ async function cargarVista(nombreVista) {
     contentEl.style.opacity = '0.4';
     contentEl.style.transition = 'opacity 0.15s ease';
 
+    _navLog(`cargarVista('${nombreVista}') → archivo: '${archivo}'`);
+
     try {
-        // Add cache busting timestamp
+        // cache: 'no-store' evita que la HTTP Cache de fetch devuelva versiones
+        // obsoletas (el problema de "Ghost File"). El timestamp es una capa extra.
         const cacheBust = `?v=${Date.now()}`;
-        const response = await fetch(archivo + cacheBust);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const response = await fetch(archivo + cacheBust, { cache: 'no-store' });
+        _navLog(`fetch OK → status ${response.status}, url: ${response.url}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status} al cargar ${archivo}`);
 
         const html = await response.text();
         const doc  = new DOMParser().parseFromString(html, 'text/html');
@@ -171,8 +229,33 @@ async function cargarVista(nombreVista) {
         }));
 
     } catch (error) {
-        console.error('[Navegacion] Error al cargar vista:', error);
-        window.location.href = archivo;
+        console.error('[Navegacion] ❌ Error al cargar vista:', error);
+
+        // ⚠️  NO usar window.location.href aquí: destruiría el reproductor de audio.
+        // En su lugar mostramos un mensaje de error inline dentro de #content.
+        const contentEl = document.getElementById('content');
+        if (contentEl) {
+            contentEl.style.opacity = '1';
+            contentEl.innerHTML = `
+                <div style="
+                    display:flex;flex-direction:column;align-items:center;
+                    justify-content:center;height:60vh;gap:16px;
+                    color:var(--color-text-muted,#9ca3af);font-family:inherit;
+                ">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                         width="56" height="56" style="opacity:.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4m0 4h.01"/>
+                    </svg>
+                    <p style="margin:0;font-size:1.1rem">No se pudo cargar la vista</p>
+                    <code style="font-size:.8rem;opacity:.6">${error.message}</code>
+                    <button onclick="window.navegarA('home.html')" style="
+                        margin-top:8px;padding:10px 24px;border-radius:999px;
+                        background:var(--color-primary,#7c3aed);color:#fff;
+                        border:none;cursor:pointer;font-size:.95rem;
+                    ">← Volver al inicio</button>
+                </div>`;
+        }
     }
 }
 
@@ -190,11 +273,26 @@ function extraerContenidoVista(doc, nombreVista) {
     return null;
 }
 
+// Clases de layout que pertenecen al shell y nunca deben eliminarse
+const CLASES_SHELL = new Set(['home-layout']);
+
 function aplicarClaseBody(doc) {
     const clasesVista = doc.body.className.trim();
     const clases = new Set(clasesVista.split(/\s+/).filter(Boolean));
-    clases.add('home-layout');
+
+    // Siempre preservar clases del shell (sidebar visible, layout base)
+    CLASES_SHELL.forEach(c => clases.add(c));
+
+    // Remover clases de layout de la vista anterior para no acumularlas
+    const clasesLayout = ['playlist-layout', 'busqueda-layout', 'favoritos-layout',
+                          'album-layout', 'artista-layout', 'player-layout',
+                          'todos-albumes-layout', 'ver-todos-layout'];
+    clasesLayout.forEach(c => {
+        if (!clases.has(c)) document.body.classList.remove(c);
+    });
+
     document.body.className = [...clases].join(' ');
+    _navLog('aplicarClaseBody →', document.body.className);
 }
 
 function inyectarModalesVista(doc) {

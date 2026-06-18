@@ -11,11 +11,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/favoritos.css">
+    <link rel="stylesheet" href="css/player-global.css">
 </head>
 
 <body>
 
-    <div class="app-wrapper">
+    <!-- ═══ SPA REDIRECT GUARD ══════════════════════════════════════════════════
+         Redirige a index.html cuando este archivo se abre DIRECTAMENTE (F5,
+         bookmark, link externo). Cuando navegacion.js hace fetch() de este
+         archivo, DOMParser NO ejecuta scripts → este bloque es inofensivo.
+         ════════════════════════════════════════════════════════════════════════ -->
+    <script>
+    (function () {
+        if (!sessionStorage.getItem('soundly_spa_active')) {
+            sessionStorage.setItem('soundly_redirect', location.href);
+            window.location.replace('index.html');
+        }
+    })();
+    </script>
 
         <aside class="sidebar">
             <div class="sidebar-top">
@@ -106,9 +119,10 @@
         <section class="song-table">
             <div class="song-table-header">
                 <span>#</span>
-                <span>Título</span>
+                <span>Título / Artista</span>
                 <span class="col-genre">Género</span>
                 <span class="col-duration"><i class="far fa-clock"></i></span>
+                <span class="col-actions"></span>
             </div>
             <div class="song-table-body" id="playlist-list"></div>
         </section>

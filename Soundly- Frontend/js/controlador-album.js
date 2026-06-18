@@ -100,6 +100,9 @@
 
         const thumb = cancion.imagenUrl || album.portada || FALLBACK_THUMB;
 
+        // Género: se lee de la canción primero, luego del artista del álbum
+        const genero = cancion.genero || cancion.genre || '—';
+
         row.innerHTML = `
             <div class="row-index" role="cell">
                 <span class="number">${index + 1}</span>
@@ -117,17 +120,22 @@
                 <span class="song-name">${cancion.titulo ?? 'Sin título'}</span>
                 <span class="song-artist">${artistName}</span>
             </div>
-            <div class="row-genre" role="cell">—</div>
+            <div class="row-genre" role="cell">${genero}</div>
             <div class="row-duration" role="cell">${_formatDuracion(cancion.duracion)}</div>
-            <div class="row-actions" role="cell"></div>
+            <div class="row-actions" role="cell">
+                <button class="row-like-btn" aria-label="Me gusta" title="Me gusta" data-song-id="${cancion.id ?? ''}">
+                    <i class="far fa-heart"></i>
+                </button>
+            </div>
         `;
 
         row.querySelector('.row-index').addEventListener('click', () =>
             window.SoundlyEvents?.reproducirLista(allCanciones, index)
         );
-        row.addEventListener('dblclick', () =>
-            window.SoundlyEvents?.reproducirLista(allCanciones, index)
-        );
+        row.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.row-actions')) return;
+            window.SoundlyEvents?.reproducirLista(allCanciones, index);
+        });
 
         return row;
     }

@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Prevent browser caching -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Soundly | Mis Playlists</title>
     <meta name="description" content="Gestioná y escuchá tus playlists personalizadas en Soundly.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +19,20 @@
 </head>
 
 <body>
+
+    <!-- ═══ SPA REDIRECT GUARD ══════════════════════════════════════════════════
+         Redirige a index.html cuando este archivo se abre DIRECTAMENTE (F5,
+         bookmark, link externo). Cuando navegacion.js hace fetch() de este
+         archivo, DOMParser NO ejecuta scripts → este bloque es inofensivo.
+         ════════════════════════════════════════════════════════════════════════ -->
+    <script>
+    (function () {
+        if (!sessionStorage.getItem('soundly_spa_active')) {
+            sessionStorage.setItem('soundly_redirect', location.href);
+            window.location.replace('index.html');
+        }
+    })();
+    </script>
 
     <div class="app-wrapper">
 
@@ -287,6 +305,7 @@
     <script src="js/modelo-canciones.js"></script>
     <script src="js/reproductor-global.js"></script>
     <script src="js/vista.js"></script>
+    <script src="js/ui-modals.js"></script>
     <script src="js/controlador-playlist.js"></script>
 
 </body>

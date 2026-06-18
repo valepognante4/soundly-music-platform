@@ -87,46 +87,49 @@
             });
         });
 
+        // Función local para formatear duración en m:ss
+        function _fmt(seg) {
+            if (!seg || isNaN(seg)) return '--:--';
+            const m = Math.floor(seg / 60);
+            const s = String(Math.floor(seg % 60)).padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
         // 1. Mostrar todas las canciones en una sola tabla vertical
         const songsSection = document.createElement('div');
         songsSection.className = 'album-section';
         songsSection.innerHTML = `
-            <div class="playlist-header-row">
+            <div class="song-table-header">
                 <span>#</span>
-                <span></span>
-                <span>Título</span>
-                <span>Género</span>
-                <span><i class="far fa-clock"></i></span>
-                <span></span>
+                <span>Título / Artista</span>
+                <span class="col-genre">Género</span>
+                <span class="col-duration"><i class="far fa-clock"></i></span>
+                <span class="col-actions"></span>
             </div>
         `;
         
         todasLasCanciones.forEach((cancion, idx) => {
             const divRow = document.createElement('div');
-            divRow.className = 'playlist-item';
+            divRow.className = 'song-row';
             divRow.dataset.id = cancion.id;
 
             divRow.innerHTML = `
-                <div class="pl-num">${idx + 1}</div>
-                <div class="pl-thumb-container" style="position:relative;">
-                    <img src="${cancion.img}" alt="${cancion.titulo}" class="pl-thumb" onerror="this.src='https://placehold.co/48x48/1a1a2e/a78bfa?text=♪'">
+                <div class="row-num">${idx + 1}</div>
+                <div class="row-info">
+                    <div class="row-title">${cancion.titulo}</div>
+                    <div class="row-artist">${cancion.artista}</div>
                 </div>
-                <div class="pl-info">
-                    <span class="pl-title">${cancion.titulo}</span>
-                    <span class="pl-artist">${cancion.artista}</span>
-                </div>
-                <div class="pl-genre">${cancion.genero}</div>
-                <div class="pl-dur">${cancion.duracion}</div>
-                <div class="pl-actions" style="display:flex;align-items:center;gap:4px;">
-                    <button class="pl-play-btn" aria-label="Reproducir" title="Reproducir">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5,3 19,12 5,21"/></svg>
+                <div class="row-genre">${cancion.genero || 'Desconocido'}</div>
+                <div class="row-duration">${_fmt(cancion.duracion)}</div>
+                <div class="row-actions">
+                    <button class="row-like-btn" aria-label="Me gusta" title="Me gusta" data-song-id="${cancion.id || ''}">
+                        <i class="far fa-heart"></i>
                     </button>
-                    <button class="pl-remove-btn" title="Me gusta"><i class="far fa-heart"></i></button>
                 </div>
             `;
 
             divRow.addEventListener('click', (e) => {
-                if (e.target.closest('.pl-actions')) return;
+                if (e.target.closest('.row-actions')) return;
                 if (window.SoundlyEvents && window.SoundlyEvents.reproducirLista) {
                     window.SoundlyEvents.reproducirLista(todasLasCanciones, idx);
                 }

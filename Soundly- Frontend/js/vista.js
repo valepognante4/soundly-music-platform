@@ -209,19 +209,18 @@ const Vista = {
                     <span class="pl-title">${c.titulo}</span>
                     <span class="pl-artist">${c.artista}</span>
                 </div>
-                <span class="pl-genre"></span>
-                <span class="pl-dur">${this.fmt(c.duracion)}</span>
+                <span class="pl-genre">${c.genero || '—'}</span>
+                <span class="pl-dur">${this.fmt(c.duracion) || '—'}</span>
                 <div style="display:flex;align-items:center;gap:4px;">
                     <button class="pl-play-btn fav-card-play"
                             aria-label="Reproducir ${c.titulo}"
                             title="Reproducir">
                         ${playIconHTML}
                     </button>
-                    <button class="pl-remove-btn fav-card-like"
+                    <button class="row-like-btn row-like-btn--active fav-card-like"
                             data-id="${c.id}"
                             aria-label="Eliminar"
-                            title="Eliminar de favoritos"
-                            style="color: #1DB954;">
+                            title="Eliminar de favoritos">
                         <i class="fas fa-heart"></i>
                     </button>
                 </div>
@@ -358,7 +357,7 @@ const Vista = {
     // renderizarPlaylists
     // Lista de playlists del usuario con nombre, creador y cantidad de canciones.
     // ─────────────────────────────────────────────────────────────────────
-    renderizarPlaylists(playlists, contenedorId, onClickPlaylist = null) {
+    renderizarPlaylists(playlists, contenedorId, onClickPlaylist = null, onDeletePlaylist = null) {
         const contenedor = this._getContainer(contenedorId);
         if (!contenedor) return;
 
@@ -394,9 +393,19 @@ const Vista = {
                         ${cantidadCanciones} canciones · ${creador}
                     </span>
                 </div>
+                <button class="btn-delete-playlist" 
+                        data-id="${p.id}"
+                        aria-label="Eliminar playlist ${nombre}"
+                        title="Eliminar playlist">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             `;
             if (typeof onClickPlaylist === 'function') {
-                item.addEventListener('click', () => onClickPlaylist(p));
+                item.addEventListener('click', (e) => {
+                    if (!e.target.closest('.btn-delete-playlist')) {
+                        onClickPlaylist(p);
+                    }
+                });
             }
             contenedor.appendChild(item);
         });

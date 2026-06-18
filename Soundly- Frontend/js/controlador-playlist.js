@@ -78,6 +78,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
     mostrarCargando();
 
+    // Mostrar controles de detalle
+    const actionBar = document.querySelector('.action-buttons');
+    if (actionBar) actionBar.classList.remove('hidden');
+
+    const header = document.querySelector('.playlist-header-row');
+    if (header) header.classList.remove('hidden');
+
+    const btnPlayAll = document.querySelector('.btn-play-big');
+    if (btnPlayAll) btnPlayAll.classList.remove('hidden');
+
+    const btnAddCircle = document.querySelector('.btn-add-circle');
+    if (btnAddCircle) btnAddCircle.classList.remove('hidden');
+
+    const btnEditName = document.getElementById('btn-edit-name');
+    if (btnEditName) btnEditName.classList.remove('hidden');
+
+    const statCanciones = document.getElementById('stat-canciones');
+    if (statCanciones) statCanciones.classList.remove('hidden');
+
+    const statDuracion = document.getElementById('stat-duracion');
+    if (statDuracion) statDuracion.classList.remove('hidden');
+
     try {
         const playlist = await GestorPlaylists.obtenerDetalle(idPlaylist);
         if (!playlist) throw new Error('Playlist no encontrada');
@@ -95,8 +117,9 @@ async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
 
         // Botón Play All
         $_pl('btn-play-all')?.addEventListener('click', () => {
+            console.log('Reproduciendo lista de playlist:', playlist.canciones);
             if (playlist.canciones?.length > 0) {
-                window.SoundlyEvents?.reproducirLista(playlist.canciones, 0);
+                window.SoundlyPlayer.reproducirLista(playlist.canciones);
             }
         }, { signal });
 
@@ -198,12 +221,12 @@ function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
         // Play al clic en la fila o botón play
         const accionPlay = (e) => {
             if (e.target.closest('.pl-remove-btn')) return; // no propagar
-            window.SoundlyEvents?.reproducirLista(canciones, i);
+            window.SoundlyPlayer.reproducirLista(canciones, i);
         };
         item.addEventListener('click', accionPlay);
         item.querySelector('.pl-play-btn').addEventListener('click', e => {
             e.stopPropagation();
-            window.SoundlyEvents?.reproducirLista(canciones, i);
+            window.SoundlyPlayer.reproducirLista(canciones, i);
         });
 
         // Quitar canción
@@ -249,16 +272,32 @@ function resaltarCancionActiva(idxActivo) {
 async function cargarListaPlaylists(usuario) {
     // Ocultar controles de detalle (solo relevantes cuando hay ?id)
     const actionBar = document.querySelector('.action-buttons');
-    if (actionBar) actionBar.style.display = 'none';
+    if (actionBar) actionBar.classList.add('hidden');
 
     const header = document.querySelector('.playlist-header-row');
-    if (header) header.style.display = 'none';
+    if (header) header.classList.add('hidden');
 
     const bannerTitleContainer = document.querySelector('.playlist-title-container');
     if (bannerTitleContainer) bannerTitleContainer.innerHTML = '<h1 id="playlist-name">Tus Playlists</h1>';
 
     const creadorEl = $_pl('nombre-usuario-display');
     if (creadorEl) creadorEl.textContent = usuario?.apodo || usuario?.nombreUsuario || '';
+
+    // Ocultar botón play, botón +, botón de edición y stats
+    const btnPlayAll = document.querySelector('.btn-play-big');
+    if (btnPlayAll) btnPlayAll.classList.add('hidden');
+
+    const btnAddCircle = document.querySelector('.btn-add-circle');
+    if (btnAddCircle) btnAddCircle.classList.add('hidden');
+
+    const btnEditName = document.getElementById('btn-edit-name');
+    if (btnEditName) btnEditName.classList.add('hidden');
+
+    const statCanciones = document.getElementById('stat-canciones');
+    if (statCanciones) statCanciones.classList.add('hidden');
+
+    const statDuracion = document.getElementById('stat-duracion');
+    if (statDuracion) statDuracion.classList.add('hidden');
 
     mostrarCargando();
 
@@ -281,6 +320,41 @@ async function cargarListaPlaylists(usuario) {
             const url = `playlist.html?id=${p.id}`;
             if (typeof window.navegarA === 'function') window.navegarA(url);
             else window.location.href = url;
+        });
+
+        // Event delegation para botón de eliminar playlist
+        contenedor.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('.btn-delete-playlist');
+            if (!deleteBtn) return;
+
+            e.stopPropagation();
+            const playlistId = deleteBtn.dataset.id;
+
+            // Confirmación antes de eliminar
+            mostrarModalConfirmacion(
+                '¿Estás seguro de que quieres eliminar esta playlist? Esta acción no se puede deshacer.',
+                async () => {
+                    try {
+                        await GestorPlaylists.eliminar(playlistId);
+                        
+                        // Limpiar estado global si la playlist eliminada estaba en reproducción
+                        if (window.SoundlyPlayer) {
+                            // Por ahora, no tenemos playlistId en el estado, pero podemos eliminar el estado guardado
+                            if (sessionStorage.getItem('soundly_player_state')) {
+                                sessionStorage.removeItem('soundly_player_state');
+                            }
+                        }
+
+                        // Recargar la lista de playlists
+                        await cargarListaPlaylists(usuario);
+
+                        mostrarToast('Playlist eliminada correctamente.', 'success');
+                    } catch (error) {
+                        console.error('[Playlist] Error al eliminar playlist:', error);
+                        mostrarToast('Error al eliminar la playlist. Intentá de nuevo.', 'error');
+                    }
+                }
+            );
         });
 
     } catch (error) {

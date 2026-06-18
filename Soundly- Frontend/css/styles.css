@@ -1361,3 +1361,18 @@ button[type="submit"]:hover {
     color: rgba(255, 255, 255, 0.5);
     font-size: 0.85rem;
 }
+
+/* Esto quita el subrayado del enlace */
+.logo-redirect {
+    text-decoration: none; 
+    color: inherit; /* Esto hace que el texto conserve su color original en lugar de ponerse azul */
+    display: flex;   /* Opcional: asegura que se mantenga bien alineado */
+    align-items: center;
+    cursor: pointer;
+}
+
+/* Esto es para que no cambie de color cuando pasas el mouse por encima */
+.logo-redirect:hover {
+    text-decoration: none;
+    color: inherit; 
+}

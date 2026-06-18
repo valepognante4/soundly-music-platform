@@ -16,6 +16,20 @@
 
 <body class="home-layout">
 
+    <!-- ═══ SPA REDIRECT GUARD ══════════════════════════════════════════════════
+         Redirige a index.html cuando este archivo se abre DIRECTAMENTE (F5,
+         bookmark, link externo). Cuando navegacion.js hace fetch() de este
+         archivo, DOMParser NO ejecuta scripts → este bloque es inofensivo.
+         ════════════════════════════════════════════════════════════════════════ -->
+    <script>
+    (function () {
+        if (!sessionStorage.getItem('soundly_spa_active')) {
+            sessionStorage.setItem('soundly_redirect', location.href);
+            window.location.replace('index.html');
+        }
+    })();
+    </script>
+
     <aside class="sidebar">
         <div class="sidebar-top">
             <a href="index.html" class="brand">
