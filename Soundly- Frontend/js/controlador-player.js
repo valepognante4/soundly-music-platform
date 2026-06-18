@@ -48,19 +48,34 @@ async function _initVista(tipoVista) {
     sincronizarEstadisticas();
     inicializarModalCrearPlaylistPlayer(usuario, signal);
 
-    window.addEventListener('soundly:cancion-cambio', ({ detail }) => {
-        resaltarCancionActiva(detail.idx);
+    window.addEventListener('soundly:cancion-cambio', () => {
+        resaltarCancionActivaPorId();
     }, { signal });
 
-    window.addEventListener('soundly:estado-cambio', ({ detail }) => {
-        resaltarCancionActiva(detail.idx);
+    window.addEventListener('soundly:estado-cambio', () => {
+        resaltarCancionActivaPorId();
     }, { signal });
 
     const btnLike = document.querySelector('.btn-like');
     if (btnLike) btnLike.addEventListener('click', toggleLike, { signal });
 
-    const idxActual = window.SoundlyPlayer?.getEstado?.()?.idx ?? -1;
-    if (idxActual >= 0) resaltarCancionActiva(idxActual);
+    // Call the function initially to highlight any active track
+    resaltarCancionActivaPorId();
+}
+
+function resaltarCancionActivaPorId() {
+    const activeId = window.SoundlyPlayer?.getCancionActualId?.();
+    const allItems = document.querySelectorAll('.playlist-item');
+    
+    allItems.forEach(item => {
+        const itemId = item.dataset.id;
+        
+        if (activeId && itemId == activeId) {
+            item.classList.add('active-track');
+        } else {
+            item.classList.remove('active-track');
+        }
+    });
 }
 
 // ── AUTO-INIT: acceso directo a player.html / favoritos.html ──────────────────

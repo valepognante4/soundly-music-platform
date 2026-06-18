@@ -625,6 +625,7 @@
         syncUI,
         getEstado: () => ({ ...estado }),
         getCancionActual: () => estado.lista[estado.idx] || null,
+        getCancionActualId: () => (estado.lista[estado.idx] ? estado.lista[estado.idx].id : null),
         getAudio: () => audio,
     };
 
@@ -638,6 +639,8 @@
         togglePlay()  { window.dispatchEvent(new CustomEvent('soundly:toggle-play')); },
         siguiente()   { window.dispatchEvent(new CustomEvent('soundly:siguiente')); },
         anterior()    { window.dispatchEvent(new CustomEvent('soundly:anterior')); },
+        toggleShuffle() { window.dispatchEvent(new CustomEvent('soundly:toggle-shuffle')); },
+        toggleRepeat()  { window.dispatchEvent(new CustomEvent('soundly:toggle-repeat')); },
         setVolumen(v) { window.dispatchEvent(new CustomEvent('soundly:set-volumen', { detail: { valor: v } })); },
     };
 
@@ -676,37 +679,43 @@
         document.body.appendChild(profileDropdown);
 
         const fsOverlay = document.createElement('div');
-        fsOverlay.id = 'fs-player-overlay';
-        fsOverlay.innerHTML = `
-            <button class="fs-close-btn" id="fs-close-btn" aria-label="Cerrar reproductor">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>
+    fsOverlay.id = 'fs-player-overlay';
+    fsOverlay.innerHTML = `
+        <button class="fs-close-btn" id="fs-close-btn" aria-label="Volver al inicio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                <path d="M6 9l6 6 6-6"/>
+            </svg>
+        </button>
+        <img class="fs-art" id="fs-art" src="https://placehold.co/320x320/1a1a2e/a78bfa?text=♪" alt="Portada">
+        <div class="fs-info">
+            <div class="fs-title" id="fs-title">Seleccioná una canción</div>
+            <div class="fs-artist" id="fs-artist">—</div>
+        </div>
+        <div class="fs-progress-row">
+            <span class="fs-time" id="fs-current">0:00</span>
+            <div class="fs-progress-track" id="fs-progress-track">
+                <div class="fs-progress-fill" id="fs-progress-fill"></div>
+            </div>
+            <span class="fs-time" id="fs-total">0:00</span>
+        </div>
+        <div class="fs-controls">
+            <button id="fs-btn-shuffle" aria-label="Aleatorio" data-action="shuffle">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
             </button>
-            <img class="fs-art" id="fs-art" src="https://placehold.co/320x320/1a1a2e/a78bfa?text=♪" alt="Portada">
-            <div class="fs-info">
-                <div class="fs-title" id="fs-title">Seleccioná una canción</div>
-                <div class="fs-artist" id="fs-artist">—</div>
-            </div>
-            <div class="fs-progress-row">
-                <span class="fs-time" id="fs-current">0:00</span>
-                <div class="fs-progress-track" id="fs-progress-track">
-                    <div class="fs-progress-fill" id="fs-progress-fill"></div>
-                </div>
-                <span class="fs-time" id="fs-total">0:00</span>
-            </div>
-            <div class="fs-controls">
-                <button id="fs-btn-prev" aria-label="Anterior">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                </button>
-                <button class="fs-play-btn" id="fs-btn-play" aria-label="Reproducir / Pausar">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><polygon points="5,3 19,12 5,21"/></svg>
-                </button>
-                <button id="fs-btn-next" aria-label="Siguiente">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                </button>
-            </div>
-        `;
+            <button id="fs-btn-prev" aria-label="Anterior">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="fs-play-btn" id="fs-btn-play" aria-label="Reproducir / Pausar">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><polygon points="5,3 19,12 5,21"/></svg>
+            </button>
+            <button id="fs-btn-next" aria-label="Siguiente">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+            <button id="fs-btn-repeat" aria-label="Repetir" data-action="repeat">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+            </button>
+        </div>
+    `;
         document.body.appendChild(fsOverlay);
 
         document.addEventListener('click', (e) => {
@@ -727,12 +736,22 @@
             }
 
             if (e.target.closest('#fs-close-btn')) {
+                // First hide the fullscreen overlay
                 fsOverlay.classList.remove('show');
+                // Then navigate to home using SPA navigation
+                if (typeof window.navegarA === 'function') {
+                    window.navegarA('home.html');
+                } else {
+                    // Fallback to full reload if SPA nav isn't available
+                    window.location.href = 'home.html';
+                }
             }
 
             if (e.target.closest('#fs-btn-play')) window.SoundlyEvents.togglePlay();
             if (e.target.closest('#fs-btn-prev')) window.SoundlyEvents.anterior();
             if (e.target.closest('#fs-btn-next')) window.SoundlyEvents.siguiente();
+            if (e.target.closest('#fs-btn-shuffle')) { window.SoundlyEvents.toggleShuffle(); syncFsUI(); }
+            if (e.target.closest('#fs-btn-repeat')) { window.SoundlyEvents.toggleRepeat(); syncFsUI(); }
             
             const fsTrack = e.target.closest('#fs-progress-track');
             if (fsTrack && window.__soundlyAudioInstance.duration) {
@@ -772,6 +791,8 @@
             ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
             : '<polygon points="5,3 19,12 5,21"/>';
         document.getElementById('fs-btn-play').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">${playBtnSvg}</svg>`;
+        document.getElementById('fs-btn-shuffle').style.color = state.shuffle ? '#1db954' : 'rgba(255,255,255,0.45)';
+        document.getElementById('fs-btn-repeat').style.color = state.repeat ? '#1db954' : 'rgba(255,255,255,0.45)';
     }
     
     function formatTime(s) {

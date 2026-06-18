@@ -125,7 +125,9 @@ async function cargarVista(nombreVista) {
     contentEl.style.transition = 'opacity 0.15s ease';
 
     try {
-        const response = await fetch(archivo);
+        // Add cache busting timestamp
+        const cacheBust = `?v=${Date.now()}`;
+        const response = await fetch(archivo + cacheBust);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const html = await response.text();
@@ -155,6 +157,14 @@ async function cargarVista(nombreVista) {
         );
 
         ejecutarControlador(archivo);
+
+        // Reload playlists in sidebar to ensure they're fresh
+        if (typeof GestorUsuarios !== 'undefined') {
+            const usuario = GestorUsuarios.obtenerActivo();
+            if (usuario && typeof window.cargarPlaylistsSidebar === 'function') {
+                window.cargarPlaylistsSidebar(usuario.id);
+            }
+        }
 
         window.dispatchEvent(new CustomEvent('soundly:vista-cambiada', {
             detail: { vista: nombreVista, url: archivo },

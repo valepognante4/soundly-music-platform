@@ -1161,3 +1161,203 @@ button[type="submit"]:hover {
         font-size: 1rem;
     }
 }
+
+/* =========================================================
+   FULLSCREEN PLAYER
+   ========================================================= */
+#fs-player-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#fs-player-overlay.show {
+    display: flex;
+}
+
+.fs-close-btn {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fs-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.fs-art {
+    width: 320px;
+    height: 320px;
+    border-radius: 24px;
+    object-fit: cover;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    margin-bottom: 40px;
+}
+
+.fs-info {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.fs-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.fs-artist {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.fs-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 32px;
+}
+
+.fs-time {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    min-width: 40px;
+}
+
+.fs-progress-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+}
+
+.fs-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a855f7, #7e22ce);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+.fs-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+}
+
+.fs-controls button {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.fs-controls button:hover {
+    transform: scale(1.1);
+}
+
+.fs-play-btn {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(90deg, #a855f7, #7e22ce);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fs-play-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 40px rgba(168, 85, 247, 0.4);
+}
+
+/* Profile dropdown (added in reproductor-global.js) */
+#profile-dropdown {
+    position: fixed;
+    top: 80px;
+    right: 50px;
+    background: rgba(18, 18, 18, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px 24px;
+    border-radius: 16px;
+    display: none;
+    z-index: 1000;
+}
+
+#profile-dropdown.show {
+    display: block;
+}
+
+/* =========================================================
+   CONSISTENT CARD STYLES
+   ========================================================= */
+.card-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-4px);
+}
+
+.card-item .card-image-wrapper {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-item .card-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.card-item .card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.card-item .card-title {
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.card-item .card-subtitle {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+}

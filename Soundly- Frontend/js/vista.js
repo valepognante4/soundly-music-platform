@@ -147,7 +147,25 @@ const Vista = {
                 <div class="card-sub">${c.artista}</div>
             `;
 
-            card.setAttribute('onclick', `reproducirCancion(${c.id})`);
+            // Use the onPlay callback if provided, otherwise use default
+            const handlePlay = () => {
+                if (typeof onPlay === 'function') {
+                    onPlay(c, i);
+                } else {
+                    // Default behavior if no callback
+                    window.SoundlyEvents?.reproducirLista(canciones, i);
+                }
+            };
+
+            // Remove inline onclick and use addEventListener
+            card.addEventListener('click', handlePlay);
+            const playBtn = card.querySelector('.card-play-btn');
+            if (playBtn) {
+                playBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handlePlay();
+                });
+            }
 
             contenedor.appendChild(card);
         });

@@ -76,6 +76,9 @@ window.initHome = async function initHome() {
         recomendadas = todasLasCanciones.slice(0, 8);
     }
 
+    // Guardar todas las canciones en caché para compatibilidad con reproducirCancion
+    window._soundlyCancionesCache = todasLasCanciones;
+
     // ── 4. RENDERIZAR SECCIONES ───────────────────────────────────────────
 
     // Desordenar recomendaciones para que sean dinámicas cada vez
@@ -286,7 +289,8 @@ function renderizarQuickGrid(canciones) {
     });
 }
 
-async function cargarPlaylistsSidebar(usuarioId) {
+// Make this globally accessible so navegacion.js can call it too!
+window.cargarPlaylistsSidebar = async function cargarPlaylistsSidebar(usuarioId) {
     if (!usuarioId) return;
     try {
         const playlists = await GestorPlaylists.listarPorUsuario(usuarioId);
