@@ -7,12 +7,12 @@
 }
 
 :root {
-    --green: #1db954;
-    --bg: #0a0a0a;
-    --sidebar-bg: #111111;
-    --card-bg: rgba(255, 255, 255, 0.04);
+    --green: #1DB954;
+    --bg: #050505;
+    --sidebar-bg: rgba(15, 15, 15, 0.95);
+    --card-bg: rgba(255, 255, 255, 0.05);
     --card-hover: rgba(255, 255, 255, 0.08);
-    --border: rgba(255, 255, 255, 0.07);
+    --border: rgba(255, 255, 255, 0.1);
     --text: #ffffff;
     --muted: rgba(255, 255, 255, 0.45);
     --player-h: 78px;
@@ -20,7 +20,7 @@
 
 body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
+    background: linear-gradient(135deg, #050505 0%, #0f1714 50%, #0a0a0a 100%);
     color: var(--text);
     height: 100vh;
     display: grid;
@@ -34,8 +34,19 @@ body {
     grid-column: 2;
     grid-row: 1;
     overflow-y: auto;
-    background: linear-gradient(180deg, #0f1e14 0%, #0a0a0a 300px);
+    background: rgba(10, 10, 10, 0.3);
+    backdrop-filter: blur(10px);
     padding: 0 0 40px;
+}
+
+/* Glassmorphism container for content */
+.content-section {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 0 32px 32px;
 }
 
 .main-content::-webkit-scrollbar {
@@ -51,13 +62,13 @@ body {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(10, 10, 10, 0.85);
+    background: rgba(10, 10, 10, 0.9);
     backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
     padding: 16px 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border);
 }
 
 .topbar-nav {
@@ -592,7 +603,9 @@ body {
 }
 
 .sidebar { 
-    background: #121212; /* Cambiado a un gris oscuro, consistente con el main-content */
+    background: rgba(18, 18, 18, 0.95); 
+    backdrop-filter: blur(10px);
+    border-right: 1px solid var(--border);
     color: #fff; 
     padding: 20px; 
     display: flex;

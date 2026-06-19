@@ -193,7 +193,10 @@ body.home-layout #content:has(#playlist-name) .playlist-container {
 
 /* ── Player (main-panel inyectado sin wrapper) ── */
 body.home-layout #content:has(.content-layout) {
-    background: #0b0b0b !important;
+    /* Gradiente radial: verde profundo (#1e3a2a) hacia negro (#050505) */
+    background: radial-gradient(circle at top right, #1e3a2a, #050505 70%) !important;
+    
+    /* Mantenemos el resto igual */
     padding: 36px !important;
     display: flex !important;
     flex-direction: column !important;
@@ -201,6 +204,8 @@ body.home-layout #content:has(.content-layout) {
     align-items: stretch !important;
     justify-content: flex-start !important;
     max-width: 100% !important;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 body.home-layout #content:has(.content-layout) .player-header {
