@@ -101,10 +101,9 @@
         songsSection.innerHTML = `
             <div class="song-table-header">
                 <span>#</span>
-                <span>Título / Artista</span>
+                <span>Título</span>
                 <span class="col-genre">Género</span>
-                <span class="col-duration"><i class="far fa-clock"></i></span>
-                <span class="col-actions"></span>
+                <span class="col-duration">Duración</span>
             </div>
         `;
         
@@ -116,20 +115,17 @@
             divRow.innerHTML = `
                 <div class="row-num">${idx + 1}</div>
                 <div class="row-info">
-                    <div class="row-title">${cancion.titulo}</div>
-                    <div class="row-artist">${cancion.artista}</div>
+                    <img src="${cancion.img}" alt="${cancion.titulo}" class="row-thumb" onerror="this.src='https://placehold.co/40x40/1a1a2e/a78bfa?text=♪'">
+                    <div class="row-text">
+                        <div class="row-title">${cancion.titulo}</div>
+                        <div class="row-artist">${cancion.artista}</div>
+                    </div>
                 </div>
                 <div class="row-genre">${cancion.genero || 'Desconocido'}</div>
                 <div class="row-duration">${_fmt(cancion.duracion)}</div>
-                <div class="row-actions">
-                    <button class="row-like-btn" aria-label="Me gusta" title="Me gusta" data-song-id="${cancion.id || ''}">
-                        <i class="far fa-heart"></i>
-                    </button>
-                </div>
             `;
 
             divRow.addEventListener('click', (e) => {
-                if (e.target.closest('.row-actions')) return;
                 if (window.SoundlyEvents && window.SoundlyEvents.reproducirLista) {
                     window.SoundlyEvents.reproducirLista(todasLasCanciones, idx);
                 }

@@ -267,12 +267,14 @@ const Vista = {
             card.className = 'artist-card';
             card.id = `card-artista-${a.id}`;
             card.innerHTML = `
-                <img class="artist-photo" 
-                     src="${a.foto}" 
-                     alt="${a.nombre}"
-                     onerror="this.src='https://placehold.co/200x200/1a1a2e/a78bfa?text=🎤'">
+                <div class="card-image-wrapper">
+                    <img class="card-image" 
+                         src="${a.foto}" 
+                         alt="${a.nombre}"
+                         onerror="this.src='https://placehold.co/200x200/1a1a2e/a78bfa?text=🎤'">
+                </div>
                 <div class="artist-name">${a.nombre}</div>
-                <div class="artist-genre">${a.genero}</div>
+                <div class="artist-genre">Artista</div>
             `;
             if (typeof onClickArtista === 'function') {
                 card.addEventListener('click', () => onClickArtista(a));
