@@ -86,7 +86,7 @@ window.initHome = async function initHome() {
 
     if (document.getElementById('cards-recomendados')) {
         Vista.renderizarTarjetasCanciones(
-            shuffledRecomendadas.slice(0, 4),
+            shuffledRecomendadas.slice(0, 5),
             'cards-recomendados',
             (cancion, idx) => window.SoundlyEvents.reproducirLista(shuffledRecomendadas, idx)
         );

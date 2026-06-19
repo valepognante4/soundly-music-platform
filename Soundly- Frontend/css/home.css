@@ -656,7 +656,6 @@ body {
 
 /* ─── GRID ESTANDARIZADO PARA ÁLBUMES, RECOMENDADOS Y TODOS LOS ÁLBUMES ─── */
 #cards-albumes,
-#cards-recomendados,
 #cards-todos-albumes {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -665,12 +664,31 @@ body {
     justify-content: start;
 }
 
+/* Grid para Recomendados: 5 columnas fijas para llenar el espacio */
+#cards-recomendados {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    width: 100%;
+    justify-content: start;
+}
+
 /* Tarjetas individuales dentro de los grids */
 #cards-albumes .song-card,
-#cards-recomendados .music-card,
 #cards-todos-albumes .song-card {
     width: 100% !important;
     max-width: none;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tarjetas de recomendados: mismo estilo que canciones */
+#cards-recomendados .music-card {
+    width: 100% !important;
+    aspect-ratio: 1 / 1.2 !important;
     padding: 12px;
     border-radius: 12px;
     background: var(--card-bg);
@@ -692,11 +710,19 @@ body {
 /* object-fit:cover universal para todas las portadas en grids */
 #cards-artistas .card-image,
 #cards-albumes .card-image,
-#cards-recomendados .card-art,
 #cards-todos-albumes .card-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+}
+
+/* Imagen de tarjetas de recomendados: tamaño fijo 160px */
+#cards-recomendados .card-art {
+    width: 100%;
+    height: 160px !important;
+    object-fit: cover;
+    border-radius: 8px !important;
     display: block;
 }
 
@@ -715,6 +741,27 @@ body {
 #cards-albumes .song-card .card-artist,
 #cards-todos-albumes .song-card .card-artist,
 #cards-artistas .card-artist {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Títulos y subtítulos de tarjetas de recomendados */
+#cards-recomendados .card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+#cards-recomendados .card-sub {
     font-size: 0.75rem;
     color: var(--muted);
     white-space: nowrap;
@@ -772,6 +819,79 @@ body {
     background: var(--card-bg);
     display: flex;
     flex-direction: column;
+}
+
+/* ─── ESTILOS ESPECÍFICOS PARA CANCIONES Y ARTISTAS (SIN TOCAR ÁLBUMES) ─── */
+
+/* Grid para contenedores de canciones y artistas: 5 columnas (EXCLUYE el carrusel horizontal de artistas en home) */
+#cards-canciones,
+#cards-artistas-grid,
+.contenedor-canciones,
+.contenedor-artistas,
+#ver-todos-grid:not(#cards-albumes):not(#cards-todos-albumes) {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 20px !important;
+    width: 100% !important;
+    justify-content: start !important;
+}
+
+/* Tarjetas de canciones y artistas: tamaño uniforme */
+.song-card:not(.album-card),
+.artist-card {
+    width: 100% !important;
+    aspect-ratio: 1 / 1.2 !important; /* Rectángulo vertical */
+    padding: 12px !important;
+    border-radius: 12px !important;
+    background: var(--card-bg) !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Imagen dentro de tarjetas de canciones y artistas */
+.song-card:not(.album-card) img,
+.song-card:not(.album-card) .card-image,
+.artist-card img,
+.artist-card .card-image {
+    width: 100% !important;
+    height: 160px !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+    display: block !important;
+}
+
+/* Wrapper de imagen para canciones y artistas (si existe) */
+.song-card:not(.album-card) .card-image-wrapper,
+.artist-card .card-image-wrapper {
+    width: 100% !important;
+    height: 160px !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    margin-bottom: 8px !important;
+}
+
+/* Control de desbordamiento de texto para títulos de canciones y artistas */
+.song-card:not(.album-card) h3,
+.song-card:not(.album-card) span,
+.song-card:not(.album-card) .card-title,
+.artist-card h3,
+.artist-card span,
+.artist-card .card-title {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    max-width: 100% !important;
+}
+
+/* Control de desbordamiento de texto para nombres de artistas/albumes en tarjetas de canciones */
+.song-card:not(.album-card) .card-artist,
+.artist-card .card-artist {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    max-width: 100% !important;
 }
 
 /* Ver todos grid styling */

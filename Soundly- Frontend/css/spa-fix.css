@@ -75,6 +75,8 @@ body.home-layout > #content.main-content {
     box-sizing: border-box;
 }
 
+
+
 body.home-layout > #global-player-bar {
     grid-area: player !important;
     grid-column: 1 / -1 !important;
@@ -144,9 +146,17 @@ body.home-layout #content:has(#greeting) {
 
 /* ── Búsqueda ── */
 body.home-layout #content:has(#search-input) {
-    background: #121212 !important;
+    /* Fondo transparente con tu degradado global */
+    background: radial-gradient(circle at top right, #1e3a2a, #050505 70%) !important;
+    
+    /* Efecto Glassmorphism */
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    
+    /* Espaciado y forma */
     padding: 24px 32px !important;
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
 body.home-layout.dark-theme {

@@ -29,10 +29,15 @@ body, html {
 
 /* --- 4. CONTENIDO PRINCIPAL --- */
 .main-content {
-    background: var(--bg-main);
-    border-radius: 8px;
-    padding: 24px 32px;
-    overflow-y: auto;
+    /* Eliminamos el color negro sólido y ponemos transparente */
+    background-color: transparent !important; 
+    
+    /* Aplicamos el degradado que ya te gustó */
+    background: radial-gradient(circle at top right, #1e3a2a, #050505 70%) !important;
+    
+    /* Mantenemos el resto igual */
+    padding: 20px;
+    min-height: 100vh;
 }
 
 /* --- 5. BUSCADOR PROFESIONAL --- */
@@ -449,4 +454,4 @@ h2 { font-size: 1.5rem; margin-bottom: 24px; }
     .search-results-grid {
         grid-template-columns: 1fr;
     }
-}
+}

@@ -396,3 +396,115 @@ window.cargarSeccion          = cargarSeccion;
 window.navegarA               = navegarA;
 window.actualizarSidebarActivo = actualizarSidebarActivo;
 window.vistaDesdeUrl          = vistaDesdeUrl;
+
+// ─── DELEGACIÓN DE EVENTOS GLOBAL: ELIMINAR PLAYLIST ─────────────────────────
+let _listenerEliminarPlaylistInicializado = false;
+let _playlistAEliminar = null;
+let _cardPlaylistAEliminar = null;
+
+function abrirModalConfirmarEliminar(playlistId, cardElement) {
+    _playlistAEliminar = playlistId;
+    _cardPlaylistAEliminar = cardElement;
+    
+    const modal = document.getElementById('modal-confirmar-eliminar');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function cerrarModalConfirmarEliminar() {
+    const modal = document.getElementById('modal-confirmar-eliminar');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    _playlistAEliminar = null;
+    _cardPlaylistAEliminar = null;
+}
+
+async function confirmarEliminarPlaylist() {
+    if (!_playlistAEliminar) return;
+    
+    try {
+        await GestorPlaylists.eliminar(_playlistAEliminar);
+        
+        // Eliminar el nodo del DOM sin recargar la página
+        if (_cardPlaylistAEliminar && _cardPlaylistAEliminar.parentNode) {
+            _cardPlaylistAEliminar.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            _cardPlaylistAEliminar.style.opacity = '0';
+            _cardPlaylistAEliminar.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                _cardPlaylistAEliminar.remove();
+                
+                // Si la vista es playlist.html, actualizar la lista de playlists en el sidebar
+                const usuario = GestorUsuarios.obtenerActivo();
+                if (usuario && typeof window.cargarPlaylistsSidebar === 'function') {
+                    window.cargarPlaylistsSidebar(usuario.id);
+                }
+            }, 300);
+        }
+        
+        console.log(`[Eliminar Playlist] Playlist ${_playlistAEliminar} eliminada exitosamente`);
+    } catch (error) {
+        console.error('[Eliminar Playlist] Error al eliminar:', error);
+        alert('Ocurrió un error al eliminar la playlist.');
+    } finally {
+        cerrarModalConfirmarEliminar();
+    }
+}
+
+function inicializarListenerEliminarPlaylist() {
+    if (_listenerEliminarPlaylistInicializado) return;
+    _listenerEliminarPlaylistInicializado = true;
+    
+    document.body.addEventListener('click', async (e) => {
+        const botonEliminar = e.target.closest('.btn-delete-playlist');
+        if (!botonEliminar) return;
+        
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const playlistId = botonEliminar.getAttribute('data-id');
+        if (!playlistId) {
+            console.warn('[Eliminar Playlist] No se encontró el data-id del botón');
+            return;
+        }
+        
+        // Encontrar la tarjeta de playlist para eliminarla visualmente
+        const cardPlaylist = botonEliminar.closest('.playlist-card');
+        
+        abrirModalConfirmarEliminar(playlistId, cardPlaylist);
+    });
+    
+    // Listener para el botón de cancelar del modal
+    const btnCancelar = document.getElementById('btn-modal-cancelar-eliminar');
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', cerrarModalConfirmarEliminar);
+    }
+    
+    // Listener para el botón de confirmar del modal
+    const btnConfirmar = document.getElementById('btn-modal-confirmar-eliminar');
+    if (btnConfirmar) {
+        btnConfirmar.addEventListener('click', confirmarEliminarPlaylist);
+    }
+    
+    // Cerrar modal al hacer click en el overlay
+    const modalOverlay = document.getElementById('modal-confirmar-eliminar');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                cerrarModalConfirmarEliminar();
+            }
+        });
+    }
+    
+    // Cerrar modal al presionar Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            cerrarModalConfirmarEliminar();
+        }
+    });
+}
+
+// Inicializar el listener inmediatamente
+inicializarListenerEliminarPlaylist();
