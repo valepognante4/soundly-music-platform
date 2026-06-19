@@ -1137,5 +1137,5 @@ body {
     pointer-events: auto !important;
     position: relative;
     z-index: 10000 !important;
-    border: 2px solid red !important; /* Esto pondrá un borde rojo a los botones */
+    
 }

@@ -201,6 +201,52 @@
         }
 
         actualizarProgreso();
+
+        // ── ACTUALIZACIÓN DEL MODAL (FULL-SCREEN PLAYER) ──
+        // Puede que el HTML use 'fs-player-overlay' o 'full-screen-player'. Verificamos ambos.
+        const modalId = document.getElementById('fs-player-overlay') ? '#fs-player-overlay' : '#full-screen-player';
+        const modal = document.querySelector(modalId);
+        
+        if (modal) {
+            // Usamos querySelector dentro del modal para estar seguros de no chocar con otros elementos
+            const fspTitle  = modal.querySelector('#fsp-title');
+            const fspArtist = modal.querySelector('#fsp-artist');
+            const fspCover  = modal.querySelector('#fsp-cover');
+            const fspPlay   = modal.querySelector('#fsp-play');
+            const fspShuffle = modal.querySelector('#fsp-shuffle');
+            const fspRepeat  = modal.querySelector('#fsp-repeat');
+            
+            if (fspTitle) fspTitle.textContent = c.titulo || 'Sin título';
+            if (fspArtist) fspArtist.textContent = c.artista || 'Artista desconocido';
+            if (fspCover) {
+                fspCover.src = c.img;
+                fspCover.alt = c.titulo;
+            }
+            
+            if (fspPlay) {
+                const playBtnSvg = estado.playing
+                    ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+                    : '<polygon points="5,3 19,12 5,21"/>';
+                fspPlay.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30">${playBtnSvg}</svg>`;
+            }
+            
+            if (fspShuffle) fspShuffle.style.color = estado.shuffle ? '#1db954' : 'rgba(255,255,255,0.45)';
+            if (fspRepeat) fspRepeat.style.color = estado.repeat ? '#1db954' : 'rgba(255,255,255,0.45)';
+            
+            if (estado.playing) {
+                modal.classList.add('fsp-is-playing');
+                if (fspCover) {
+                    fspCover.classList.add('fsp-spinning');
+                    fspCover.classList.remove('fsp-paused');
+                }
+            } else {
+                modal.classList.remove('fsp-is-playing');
+                if (fspCover) {
+                    fspCover.classList.remove('fsp-spinning');
+                    fspCover.classList.add('fsp-paused');
+                }
+            }
+        }
     }
 
     /** Solo DOM — nunca modifica el objeto Audio si ya está reproduciendo. */
@@ -574,6 +620,31 @@
             if (e.target.closest('#btn-shuffle')) { toggleShuffle(); return; }
             if (e.target.closest('#btn-repeat'))  { toggleRepeat();  return; }
             if (e.target.closest('#progress-track')) { seekTo(e);    return; }
+            if (e.target.closest('#fsp-play'))    { togglePlay();    return; }
+            if (e.target.closest('#fsp-next'))    { siguiente();     return; }
+            if (e.target.closest('#fsp-prev'))    { anterior();      return; }
+            if (e.target.closest('#fsp-shuffle')) { toggleShuffle(); return; }
+            if (e.target.closest('#fsp-repeat'))  { toggleRepeat();  return; }
+            const fspTrack = e.target.closest('#fsp-progress-track');
+            if (fspTrack) {
+                if (audio.duration) {
+                    const rect = fspTrack.getBoundingClientRect();
+                    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                    audio.currentTime = pct * audio.duration;
+                }
+                return;
+            }
+            if (e.target.closest('#fsp-close')) {
+                const fsp = document.getElementById('fs-player-overlay');
+                if (fsp) {
+                    fsp.classList.add('fsp-closing');
+                    setTimeout(() => {
+                        fsp.style.display = 'none';
+                        fsp.classList.remove('fsp-closing');
+                    }, 350);
+                }
+                return;
+            }
             if (e.target.closest('#vol-btn')) {
                 const volBtn = document.getElementById('vol-btn');
                 if (audio.muted) {
@@ -719,85 +790,6 @@
             document.body.appendChild(profileDropdown);
         }
 
-        // ── FULLSCREEN PLAYER BUTTONS (DIRECT LISTENERS) ─────────────────
-        const fullScreenPlayer = document.getElementById('full-screen-player');
-        
-        // 1. Close button
-        const btnCerrar = document.getElementById('fsp-close');
-        if (btnCerrar) {
-            btnCerrar.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                if (fullScreenPlayer) {
-                    fullScreenPlayer.classList.add('fsp-closing');
-                    setTimeout(() => {
-                        fullScreenPlayer.style.display = 'none';
-                        fullScreenPlayer.classList.remove('fsp-closing');
-                    }, 350);
-                }
-            });
-        }
-
-        // 2. Play/Pause button
-        const btnPlayPause = document.getElementById('fsp-play');
-        if (btnPlayPause) {
-            btnPlayPause.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.SoundlyEvents.togglePlay();
-            });
-        }
-
-        // 3. Previous button
-        const btnAnterior = document.getElementById('fsp-prev');
-        if (btnAnterior) {
-            btnAnterior.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.SoundlyEvents.anterior();
-            });
-        }
-
-        // 4. Next button
-        const btnSiguiente = document.getElementById('fsp-next');
-        if (btnSiguiente) {
-            btnSiguiente.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.SoundlyEvents.siguiente();
-            });
-        }
-
-        // 5. Shuffle button
-        const btnShuffle = document.getElementById('fsp-shuffle');
-        if (btnShuffle) {
-            btnShuffle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.SoundlyEvents.toggleShuffle();
-                syncFSPUI();
-            });
-        }
-
-        // 6. Repeat button
-        const btnRepeat = document.getElementById('fsp-repeat');
-        if (btnRepeat) {
-            btnRepeat.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.SoundlyEvents.toggleRepeat();
-                syncFSPUI();
-            });
-        }
-
-        // 7. Progress track
-        const fspProgressTrack = document.getElementById('fsp-progress-track');
-        if (fspProgressTrack) {
-            fspProgressTrack.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (window.__soundlyAudioInstance.duration) {
-                    const rect = fspProgressTrack.getBoundingClientRect();
-                    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                    window.__soundlyAudioInstance.currentTime = pct * window.__soundlyAudioInstance.duration;
-                }
-            });
-        }
-
         // ── GLOBAL CLICK LISTENERS (for profile dropdown and opening fullscreen) ─────────
         document.addEventListener('click', (e) => {
             const chip = e.target.closest('.user-chip');
@@ -815,22 +807,32 @@
             // Handle opening fullscreen player (from index.html)
             if (playerBar && !e.target.closest('button') && !e.target.closest('.gp-progress-row') && !e.target.closest('.gp-extras')) {
                 e.stopPropagation();
-                if (fullScreenPlayer) {
-                    fullScreenPlayer.style.display = 'flex';
-                    fullScreenPlayer.classList.remove('fsp-closing');
-                    syncFSPUI();
+                console.log('--- DEBUG REPRODUCTOR ---');
+                console.log('Clic detectado en playerBar (intento de abrir overlay)');
+                const fspOverlay = document.getElementById('fs-player-overlay');
+                console.log('¿Existe #fs-player-overlay en el DOM?:', fspOverlay);
+                const fullScreenIdOriginal = document.getElementById('full-screen-player');
+                console.log('¿Existe #full-screen-player en el DOM?:', fullScreenIdOriginal);
+
+                if (fspOverlay) {
+                    fspOverlay.style.display = 'flex';
+                    fspOverlay.classList.remove('fsp-closing');
+                    actualizarUI();
+                } else if (fullScreenIdOriginal) {
+                    console.warn('Parece que el ID en el HTML sigue siendo full-screen-player y no fs-player-overlay.');
+                    fullScreenIdOriginal.style.display = 'flex';
+                    fullScreenIdOriginal.classList.remove('fsp-closing');
+                    actualizarUI();
                 }
             }
         });
         
-        // Sync fullscreen player UI on state changes
-        window.addEventListener('soundly:estado-cambio', syncFSPUI);
-        window.addEventListener('soundly:cancion-cambio', syncFSPUI);
-        window.addEventListener('soundly:ui-sync', syncFSPUI);
+        // Sync fullscreen player UI on state changes is handled natively by actualizarUI()
+        // so we don't need redundant event listeners here anymore.
         
         const audio = window.__soundlyAudioInstance;
         audio.addEventListener('timeupdate', () => {
-            const fullScreenPlayer = document.getElementById('full-screen-player');
+            const fullScreenPlayer = document.getElementById('fs-player-overlay');
             if (!fullScreenPlayer || fullScreenPlayer.style.display === 'none') return;
             const cur = audio.currentTime || 0;
             const tot = audio.duration || 0;
@@ -841,57 +843,7 @@
         });
 
         // Initial sync
-        syncFSPUI();
-    }
-
-    function syncFSPUI() {
-        const fullScreenPlayer = document.getElementById('full-screen-player');
-        if (!fullScreenPlayer) return;
-        
-        const state = window.__soundlyEstado;
-        const c = state.lista[state.idx];
-        
-        if (c) {
-            const fspTitle = document.getElementById('fsp-title');
-            const fspArtist = document.getElementById('fsp-artist');
-            const fspCover = document.getElementById('fsp-cover');
-            
-            if (fspTitle) fspTitle.textContent = c.titulo;
-            if (fspArtist) fspArtist.textContent = c.artista;
-            if (fspCover) fspCover.src = c.img;
-        }
-        
-        const fspPlayBtn = document.getElementById('fsp-play');
-        if (fspPlayBtn) {
-            const playBtnSvg = state.playing
-                ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
-                : '<polygon points="5,3 19,12 5,21"/>';
-            fspPlayBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="30" height="30">${playBtnSvg}</svg>`;
-        }
-        
-        const fspShuffleBtn = document.getElementById('fsp-shuffle');
-        const fspRepeatBtn = document.getElementById('fsp-repeat');
-        
-        if (fspShuffleBtn) fspShuffleBtn.style.color = state.shuffle ? '#1db954' : 'rgba(255,255,255,0.45)';
-        if (fspRepeatBtn) fspRepeatBtn.style.color = state.repeat ? '#1db954' : 'rgba(255,255,255,0.45)';
-        
-        if (fullScreenPlayer) {
-            if (state.playing) {
-                fullScreenPlayer.classList.add('fsp-is-playing');
-                const cover = document.getElementById('fsp-cover');
-                if (cover) {
-                    cover.classList.add('fsp-spinning');
-                    cover.classList.remove('fsp-paused');
-                }
-            } else {
-                fullScreenPlayer.classList.remove('fsp-is-playing');
-                const cover = document.getElementById('fsp-cover');
-                if (cover) {
-                    cover.classList.remove('fsp-spinning');
-                    cover.classList.add('fsp-paused');
-                }
-            }
-        }
+        actualizarUI();
     }
     
     function formatTime(s) {

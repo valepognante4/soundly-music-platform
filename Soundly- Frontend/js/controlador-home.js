@@ -124,20 +124,25 @@ window.initHome = async function initHome() {
         actualizarBotonLike(cancionActual.id, usuario.id);
     }
 
-    // ── 6. EVENTO: LIKE EN EL FOOTER ──────────────────────────────────────
-    document.getElementById('np-like')?.addEventListener('click', async () => {
-        const c = window.SoundlyPlayer.getCancionActual();
-        if (!c || !usuario) return;
-        try {
-            const mensaje = await GestorCanciones.toggleFavorito(c.id, usuario.id);
-            const btn = document.getElementById('np-like');
-            const esFavorito = btn.classList.toggle('liked');
-            btn.textContent = esFavorito ? '♥' : '♡';
-            console.log('[Home]', mensaje);
-        } catch (e) {
-            console.error('[Home] Error al actualizar favorito:', e);
-        }
-    }, { signal });
+    // ── 6. EVENTO: LIKE EN EL FOOTER (DELEGACIÓN GLOBAL) ──────────────────
+    if (!window.__soundlyLikeListenerRegistered) {
+        window.__soundlyLikeListenerRegistered = true;
+        document.addEventListener('click', async (e) => {
+            const btnLike = e.target.closest('#np-like');
+            if (!btnLike) return;
+            const user = GestorUsuarios.obtenerActivo();
+            const c = window.SoundlyPlayer.getCancionActual();
+            if (!c || !user) return;
+            try {
+                const mensaje = await GestorCanciones.toggleFavorito(c.id, user.id);
+                const esFavorito = btnLike.classList.toggle('liked');
+                btnLike.textContent = esFavorito ? '♥' : '♡';
+                console.log('[Home]', mensaje);
+            } catch (err) {
+                console.error('[Home] Error al actualizar favorito:', err);
+            }
+        });
+    }
 
     // Actualizar botón like cuando cambia la canción
     window.addEventListener('soundly:cancion-cambio', async (e) => {
