@@ -265,10 +265,18 @@
     function actualizarProgreso() {
         if (!audio.duration) return;
         const pct = (audio.currentTime / audio.duration) * 100;
+        
+        // Footer
         const fill = document.getElementById('p-fill');
         const cur  = document.getElementById('p-current');
         if (fill) fill.style.width = pct + '%';
         if (cur)  cur.textContent  = fmt(audio.currentTime);
+
+        // Modal
+        const fspFill = document.getElementById('fsp-fill');
+        const fspCur  = document.getElementById('fsp-current');
+        if (fspFill) fspFill.style.width = pct + '%';
+        if (fspCur)  fspCur.textContent  = fmt(audio.currentTime);
     }
 
     function setLoadingState(loading) {
@@ -522,6 +530,10 @@
         audio.volume = vol;
         estado.volumen = vol;
         guardarEstado();
+        
+        const pct = Math.round(vol * 100);
+        
+        // Footer
         const volBtn = document.getElementById('vol-btn');
         if (volBtn) {
             volBtn.classList.toggle('muted', vol === 0);
@@ -530,11 +542,29 @@
             }
         }
         const volSlider = document.getElementById('vol-slider');
-        if (volSlider) volSlider.style.setProperty('--vol-pct', Math.round(vol * 100) + '%');
+        if (volSlider) {
+            volSlider.value = pct;
+            volSlider.style.setProperty('--vol-pct', pct + '%');
+        }
+
+        // Modal
+        const fspVolBtn = document.getElementById('fsp-vol-btn');
+        if (fspVolBtn) {
+            fspVolBtn.classList.toggle('muted', vol === 0);
+            if (!fspVolBtn.querySelector('svg')) {
+                fspVolBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
+            }
+        }
+        const fspVolSlider = document.getElementById('fsp-vol-slider');
+        if (fspVolSlider) {
+            fspVolSlider.value = pct;
+            fspVolSlider.style.setProperty('--vol-pct', pct + '%');
+        }
     }
 
     function seekTo(event) {
-        const track = document.getElementById('progress-track');
+        // Encontramos si hizo clic en el track del footer o del modal
+        const track = event.target.closest('#progress-track') || event.target.closest('#fsp-progress-track');
         if (!track || !audio.duration) return;
         const rect = track.getBoundingClientRect();
         const pct  = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
@@ -633,8 +663,10 @@
                 toggleRepeat();  
                 return; 
             }
+            // ── LÓGICA DE BARRA DE PROGRESO (SOLO SI ES UN DIV/CONTENEDOR, NO UN INPUT) ──
             const fspTrack = e.target.closest('#fsp-progress-track');
-            if (fspTrack) {
+            // Verificamos que no haya hecho clic en un slider (input) dentro o superpuesto
+            if (fspTrack && e.target.tagName !== 'INPUT') {
                 if (audio.duration) {
                     const rect = fspTrack.getBoundingClientRect();
                     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -644,7 +676,6 @@
             }
             if (e.target.closest('#fsp-close')) {
                 console.log('--- DEBUG EVENTOS ---: Clic en Cerrar (Modal)');
-                // Soporta ambos IDs en caso de que el HTML tenga full-screen-player en vez de fs-player-overlay
                 const fsp = document.getElementById('fs-player-overlay') || document.getElementById('full-screen-player');
                 if (fsp) {
                     fsp.classList.add('fsp-closing');
@@ -652,29 +683,43 @@
                         fsp.style.display = 'none';
                         fsp.classList.remove('fsp-closing');
                     }, 350);
-                } else {
-                    console.log('--- DEBUG EVENTOS ---: Elemento modal no encontrado al intentar cerrar.');
                 }
                 return;
             }
-            if (e.target.closest('#vol-btn')) {
+            if (e.target.closest('#vol-btn') || e.target.closest('#fsp-vol-btn')) {
                 const volBtn = document.getElementById('vol-btn');
+                const fspVolBtn = document.getElementById('fsp-vol-btn');
                 if (audio.muted) {
                     audio.muted = false;
                     setVolumen(estado.volumen || 0.8);
-                    volBtn?.classList.remove('muted');
+                    if(volBtn) volBtn.classList.remove('muted');
+                    if(fspVolBtn) fspVolBtn.classList.remove('muted');
                 } else {
                     audio.muted = true;
-                    volBtn?.classList.add('muted');
+                    if(volBtn) volBtn.classList.add('muted');
+                    if(fspVolBtn) fspVolBtn.classList.add('muted');
                     document.getElementById('vol-slider')?.style.setProperty('--vol-pct', '0%');
+                    document.getElementById('fsp-vol-slider')?.style.setProperty('--vol-pct', '0%');
                 }
             }
         });
 
+        // ── DELEGACIÓN DE EVENTOS PARA SLIDERS (INPUT TYPE="RANGE") ──
         document.addEventListener('input', (e) => {
-            if (e.target.id === 'vol-slider') {
-                console.log('--- DEBUG EVENTOS ---: Input en Slider de Volumen con valor:', e.target.value);
+            // 1) Si es el SLIDER DE VOLUMEN
+            if (e.target.id === 'vol-slider' || e.target.id === 'fsp-vol-slider' || e.target.classList.contains('fsp-vol-slider')) {
+                console.log('--- DEBUG EVENTOS ---: Modificando Volumen', e.target.value);
                 setVolumen(Number(e.target.value));
+            }
+            // 2) Si es la BARRA DE PROGRESO (en caso de que la hayas convertido en un <input type="range">)
+            else if (e.target.id === 'progress-track' || e.target.id === 'fsp-progress-track' || e.target.classList.contains('fsp-progress-track')) {
+                if (audio.duration) {
+                    console.log('--- DEBUG EVENTOS ---: Modificando Progreso', e.target.value);
+                    // Si el slider va de 0 a 100, dividimos por 100. Si va de 0 a 1, no.
+                    // Asumimos 0 a 100 por compatibilidad:
+                    const pct = Number(e.target.value) / 100;
+                    audio.currentTime = pct * audio.duration;
+                }
             }
         });
     }
@@ -847,14 +892,25 @@
         
         const audio = window.__soundlyAudioInstance;
         audio.addEventListener('timeupdate', () => {
-            const fullScreenPlayer = document.getElementById('fs-player-overlay');
+            const modalId = document.getElementById('fs-player-overlay') ? 'fs-player-overlay' : 'full-screen-player';
+            const fullScreenPlayer = document.getElementById(modalId);
+            
             if (!fullScreenPlayer || fullScreenPlayer.style.display === 'none') return;
+            
             const cur = audio.currentTime || 0;
             const tot = audio.duration || 0;
-            document.getElementById('fsp-current').textContent = formatTime(cur);
-            document.getElementById('fsp-total').textContent = formatTime(tot);
-            const pct = tot > 0 ? (cur / tot) * 100 : 0;
-            document.getElementById('fsp-fill').style.width = pct + '%';
+            
+            const fspCurrent = document.getElementById('fsp-current');
+            const fspTotal = document.getElementById('fsp-total');
+            const fspFill = document.getElementById('fsp-fill');
+
+            if (fspCurrent) fspCurrent.textContent = formatTime(cur);
+            if (fspTotal) fspTotal.textContent = formatTime(tot);
+            
+            if (fspFill) {
+                const pct = tot > 0 ? (cur / tot) * 100 : 0;
+                fspFill.style.width = pct + '%';
+            }
         });
 
         // Initial sync
