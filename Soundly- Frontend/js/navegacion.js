@@ -397,6 +397,67 @@ window.navegarA               = navegarA;
 window.actualizarSidebarActivo = actualizarSidebarActivo;
 window.vistaDesdeUrl          = vistaDesdeUrl;
 
+// ─── DELEGACIÓN DE EVENTOS GLOBAL: TUS ME GUSTA (PLAY PRIMERA CANCIÓN ─────────────
+let _listenerMeGustaInicializado = false;
+
+async function reproducirPrimeraFavorita() {
+    try {
+        const usuario = GestorUsuarios.obtenerActivo();
+        if (!usuario) {
+            console.warn('[Me Gusta] No hay usuario logueado');
+            return;
+        }
+        
+        const favoritos = await GestorCanciones.obtenerFavoritos(usuario.id);
+        
+        if (!favoritos || favoritos.length === 0) {
+            console.log('[Me Gusta] No hay canciones favoritas para reproducir');
+            return;
+        }
+        
+        const primeraCancion = favoritos[0];
+        console.log('[Me Gusta] Reproduciendo primera canción favorita:', primeraCancion.titulo);
+        
+        // Reproducir usando el reproductor global
+        if (window.SoundlyPlayer && window.SoundlyPlayer.reproducirLista) {
+            window.SoundlyPlayer.reproducirLista(favoritos, 0);
+        } else if (window.SoundlyEvents) {
+            window.SoundlyEvents.reproducirLista(favoritos, 0);
+        } else {
+            window.dispatchEvent(new CustomEvent('soundly:reproducir-lista', {
+                detail: { lista: favoritos, indice: 0 }
+            }));
+        }
+        
+    } catch (error) {
+        console.error('[Me Gusta] Error al reproducir primera favorita:', error);
+    }
+}
+
+function inicializarListenerMeGusta() {
+    if (_listenerMeGustaInicializado) return;
+    _listenerMeGustaInicializado = true;
+    
+    document.body.addEventListener('click', async (e) => {
+        const botonMeGusta = e.target.closest('a[href="favoritos.html"]');
+        if (!botonMeGusta) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('[Me Gusta] Click en botón Tus Me Gusta');
+        
+        // Navegar primero a la vista de favoritos
+        await navegarA('favoritos.html');
+        
+        // Y reproducir la primera canción
+        await reproducirPrimeraFavorita();
+    });
+}
+
+// Inicializar el listener inmediatamente
+inicializarListenerMeGusta();
+
 // ─── DELEGACIÓN DE EVENTOS GLOBAL: ELIMINAR PLAYLIST ─────────────────────────
 let _listenerEliminarPlaylistInicializado = false;
 let _playlistAEliminar = null;

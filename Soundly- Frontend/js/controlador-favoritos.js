@@ -2,6 +2,8 @@
     'use strict';
 
     let _favAbortController = null;
+    let _favListenerInicializado = false;
+    let _favoritosActuales = [];
 
     // ── Formatea segundos → "m:ss" ─────────────────────────────────────────
     function _formatDuracion(seg) {
@@ -13,6 +15,43 @@
 
     const FALLBACK_IMG = 'https://placehold.co/40x40/1a1a2e/a78bfa?text=♪';
 
+    // ── Delegación de Eventos Global (para SPA) ───────────────────────────
+    function inicializarDelegacionFavoritos() {
+        if (_favListenerInicializado) return;
+        _favListenerInicializado = true;
+
+        document.body.addEventListener('click', async (e) => {
+            // 1. Clic en botón "Reproducir todo" (#btn-play-all)
+            const btnPlayAll = e.target.closest('#btn-play-all');
+            if (btnPlayAll) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (_favoritosActuales.length > 0) {
+                    console.log('Reproduciendo lista de favoritos...', _favoritosActuales);
+                    window.SoundlyPlayer.reproducirLista(_favoritosActuales, 0);
+                }
+                return;
+            }
+
+            // 2. Clic en fila de canción (.song-row)
+            const filaCancion = e.target.closest('#playlist-list .song-row');
+            if (filaCancion) {
+                // Verificar que el clic NO sea en el botón de like
+                if (e.target.closest('.row-like-btn')) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                const idx = parseInt(filaCancion.dataset.idx, 10);
+                if (!isNaN(idx) && _favoritosActuales[idx]) {
+                    const cancion = _favoritosActuales[idx];
+                    console.log('Reproduciendo canción de favoritos:', cancion.titulo);
+                    window.SoundlyPlayer.reproducir(cancion);
+                }
+            }
+        });
+    }
+
     window.initFavoritos = async function initFavoritos() {
         if (_favAbortController) _favAbortController.abort();
         _favAbortController = new AbortController();
@@ -23,6 +62,9 @@
             window.location.href = 'login.html';
             return;
         }
+
+        // Inicializar delegación de eventos (solo una vez)
+        inicializarDelegacionFavoritos();
 
         // Función para toggle de favorito
         async function toggleFavorito(cancion) {
@@ -43,9 +85,12 @@
         let favoritos = [];
         try {
             favoritos = await GestorCanciones.obtenerFavoritos(usuario.id);
+            // Guardar la lista en variable global para la delegación de eventos
+            _favoritosActuales = favoritos;
         } catch (e) {
             console.error('[Favoritos] Error al cargar favoritos:', e);
             favoritos = [];
+            _favoritosActuales = [];
         }
 
         // ── Refinar header visual ─────────────────────────────────────────
@@ -71,18 +116,12 @@
         }
 
         // ── Botón "Reproducir todo" ────────────────────────────────────────
-        // Se usa onclick (no addEventListener) para evitar listeners zombie en SPA.
         const playAllBtn = document.getElementById('btn-play-all');
         if (playAllBtn) {
             if (favoritos.length) {
                 playAllBtn.disabled = false;
-                playAllBtn.onclick = () => {
-                    console.log('Reproduciendo lista...', favoritos);
-                    window.SoundlyPlayer.reproducirLista(favoritos);
-                };
             } else {
                 playAllBtn.disabled = true;
-                playAllBtn.onclick = null;
             }
         }
 
@@ -139,18 +178,12 @@
                 </div>
             `;
 
-            // Clic en el corazón → stopPropagation para no disparar reproducción
-            row.querySelector('.row-like-btn').addEventListener('click', (e) => {
+            // Clic en el corazón (también manejado por delegación, pero lo mantenemos aquí para mayor control)
+            const btnLike = row.querySelector('.row-like-btn');
+            btnLike.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 toggleFavorito(cancion);
-            });
-
-            // Clic en la fila → reproducir canción
-            row.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                window.SoundlyPlayer.reproducir(cancion);
             });
 
             fragment.appendChild(row);
