@@ -71,12 +71,14 @@
         btn.className = 'album-play-all-btn';
         btn.setAttribute('aria-label', 'Reproducir álbum completo');
         btn.innerHTML = `
-            <span class="play-all-icon">
+          <div class="boton-reproducir-container">
+             <span class="play-all-icon">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                    <polygon points="5,3 19,12 5,21"/>
+                  <polygon points="5,3 19,12 5,21"/>
                 </svg>
-            </span>
-            <span class="play-all-label">Reproducir todo</span>
+              </span>
+              <span class="play-all-label"></span>
+          </div>
         `;
         btn.addEventListener('click', () => {
             window.SoundlyEvents?.reproducirLista(canciones, 0);
@@ -104,29 +106,21 @@
         const genero = cancion.genero || cancion.genre || '—';
 
         row.innerHTML = `
-            <div class="row-index" role="cell">
-                <span class="number">${index + 1}</span>
-                <i class="fas fa-play play-icon" aria-hidden="true"></i>
-            </div>
-            <div class="row-thumb" role="cell">
-                <img
-                    src="${thumb}"
-                    alt="${cancion.titulo ?? 'Canción'}"
-                    loading="lazy"
-                    onerror="this.src='${FALLBACK_THUMB}'"
-                >
-            </div>
-            <div class="row-title" role="cell">
-                <span class="song-name">${cancion.titulo ?? 'Sin título'}</span>
-                <span class="song-artist">${artistName}</span>
-            </div>
-            <div class="row-genre" role="cell">${genero}</div>
-            <div class="row-duration" role="cell">${_formatDuracion(cancion.duracion)}</div>
-            <div class="row-actions" role="cell">
-                <button class="row-like-btn" aria-label="Me gusta" title="Me gusta" data-song-id="${cancion.id ?? ''}">
-                    <i class="far fa-heart"></i>
-                </button>
-            </div>
+        <div class="row-index" role="cell">
+        <span class="number">${index + 1}</span>
+        <i class="fas fa-play play-icon" aria-hidden="true"></i>
+        </div>
+        <div class="row-title" role="cell">
+        <span class="song-name">${cancion.titulo ?? 'Sin título'}</span>
+        <span class="song-artist">${artistName}</span>
+        </div>
+        <div class="row-genre" role="cell">${genero}</div>
+        <div class="row-duration" role="cell">${_formatDuracion(cancion.duracion)}</div>
+        <div class="row-actions" role="cell">
+        <button class="row-like-btn" aria-label="Me gusta" title="Me gusta" data-song-id="${cancion.id ?? ''}">
+            <i class="far fa-heart"></i>
+        </button>
+        </div>
         `;
 
         row.querySelector('.row-index').addEventListener('click', () =>

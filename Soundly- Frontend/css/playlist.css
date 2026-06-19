@@ -423,18 +423,18 @@ body, html {
 
 .playlist-header-row {
     display: grid;
-    grid-template-columns: 48px 48px 1fr 160px 80px 56px;
+    /* 5 columnas iguales a las de .playlist-row */
+    grid-template-columns: 50px 2fr 1fr 100px 50px; 
     align-items: center;
-    padding: 8px 16px;
+    padding: 0 16px;
     border-bottom: 1px solid var(--border);
     color: var(--muted);
     font-size: 0.78rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    margin-bottom: 4px;
+    margin-bottom: 10px;
     width: 100%;
-    table-layout: fixed;
 }
 
 /* Alinear cabeceras de Género y Tiempo a la derecha */
@@ -450,7 +450,8 @@ body, html {
 /* ─── 6. FILAS DE CANCIONES (playlist-item y playlist-row) ─────────────────────────────── */
 .playlist-item, .playlist-row {
     display: grid;
-    grid-template-columns: 48px 48px 1fr 160px 80px 56px;
+    /* Definimos 5 columnas: 1.Indice, 2.Título, 3.Género, 4.Duración, 5.Extra(botón) */
+    grid-template-columns: 50px 2fr 1fr 100px 50px; 
     align-items: center;
     padding: 8px 16px;
     border-radius: 10px;
@@ -1084,16 +1085,14 @@ body, html {
 .album-play-all-btn {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center; /* Centra el icono perfectamente */
+    width: 60px;             /* Ancho fijo */
+    height: 60px;            /* Alto igual al ancho para que sea un círculo */
     margin: 0 32px 8px;
-    padding: 14px 32px;
+    padding: 0;              /* Quitamos el padding para que no deforme el círculo */
     border: none;
-    border-radius: 50px;
+    border-radius: 50%;      /* ¡Esto es lo que crea el círculo! */
     cursor: pointer;
-    font-family: 'DM Sans', 'Inter', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
     color: #fff;
     background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #1db954 100%);
     background-size: 200% 200%;

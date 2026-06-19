@@ -1131,3 +1131,11 @@ body {
     color: #a855f7;
     font-weight: 700;
 }
+
+#full-screen-player button, 
+#full-screen-player svg {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 10000 !important;
+    border: 2px solid red !important; /* Esto pondrá un borde rojo a los botones */
+}
