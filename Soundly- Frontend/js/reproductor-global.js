@@ -623,8 +623,16 @@
             if (e.target.closest('#fsp-play'))    { togglePlay();    return; }
             if (e.target.closest('#fsp-next'))    { siguiente();     return; }
             if (e.target.closest('#fsp-prev'))    { anterior();      return; }
-            if (e.target.closest('#fsp-shuffle')) { toggleShuffle(); return; }
-            if (e.target.closest('#fsp-repeat'))  { toggleRepeat();  return; }
+            if (e.target.closest('#fsp-shuffle')) { 
+                console.log('--- DEBUG EVENTOS ---: Clic en Shuffle (Modal)');
+                toggleShuffle(); 
+                return; 
+            }
+            if (e.target.closest('#fsp-repeat'))  { 
+                console.log('--- DEBUG EVENTOS ---: Clic en Repeat (Modal)');
+                toggleRepeat();  
+                return; 
+            }
             const fspTrack = e.target.closest('#fsp-progress-track');
             if (fspTrack) {
                 if (audio.duration) {
@@ -635,13 +643,17 @@
                 return;
             }
             if (e.target.closest('#fsp-close')) {
-                const fsp = document.getElementById('fs-player-overlay');
+                console.log('--- DEBUG EVENTOS ---: Clic en Cerrar (Modal)');
+                // Soporta ambos IDs en caso de que el HTML tenga full-screen-player en vez de fs-player-overlay
+                const fsp = document.getElementById('fs-player-overlay') || document.getElementById('full-screen-player');
                 if (fsp) {
                     fsp.classList.add('fsp-closing');
                     setTimeout(() => {
                         fsp.style.display = 'none';
                         fsp.classList.remove('fsp-closing');
                     }, 350);
+                } else {
+                    console.log('--- DEBUG EVENTOS ---: Elemento modal no encontrado al intentar cerrar.');
                 }
                 return;
             }
@@ -660,7 +672,10 @@
         });
 
         document.addEventListener('input', (e) => {
-            if (e.target.id === 'vol-slider') setVolumen(Number(e.target.value));
+            if (e.target.id === 'vol-slider') {
+                console.log('--- DEBUG EVENTOS ---: Input en Slider de Volumen con valor:', e.target.value);
+                setVolumen(Number(e.target.value));
+            }
         });
     }
 
