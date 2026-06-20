@@ -1,0 +1,449 @@
+/**
+ * mobile-nav.css — Soundly
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Bottom Navigation Bar — visible SOLO en dispositivos móviles (< 768px).
+ *
+ * Diseño: Dark Mode + Glassmorphism, consistente con el resto de la app.
+ * Integración SPA: los ítems usan data-view para sincronizarse con navegacion.js.
+ *
+ * ─── ESTRUCTURA REQUERIDA EN index.html ──────────────────────────────────────
+ *   <nav id="mobile-bottom-nav">
+ *     <a class="mbn-item" data-view="home"      ...>...</a>
+ *     <a class="mbn-item" data-view="busqueda"  ...>...</a>
+ *     <a class="mbn-item" data-view="favoritos" ...>...</a>
+ *     <a class="mbn-item" data-view="playlist"  ...>...</a>
+ *   </nav>
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   1. VARIABLES LOCALES (extienden las de home.css y player-global.css)
+   ══════════════════════════════════════════════════════════════════════════════ */
+:root {
+    --mbn-height:      60px;
+    --mbn-bg:          rgba(10, 10, 15, 0.92);
+    --mbn-border:      rgba(167, 139, 250, 0.15);
+    --mbn-blur:        20px;
+    --mbn-active:      #1DB954;          /* Verde Soundly para ítem activo      */
+    --mbn-inactive:    rgba(255, 255, 255, 0.38);
+    --mbn-active-bg:   rgba(29, 185, 84, 0.10);
+    --mbn-label-size:  0.62rem;
+    --mbn-icon-size:   22px;
+    --mbn-transition:  0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   2. CONTENEDOR PRINCIPAL — oculto en desktop, visible en móvil
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Por defecto: oculto en desktop */
+#mobile-bottom-nav {
+    display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   3. ESTILOS MÓVILES — activados en viewport < 768px
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+    /* ── Ocultar sidebar en móvil ─────────────────────────────────────────── */
+    .sidebar {
+        display: none !important;
+    }
+
+    /* ── Topbar: posición relativa para el dropdown ───────────────────────── */
+    .topbar {
+        position: relative !important;
+    }
+
+    /* ── Profile chip: compacto en móvil ─────────────────────────────────── */
+    #profile-chip .user-name {
+        max-width: 90px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ── Dropdown: asegura que no salga de pantalla ───────────────────────── */
+    #profile-dropdown-menu {
+        right: 0 !important;
+        left: auto !important;
+        min-width: 170px !important;
+    }
+
+
+    #mobile-bottom-nav {
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+
+        /* Glassmorphism */
+        background: var(--mbn-bg);
+        backdrop-filter: blur(var(--mbn-blur));
+        -webkit-backdrop-filter: blur(var(--mbn-blur));
+        border-top: 1px solid var(--mbn-border);
+
+        /* Dimensiones */
+        width: 100%;
+        height: var(--mbn-height);
+        min-height: var(--mbn-height);
+        max-height: var(--mbn-height);
+
+        /* En el grid del SPA shell se posiciona en grid-area: bottom-nav.
+           Como fallback (por si se usa fuera del grid), position: fixed.     */
+        position: relative;
+        z-index: 300;
+
+        /* Safe area para iPhone con notch inferior */
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+
+        /* Sin padding lateral — los ítems se distribuyen solos */
+        padding-left: 0;
+        padding-right: 0;
+        margin: 0;
+
+        /* Evitar que aparezca lista de navegador */
+        list-style: none;
+    }
+
+    /* ── Ítem individual ──────────────────────────────────────────────────── */
+    .mbn-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+
+        flex: 1;                            /* Distribuye el espacio por igual  */
+        padding: 8px 4px 6px;
+        border-radius: 0;
+        text-decoration: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+
+        /* Color por defecto: apagado */
+        color: var(--mbn-inactive);
+        background: transparent;
+        border: none;
+
+        /* Transición suave */
+        transition: color var(--mbn-transition),
+                    background var(--mbn-transition);
+
+        /* Sin outlines extraños */
+        outline: none;
+    }
+
+    /* Ripple effect al tocar */
+    .mbn-item::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--mbn-active-bg);
+        opacity: 0;
+        border-radius: 12px;
+        transform: scale(0.6);
+        transition: opacity 0.15s ease, transform 0.2s ease;
+    }
+
+    .mbn-item:active::before {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* ── Ícono SVG dentro del ítem ────────────────────────────────────────── */
+    .mbn-item svg {
+        width: var(--mbn-icon-size);
+        height: var(--mbn-icon-size);
+        flex-shrink: 0;
+        transition: transform var(--mbn-transition),
+                    color var(--mbn-transition);
+    }
+
+    /* ── Label de texto ───────────────────────────────────────────────────── */
+    .mbn-item span {
+        font-size: var(--mbn-label-size);
+        font-weight: 600;
+        font-family: 'DM Sans', sans-serif;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        transition: color var(--mbn-transition);
+        line-height: 1;
+    }
+
+    /* ── Estado: HOVER ────────────────────────────────────────────────────── */
+    .mbn-item:hover {
+        color: rgba(255, 255, 255, 0.75);
+    }
+
+    .mbn-item:hover svg {
+        transform: translateY(-2px) scale(1.05);
+    }
+
+    /* ── Estado: ACTIVO ───────────────────────────────────────────────────── */
+    .mbn-item.active {
+        color: var(--mbn-active);
+    }
+
+    .mbn-item.active svg {
+        transform: translateY(-2px) scale(1.1);
+        filter: drop-shadow(0 0 6px rgba(29, 185, 84, 0.5));
+    }
+
+    .mbn-item.active span {
+        color: var(--mbn-active);
+        font-weight: 700;
+    }
+
+    /* Indicador verde superior para ítem activo */
+    .mbn-item.active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 2px;
+        background: var(--mbn-active);
+        border-radius: 0 0 2px 2px;
+        box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
+    }
+
+    /* ── Separador vertical sutil entre ítems ─────────────────────────────── */
+    .mbn-item + .mbn-item {
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       4. AJUSTE DE SCROLL DEL CONTENIDO — el contenido no queda tapado
+       ══════════════════════════════════════════════════════════════════════════ */
+
+    /*
+     * En la SPA, #content está en un grid de 3 filas:
+     *   1fr (main) | 86px (player) | 60px (bottom-nav)
+     * Por lo tanto el scroll interno de #content ya está aislado por el grid
+     * y NO necesita padding-bottom extra.
+     *
+     * Sin embargo, compensamos el safe-area del iPhone al final de las vistas:
+     */
+    body.home-layout #content.main-content {
+        padding-bottom: 0 !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       5. AJUSTE DEL REPRODUCTOR GLOBAL EN MÓVIL
+       ══════════════════════════════════════════════════════════════════════════ */
+
+    /*
+     * En móvil el reproductor ocupa la fila 2 del grid.
+     * Reducimos su altura para que quepan bien los 3 elementos verticales.
+     */
+    #global-player-bar {
+        --sp-player-h: 72px;
+    }
+
+    /* Ocultar el slider de volumen en móvil (ahorro de espacio) */
+    #global-player-bar .gp-extras {
+        display: none !important;
+    }
+
+    /* Compactar los controles del reproductor */
+    #global-player-bar .gp-center {
+        flex: 1.5;
+    }
+
+    #global-player-bar .gp-now-playing {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Ocultar botones shuffle y repeat en móvil para ahorrar espacio */
+    #global-player-bar #btn-shuffle,
+    #global-player-bar #btn-repeat {
+        display: none !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       6. RESPONSIVE PARA VISTAS INTERNAS
+       ══════════════════════════════════════════════════════════════════════════ */
+
+    /* ── Vista Home: quick-grid de 3 col → 2 col ──────────────────────────── */
+    .quick-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    /* ── Vista Home: sección con menos padding ────────────────────────────── */
+    .section {
+        padding: 16px 16px 0 !important;
+    }
+
+    /* ── Vista Home: topbar compacta ──────────────────────────────────────── */
+    .topbar {
+        padding: 12px 16px !important;
+    }
+
+    /* ── Título greeting más pequeño ──────────────────────────────────────── */
+    .greeting {
+        font-size: 1.4rem !important;
+    }
+
+    /* ── Cards grid: columnas más pequeñas en móvil ───────────────────────── */
+    .cards-grid,
+    #cards-albumes,
+    #cards-todos-albumes,
+    #ver-todos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    /* ── Recomendados: de 5 col a 2 col ──────────────────────────────────── */
+    #cards-recomendados {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    /* ── Artistas: carrusel más estrecho ──────────────────────────────────── */
+    #cards-artistas .song-card,
+    #cards-artistas .artist-card {
+        width: 140px !important;
+    }
+
+    /* ── Sección header más compacto ──────────────────────────────────────── */
+    .section-header {
+        margin-top: 24px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .section-title {
+        font-size: 1.05rem !important;
+    }
+
+    /* ── Favoritos / Playlist — hero banner adaptado ──────────────────────── */
+    .hero-banner {
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 16px !important;
+        gap: 12px !important;
+        text-align: center !important;
+    }
+
+    .hero-banner img,
+    .hero-cover {
+        width: 160px !important;
+        height: 160px !important;
+        max-width: 160px !important;
+    }
+
+    .hero-info {
+        text-align: center !important;
+    }
+
+    /* ── Playlist / Favoritos: controles compactos ────────────────────────── */
+    .playlist-controls,
+    .action-buttons {
+        padding: 12px 16px !important;
+        gap: 10px !important;
+    }
+
+    /* ── Playlist container: padding lateral reducido ─────────────────────── */
+    .playlist-container {
+        padding: 0 12px 16px !important;
+    }
+
+    /* ── Fila de canción en playlist: sin columna de duración ─────────────── */
+    .playlist-item .track-duration {
+        display: none !important;
+    }
+
+    .playlist-item .track-number {
+        display: none !important;
+    }
+
+    /* ── Búsqueda: padding reducido ───────────────────────────────────────── */
+    .search-header {
+        padding: 16px !important;
+    }
+
+    .categories-section {
+        padding: 0 16px 16px !important;
+    }
+
+    /* ── Album / Artista hero: layout columna ─────────────────────────────── */
+    .album-header,
+    .artista-header,
+    .artist-header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        padding: 16px !important;
+        gap: 12px !important;
+    }
+
+    .album-cover,
+    .artista-foto,
+    .artist-cover {
+        width: 160px !important;
+        height: 160px !important;
+    }
+
+    /* ── Player view: compacto en móvil ───────────────────────────────────── */
+    .content-layout {
+        flex-direction: column !important;
+        padding: 16px !important;
+    }
+
+    /* ── Modales: ancho completo en móvil ─────────────────────────────────── */
+    .modal-content {
+        width: 90% !important;
+        max-width: 340px !important;
+        margin: 0 auto !important;
+    }
+
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   7. PANTALLAS MUY PEQUEÑAS (≤ 375px — iPhone SE, etc.)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 375px) {
+    .mbn-item span {
+        font-size: 0.58rem;
+    }
+
+    .mbn-item svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .quick-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    #cards-recomendados {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   8. ANIMACIÓN DE ENTRADA DEL BOTTOM NAV (carga inicial)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    @keyframes mbn-slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    #mobile-bottom-nav {
+        animation: mbn-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+}

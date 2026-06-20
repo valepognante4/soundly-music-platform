@@ -104,13 +104,49 @@
 
     <main class="main-content">
         <div class="topbar">
-            <div style="display:flex;gap:10px;align-items:center;margin-left:auto;">
-                <div class="user-chip">
+        <div style="display:flex;gap:10px;align-items:center;margin-left:auto;">
+                <!-- Menú de perfil con dropdown — accesible desde móvil sin sidebar -->
+                <div class="user-chip" id="profile-chip" role="button" tabindex="0"
+                     aria-haspopup="true" aria-expanded="false" aria-label="Menú de perfil"
+                     style="cursor:pointer;position:relative;">
                     <div class="user-avatar" id="user-avatar">V</div>
                     <span class="user-name" id="user-name">Usuario</span>
+                    <!-- Flecha indicadora -->
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"
+                         style="color:rgba(255,255,255,0.45);margin-left:2px;transition:transform 0.2s;"
+                         id="profile-chip-arrow">
+                        <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                </div>
+                <!-- Dropdown del perfil -->
+                <div id="profile-dropdown-menu"
+                     style="display:none;position:absolute;top:calc(100% + 8px);right:0;
+                            min-width:180px;background:rgba(15,15,20,0.96);
+                            backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+                            border:1px solid rgba(167,139,250,0.18);border-radius:14px;
+                            padding:8px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+                    <div style="padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:4px;">
+                        <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);font-weight:500;">Conectado como</div>
+                        <div style="font-size:0.88rem;font-weight:700;color:#fff;margin-top:2px;" id="dropdown-username">Usuario</div>
+                    </div>
+                    <button id="btn-logout"
+                            style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;
+                                   border-radius:8px;background:transparent;border:none;cursor:pointer;
+                                   color:rgba(255,255,255,0.7);font-size:0.88rem;font-weight:600;
+                                   font-family:inherit;transition:background 0.15s,color 0.15s;text-align:left;"
+                            onmouseover="this.style.background='rgba(239,68,68,0.12)';this.style.color='#ef4444';"
+                            onmouseout="this.style.background='transparent';this.style.color='rgba(255,255,255,0.7)';">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Cerrar sesión
+                    </button>
                 </div>
             </div>
         </div>
+
 
         <div class="section">
             <h1 class="greeting" id="greeting">Buenas tardes</h1>

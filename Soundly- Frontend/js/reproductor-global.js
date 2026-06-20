@@ -706,20 +706,20 @@
 
         // ── DELEGACIÓN DE EVENTOS PARA SLIDERS (INPUT TYPE="RANGE") ──
         document.addEventListener('input', (e) => {
-            // 1) Si es el SLIDER DE VOLUMEN
-            if (e.target.id === 'vol-slider' || e.target.id === 'fsp-vol-slider' || e.target.classList.contains('fsp-vol-slider')) {
-                console.log('--- DEBUG EVENTOS ---: Modificando Volumen', e.target.value);
-                setVolumen(Number(e.target.value));
-            }
-            // 2) Si es la BARRA DE PROGRESO (en caso de que la hayas convertido en un <input type="range">)
-            else if (e.target.id === 'progress-track' || e.target.id === 'fsp-progress-track' || e.target.classList.contains('fsp-progress-track')) {
+            // Verificación estricta por ID para BARRA DE PROGRESO
+            if (e.target.id === 'progress-track' || e.target.id === 'fsp-progress-track') {
+                e.stopPropagation(); // Evitar propagación que cause conflictos
                 if (audio.duration) {
-                    console.log('--- DEBUG EVENTOS ---: Modificando Progreso', e.target.value);
-                    // Si el slider va de 0 a 100, dividimos por 100. Si va de 0 a 1, no.
-                    // Asumimos 0 a 100 por compatibilidad:
+                    // Lógica exclusiva para avanzar/retroceder canción
                     const pct = Number(e.target.value) / 100;
                     audio.currentTime = pct * audio.duration;
                 }
+            } 
+            // Verificación estricta por ID para SLIDER DE VOLUMEN
+            else if (e.target.id === 'vol-slider' || e.target.id === 'fsp-vol-slider') {
+                e.stopPropagation(); // Aislar el evento de volumen del resto del reproductor
+                // Lógica exclusiva para audio.volume
+                setVolumen(Number(e.target.value));
             }
         });
     }

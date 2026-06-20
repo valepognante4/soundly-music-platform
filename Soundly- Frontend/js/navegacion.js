@@ -160,6 +160,7 @@ async function navegarA(url) {
     if (vista) {
         await cargarVista(vista);
         actualizarSidebarActivo(url);
+        actualizarBottomNavActivo(url);
     }
 }
 
@@ -211,6 +212,9 @@ async function cargarVista(nombreVista) {
         const urlRef = Object.entries(ARCHIVO_VISTA).find(([, f]) => f === archivo);
         const urlParaSidebar = urlRef ? archivo : archivo;
         actualizarSidebarActivo(
+            new URL(urlParaSidebar, window.location.origin).href
+        );
+        actualizarBottomNavActivo(
             new URL(urlParaSidebar, window.location.origin).href
         );
 
@@ -342,6 +346,51 @@ function actualizarSidebarActivo(url) {
     }
 }
 
+// ─── ACTUALIZAR BOTTOM NAV ACTIVO (MÓVIL) ─────────────────────────────────────
+
+/**
+ * Sincroniza la clase 'active' del bottom nav móvil con la vista actual.
+ *
+ * Mapeo data-view → vistas SPA:
+ *   home      → 'home'
+ *   busqueda  → 'busqueda'
+ *   favoritos → 'favoritos'
+ *   playlist  → 'playlist'
+ *
+ * Vistas sin ítem propio (album, artista, todos-los-albumes, ver-todos, player)
+ * dejan todos los ítems sin 'active' para no confundir al usuario.
+ *
+ * @param {string} url - URL absoluta o relativa de la vista que se cargó.
+ */
+function actualizarBottomNavActivo(url) {
+    try {
+        const nav = document.getElementById('mobile-bottom-nav');
+        if (!nav) return;
+
+        // Resolver qué vista está activa usando el mapeador ya existente
+        const vista = vistaDesdeUrl(url);
+
+        // Vistas que tienen ítem directo en el bottom nav
+        const VISTAS_CON_ITEM = new Set(['home', 'busqueda', 'favoritos', 'playlist']);
+
+        const items = nav.querySelectorAll('.mbn-item');
+        items.forEach(item => {
+            item.classList.remove('active');
+
+            if (!vista || !VISTAS_CON_ITEM.has(vista)) return;
+
+            const dataView = item.getAttribute('data-view');
+            if (dataView === vista) {
+                item.classList.add('active');
+            }
+        });
+
+        _navLog('actualizarBottomNavActivo →', vista ?? '(sin ítem en bottom nav)');
+    } catch (e) {
+        console.warn('[Navegacion] actualizarBottomNavActivo error:', e);
+    }
+}
+
 // ─── DESPACHAR CONTROLADOR DE LA SECCIÓN ─────────────────────────────────────
 
 function ejecutarControlador(url) {
@@ -394,7 +443,8 @@ function ejecutarControlador(url) {
 window.cargarVista            = cargarVista;
 window.cargarSeccion          = cargarSeccion;
 window.navegarA               = navegarA;
-window.actualizarSidebarActivo = actualizarSidebarActivo;
+window.actualizarSidebarActivo  = actualizarSidebarActivo;
+window.actualizarBottomNavActivo = actualizarBottomNavActivo;
 window.vistaDesdeUrl          = vistaDesdeUrl;
 
 // ─── DELEGACIÓN DE EVENTOS GLOBAL: TUS ME GUSTA (PLAY PRIMERA CANCIÓN ─────────────

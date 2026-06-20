@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/player-global.css">
     <link rel="stylesheet" href="css/fullscreen-player.css">
     <link rel="stylesheet" href="css/spa-fix.css">
+    <link rel="stylesheet" href="css/mobile-nav.css">
     <link rel="icon" type="image/png" href="images/soundly-logo-2048px.png">
 </head>
 
@@ -252,6 +253,51 @@
     </div>
 
     <div id="view-modals"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         BOTTOM NAVIGATION BAR — Solo visible en móvil (< 768px)
+         La clase .active se gestiona dinámicamente desde navegacion.js
+         mediante actualizarBottomNavActivo(). Los links usan el mismo sistema
+         de delegación de clics que el resto de la SPA (navegarA).
+         ══════════════════════════════════════════════════════════════════════ -->
+    <nav id="mobile-bottom-nav" aria-label="Navegación principal">
+
+        <!-- Inicio -->
+        <a href="home.html" class="mbn-item active" data-view="home" id="mbn-home" aria-label="Inicio">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" aria-hidden="true">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>Inicio</span>
+        </a>
+
+        <!-- Buscar -->
+        <a href="busqueda.html" class="mbn-item" data-view="busqueda" id="mbn-busqueda" aria-label="Buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <span>Buscar</span>
+        </a>
+
+        <!-- Me Gusta -->
+        <a href="favoritos.html" class="mbn-item" data-view="favoritos" id="mbn-favoritos" aria-label="Tus Me Gusta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" aria-hidden="true">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span>Me Gusta</span>
+        </a>
+
+        <!-- Playlists -->
+        <a href="playlist.html" class="mbn-item" data-view="playlist" id="mbn-playlist" aria-label="Tus Playlists">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24" aria-hidden="true">
+                <path d="M9 18V5l12-2v13"/>
+                <circle cx="6" cy="18" r="3"/>
+                <circle cx="18" cy="16" r="3"/>
+            </svg>
+            <span>Playlists</span>
+        </a>
+
+    </nav>
 
     <script src="js/config.js"></script>
     <script src="js/modelo.js"></script>

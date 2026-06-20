@@ -46,15 +46,50 @@ window.initHome = async function initHome() {
     }
 
     // ── 2. ACTUALIZAR UI CON DATOS DEL USUARIO ────────────────────────────
-    Vista.actualizarNombreUsuario(usuario.apodo || usuario.nombreUsuario || 'Usuario');
+    const nombreUsuario = usuario.apodo || usuario.nombreUsuario || 'Usuario';
+    Vista.actualizarNombreUsuario(nombreUsuario);
+
+    // Actualizar también el label del dropdown
+    const dropdownUsernameEl = document.getElementById('dropdown-username');
+    if (dropdownUsernameEl) dropdownUsernameEl.textContent = nombreUsuario;
 
     const greetingEl = document.getElementById('greeting');
     if (greetingEl) greetingEl.textContent = obtenerSaludo();
 
-    // Botón logout (solo conectar si no fue conectado ya — usa signal)
+    // ── Dropdown de perfil (toggle al hacer clic en el chip) ──────────────
+    const profileChip   = document.getElementById('profile-chip');
+    const dropdownMenu  = document.getElementById('profile-dropdown-menu');
+    const chipArrow     = document.getElementById('profile-chip-arrow');
+
+    if (profileChip && dropdownMenu) {
+        const toggleDropdown = (e) => {
+            e.stopPropagation();
+            const isOpen = dropdownMenu.style.display === 'block';
+            dropdownMenu.style.display = isOpen ? 'none' : 'block';
+            profileChip.setAttribute('aria-expanded', String(!isOpen));
+            if (chipArrow) chipArrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        };
+
+        profileChip.addEventListener('click', toggleDropdown, { signal });
+        profileChip.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') toggleDropdown(e);
+        }, { signal });
+
+        // Cerrar el dropdown al hacer clic fuera de él
+        document.addEventListener('click', () => {
+            if (dropdownMenu.style.display === 'block') {
+                dropdownMenu.style.display = 'none';
+                profileChip.setAttribute('aria-expanded', 'false');
+                if (chipArrow) chipArrow.style.transform = 'rotate(0deg)';
+            }
+        }, { signal });
+    }
+
+    // Botón logout (dentro del dropdown — signal garantiza una sola conexión)
     document.getElementById('btn-logout')?.addEventListener('click', () => {
         GestorUsuarios.cerrarSesion();
     }, { signal });
+
 
     // ── 3. CARGAR CANCIONES DESDE EL BACKEND ─────────────────────────────
     let todasLasCanciones = [];

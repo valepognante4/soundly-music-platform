@@ -247,36 +247,105 @@ body.home-layout #content .search-results {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   5. RESPONSIVE — mantener grid funcional en pantallas pequeñas
+   5. DESKTOP — posición del bottom nav (oculto, fuera del flujo del grid)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body.home-layout > #mobile-bottom-nav {
+    display: none;
+    grid-area: unset;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. RESPONSIVE MÓVIL — grid de 1 columna, 3 filas
+      main (flex:1) | player (72px) | bottom-nav (60px)
    ══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
+
+    /* ── Layout del shell: 1 col, 3 filas ──────────────────────────────── */
     body.home-layout {
         grid-template-columns: 1fr !important;
-        grid-template-rows: auto 1fr var(--sp-player-h, 86px) !important;
+        grid-template-rows: 1fr 72px 60px !important;
         grid-template-areas:
-            "sidebar"
             "main"
-            "player" !important;
+            "player"
+            "bottom-nav" !important;
+        /* Compensar safe-area de iOS en la parte inferior */
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     }
 
+    /* ── Sidebar: oculto en móvil ──────────────────────────────────────── */
     body.home-layout > .sidebar {
-        grid-area: sidebar !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        height: auto !important;
-        max-height: 56px;
-        overflow-x: auto;
+        display: none !important;
     }
 
+    /* ── Contenido principal: columna única ────────────────────────────── */
     body.home-layout > #content.main-content {
         grid-area: main !important;
         grid-column: 1 !important;
+        grid-row: 1 !important;
+        /* Aseguramos que el padding-bottom no tape el contenido */
+        padding-bottom: 8px !important;
     }
 
+    /* ── Reproductor global: fila 2 ───────────────────────────────────── */
     body.home-layout > #global-player-bar {
         grid-area: player !important;
         grid-column: 1 !important;
+        grid-row: 2 !important;
+        height: 72px !important;
+        min-height: 72px !important;
+        max-height: 72px !important;
+    }
+
+    /* ── Bottom nav: visible en móvil, fila 3 ────────────────────────── */
+    body.home-layout > #mobile-bottom-nav {
+        display: flex !important;
+        grid-area: bottom-nav !important;
+        grid-column: 1 !important;
+        grid-row: 3 !important;
+        /* position: relative ya que está en el grid */
+        position: relative !important;
+        bottom: auto !important;
+    }
+
+    /* ── Overlays: siguen fixed ────────────────────────────────────────── */
+    body.home-layout > #full-screen-player,
+    body.home-layout > #modal-crear-playlist,
+    body.home-layout > #modal-confirmar-eliminar,
+    body.home-layout > #view-modals {
+        position: fixed !important;
+    }
+
+    /* ── Correcciones contextuales de vistas en móvil ──────────────────── */
+
+    /* Home */
+    body.home-layout #content:has(#greeting) {
+        padding: 0 0 16px !important;
+    }
+
+    /* Búsqueda */
+    body.home-layout #content:has(#search-input) {
+        padding: 16px !important;
+        border-radius: 0 !important;
+    }
+
+    /* Favoritos */
+    body.home-layout #content:has(#fav-meta-info) .playlist-controls {
+        padding: 12px 16px !important;
+    }
+
+    body.home-layout #content:has(#fav-meta-info) .playlist-container {
+        padding: 0 12px 16px !important;
+    }
+
+    /* Playlist */
+    body.home-layout #content:has(#playlist-name) {
+        padding: 0 0 8px !important;
+    }
+
+    /* Player */
+    body.home-layout #content:has(.content-layout) {
+        padding: 16px !important;
     }
 }
