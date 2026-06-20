@@ -32,17 +32,25 @@
 
 /* ── VARIABLES COMPARTIDAS ──────────────────────────────────────────────── */
 :root {
-  --sp-accent:     #a78bfa;          /* Violeta Soundly                       */
-  --sp-accent-2:   #7c3aed;          /* Violeta oscuro                        */
-  --sp-green:      #1db954;          /* Verde Spotify (para estados activos)  */
-  --sp-green-2:    #17a349;          /* Verde oscuro (hover)                  */
-  --sp-bg:         #0a0a0f;          /* Fondo base ultra oscuro               */
-  --sp-glass:      rgba(15, 15, 25, 0.85);  /* Glass base                   */
-  --sp-glass-edge: rgba(167, 139, 250, 0.12); /* Borde glass violeta         */
-  --sp-text:       #ffffff;
-  --sp-muted:      rgba(255, 255, 255, 0.45);
-  --sp-player-h:   86px;             /* Altura del footer player              */
-  --vol-pct:       80%;              /* Actualizado dinámicamente por JS      */
+  /* Colores base */
+  --sp-accent:       #a78bfa;          /* Violeta Soundly                     */
+  --sp-accent-2:     #7c3aed;          /* Violeta oscuro                      */
+  --sp-green:        #1db954;          /* Verde Spotify (estados activos)     */
+  --sp-green-2:      #17a349;          /* Verde oscuro (hover)                */
+  --sp-bg:           #0a0a0f;          /* Fondo base ultra oscuro             */
+  
+  /* Gradiente profesional: Violeta (arriba) -> Verde oscuro (medio) -> Fondo (abajo) */
+  --sp-bg-gradient:  linear-gradient(180deg, rgba(124, 58, 237, 0.25) 0%, rgba(29, 185, 84, 0.08) 50%, #0a0a0f 100%);
+  
+  /* Glassmorphism */
+  --sp-glass:        rgba(15, 15, 25, 0.85);
+  --sp-glass-edge:   rgba(167, 139, 250, 0.12);
+  
+  /* Texto y otros */
+  --sp-text:         #ffffff;
+  --sp-muted:        rgba(255, 255, 255, 0.45);
+  --sp-player-h:     86px;
+  --vol-pct:         80%;
 }
 
 /* ── BODY — compensar el footer fijo ───────────────────────────────────── */
@@ -1284,4 +1292,37 @@ body.home-layout #global-player-bar:not(.player-visible) {
 #vol-slider, #fsp-vol-slider {
     pointer-events: auto;
     cursor: pointer;
+}
+/* Esto fuerza a que cualquier sección de álbum ignore el azul anterior */
+/* Esto fuerza a todos los contenedores principales a usar tu fondo base */
+/* 1. Fondo base para TODO el área de contenido */
+.main-content {
+    /* Un verde casi negro como base para mantener la elegancia */
+    background: #244424 !important; 
+    
+    /* Degradado que emana un brillo verde desde la esquina superior derecha */
+    background-image: radial-gradient(circle at 100% 0%, 
+        rgba(29, 185, 84, 0.25),  /* Verde Spotify con transparencia */
+        rgba(10, 15, 10, 1) 60%   /* Transición a un verde muy oscuro casi negro */
+    ) !important;
+}
+/* 2. Definimos el degradado como una clase de utilidad */
+.gradiente-fondo {
+    /* Degradado de diferentes tonos de verde */
+    background: linear-gradient(135deg, 
+        rgba(20, 90, 45, 0.6),   /* Verde bosque oscuro (base profunda) */
+        rgba(29, 185, 84, 0.4),  /* Verde Spotify (color central) */
+        rgba(100, 230, 140, 0.3) /* Verde neón suave (brillo superior) */
+    ) !important;
+    
+    backdrop-filter: blur(20px); 
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 3. Aplicamos el degradado solo donde queremos que se vea bien */
+.hero-banner, 
+.album-section {
+    background: transparent !important; /* O usa 'none' */
+    --sp-bg: transparent !important;    /* Esto es lo que probablemente necesitas */
+    background-image: none !important;
 }

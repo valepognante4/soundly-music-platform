@@ -1094,9 +1094,9 @@ body, html {
     border-radius: 50%;      /* ¡Esto es lo que crea el círculo! */
     cursor: pointer;
     color: #fff;
-    background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #1db954 100%);
+    background: linear-gradient(135deg, #252d9c 0%, #342c4d 50%, #0d5c28 100%);
     background-size: 200% 200%;
-    box-shadow: 0 4px 24px rgba(167, 139, 250, 0.45);
+    box-shadow: 0 4px 24px rgba(141, 139, 250, 0.45);
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease;
     position: relative;
     overflow: hidden;
@@ -1121,7 +1121,7 @@ body, html {
 
 .album-play-all-btn:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 36px rgba(167, 139, 250, 0.6);
+    box-shadow: 0 8px 36px rgba(150, 139, 250, 0.6);
     background-position: 100% 100%;
 }
 
@@ -1131,7 +1131,7 @@ body, html {
 
 .album-play-all-btn:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: 0 3px 14px rgba(167, 139, 250, 0.4);
+    box-shadow: 0 3px 14px rgba(150, 139, 250, 0.4);
 }
 
 .album-play-all-btn .play-all-icon {
