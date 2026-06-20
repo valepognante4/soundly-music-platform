@@ -1265,3 +1265,23 @@ body.home-layout #global-player-bar:not(.player-visible) {
   width: 0%;
   pointer-events: none;
 }
+
+.gp-progress-row {
+    pointer-events: none; /* Esto hace que el padre sea invisible al mouse */
+}
+
+/* Y asegúrate de que la barra sí sea clickeable */
+#progress-track, #fsp-progress-track {
+    pointer-events: auto; /* Esto hace que el hijo sí reciba el clic */
+}
+
+/* Esto asegura que los contenedores de controles no bloqueen a los inputs */
+.gp-extras, .fsp-volume {
+    pointer-events: auto; /* El contenedor permite eventos */
+}
+
+/* Y forzamos al slider a ser el elemento principal de interacción */
+#vol-slider, #fsp-vol-slider {
+    pointer-events: auto;
+    cursor: pointer;
+}

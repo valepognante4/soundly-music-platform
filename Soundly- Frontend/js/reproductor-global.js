@@ -49,7 +49,7 @@
             playing:  false,
             shuffle:  false,
             repeat:   false,
-            volumen:  0.8,
+            muted:    false,
             currentTime: 0,
         };
     }
@@ -90,7 +90,7 @@
             estado.idx         = saved.idx         || 0;
             estado.shuffle     = saved.shuffle     || false;
             estado.repeat      = saved.repeat      || false;
-            estado.volumen     = saved.volumen !== undefined ? saved.volumen : 0.8;
+            estado.muted       = saved.muted       || false;
             estado.playing     = saved.playing     || false;
             estado.currentTime = saved.currentTime || 0;
         } catch (e) {
@@ -105,7 +105,7 @@
                 idx:         estado.idx,
                 shuffle:     estado.shuffle,
                 repeat:      estado.repeat,
-                volumen:     estado.volumen,
+                muted:       estado.muted,
                 playing:     estado.playing,
                 currentTime: audio.currentTime,
             }));
@@ -193,19 +193,11 @@
         const btnLike = document.querySelector('.btn-like');
         if (btnLike) btnLike.setAttribute('data-id', c.id);
 
-        const volSlider = document.getElementById('vol-slider');
-        if (volSlider) {
-            const pct = Math.round(estado.volumen * 100);
-            volSlider.value = pct;
-            volSlider.style.setProperty('--vol-pct', pct + '%');
-        }
 
         actualizarProgreso();
 
         // ── ACTUALIZACIÓN DEL MODAL (FULL-SCREEN PLAYER) ──
-        // Puede que el HTML use 'fs-player-overlay' o 'full-screen-player'. Verificamos ambos.
-        const modalId = document.getElementById('fs-player-overlay') ? '#fs-player-overlay' : '#full-screen-player';
-        const modal = document.querySelector(modalId);
+        const modal = document.getElementById('full-screen-player');
         
         if (modal) {
             // Usamos querySelector dentro del modal para estar seguros de no chocar con otros elementos
@@ -525,41 +517,14 @@
         notificarEstado();
     }
 
-    function setVolumen(valor) {
-        const vol = valor > 1 ? valor / 100 : valor;
-        audio.volume = vol;
-        estado.volumen = vol;
+    function toggleMute() {
+        estado.muted = !estado.muted;
+        audio.muted = estado.muted;
         guardarEstado();
         
-        const pct = Math.round(vol * 100);
-        
-        // Footer
-        const volBtn = document.getElementById('vol-btn');
-        if (volBtn) {
-            volBtn.classList.toggle('muted', vol === 0);
-            if (!volBtn.querySelector('svg')) {
-                volBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
-            }
-        }
-        const volSlider = document.getElementById('vol-slider');
-        if (volSlider) {
-            volSlider.value = pct;
-            volSlider.style.setProperty('--vol-pct', pct + '%');
-        }
-
-        // Modal
-        const fspVolBtn = document.getElementById('fsp-vol-btn');
-        if (fspVolBtn) {
-            fspVolBtn.classList.toggle('muted', vol === 0);
-            if (!fspVolBtn.querySelector('svg')) {
-                fspVolBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
-            }
-        }
-        const fspVolSlider = document.getElementById('fsp-vol-slider');
-        if (fspVolSlider) {
-            fspVolSlider.value = pct;
-            fspVolSlider.style.setProperty('--vol-pct', pct + '%');
-        }
+        document.querySelectorAll('#vol-btn, #fsp-vol-btn').forEach(btn => {
+            if (btn) btn.classList.toggle('muted', estado.muted);
+        });
     }
 
     function seekTo(event) {
@@ -629,9 +594,7 @@
         window.addEventListener('soundly:anterior',    () => anterior());
         window.addEventListener('soundly:toggle-shuffle', () => toggleShuffle());
         window.addEventListener('soundly:toggle-repeat',  () => toggleRepeat());
-        window.addEventListener('soundly:set-volumen', e => {
-            if (e.detail?.valor !== undefined) setVolumen(e.detail.valor);
-        });
+        window.addEventListener('soundly:toggle-mute', () => toggleMute());
         window.addEventListener('soundly:seek', e => {
             if (e.detail?.event) seekTo(e.detail.event);
         });
@@ -643,85 +606,74 @@
         if (window.__soundlyControlsRegistered) return;
         window.__soundlyControlsRegistered = true;
 
+        // 1. MANEJO DE CLICS (Botones)
         document.addEventListener('click', (e) => {
-            if (e.target.closest('#btn-play'))    { togglePlay();    return; }
-            if (e.target.closest('#btn-next'))    { siguiente();     return; }
-            if (e.target.closest('#btn-prev'))    { anterior();      return; }
-            if (e.target.closest('#btn-shuffle')) { toggleShuffle(); return; }
-            if (e.target.closest('#btn-repeat'))  { toggleRepeat();  return; }
-            if (e.target.closest('#progress-track')) { seekTo(e);    return; }
-            if (e.target.closest('#fsp-play'))    { togglePlay();    return; }
-            if (e.target.closest('#fsp-next'))    { siguiente();     return; }
-            if (e.target.closest('#fsp-prev'))    { anterior();      return; }
-            if (e.target.closest('#fsp-shuffle')) { 
-                console.log('--- DEBUG EVENTOS ---: Clic en Shuffle (Modal)');
-                toggleShuffle(); 
-                return; 
+            // Navegación y acciones
+            if (e.target.closest('#btn-play, #fsp-play')) { togglePlay(); return; }
+            if (e.target.closest('#btn-next, #fsp-next')) { siguiente(); return; }
+            if (e.target.closest('#btn-prev, #fsp-prev')) { anterior(); return; }
+            if (e.target.closest('#btn-shuffle, #fsp-shuffle')) { toggleShuffle(); return; }
+            if (e.target.closest('#btn-repeat, #fsp-repeat')) { toggleRepeat(); return; }
+            if (e.target.closest('#vol-btn, #fsp-vol-btn')) { toggleMute(); return; }
+            
+            // Cierre de modal
+            if (e.target.closest('#fsp-close')) {
+                const fsp = document.getElementById('full-screen-player'); fsp.style.display = 'none';
+                return;
             }
-            if (e.target.closest('#fsp-repeat'))  { 
-                console.log('--- DEBUG EVENTOS ---: Clic en Repeat (Modal)');
-                toggleRepeat();  
-                return; 
-            }
-            // ── LÓGICA DE BARRA DE PROGRESO (SOLO SI ES UN DIV/CONTENEDOR, NO UN INPUT) ──
-            const fspTrack = e.target.closest('#fsp-progress-track');
-            // Verificamos que no haya hecho clic en un slider (input) dentro o superpuesto
-            if (fspTrack && e.target.tagName !== 'INPUT') {
+
+            // 2. CLIC EN BARRA DE PROGRESO (TRACK)
+            const track = e.target.closest('#progress-track') || e.target.closest('#fsp-progress-track');
+            // IMPORTANTE: Solo disparar si NO es el input (slider) para no duplicar eventos
+            if (track && e.target.tagName !== 'INPUT') {
                 if (audio.duration) {
-                    const rect = fspTrack.getBoundingClientRect();
+                    const rect = track.getBoundingClientRect();
                     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                     audio.currentTime = pct * audio.duration;
-                }
-                return;
-            }
-            if (e.target.closest('#fsp-close')) {
-                console.log('--- DEBUG EVENTOS ---: Clic en Cerrar (Modal)');
-                const fsp = document.getElementById('fs-player-overlay') || document.getElementById('full-screen-player');
-                if (fsp) {
-                    fsp.classList.add('fsp-closing');
-                    setTimeout(() => {
-                        fsp.style.display = 'none';
-                        fsp.classList.remove('fsp-closing');
-                    }, 350);
-                }
-                return;
-            }
-            if (e.target.closest('#vol-btn') || e.target.closest('#fsp-vol-btn')) {
-                const volBtn = document.getElementById('vol-btn');
-                const fspVolBtn = document.getElementById('fsp-vol-btn');
-                if (audio.muted) {
-                    audio.muted = false;
-                    setVolumen(estado.volumen || 0.8);
-                    if(volBtn) volBtn.classList.remove('muted');
-                    if(fspVolBtn) fspVolBtn.classList.remove('muted');
-                } else {
-                    audio.muted = true;
-                    if(volBtn) volBtn.classList.add('muted');
-                    if(fspVolBtn) fspVolBtn.classList.add('muted');
-                    document.getElementById('vol-slider')?.style.setProperty('--vol-pct', '0%');
-                    document.getElementById('fsp-vol-slider')?.style.setProperty('--vol-pct', '0%');
                 }
             }
         });
 
-        // ── DELEGACIÓN DE EVENTOS PARA SLIDERS (INPUT TYPE="RANGE") ──
+        // 3. MANEJO EXCLUSIVO DE SLIDERS (INPUT)
         document.addEventListener('input', (e) => {
-            // Verificación estricta por ID para BARRA DE PROGRESO
-            if (e.target.id === 'progress-track' || e.target.id === 'fsp-progress-track') {
-                e.stopPropagation(); // Evitar propagación que cause conflictos
+            const targetId = e.target.id;
+            
+            // Solo si el target es un slider de progreso
+            if (targetId === 'progress-bar' || targetId === 'fsp-progress-bar') {
+                e.stopPropagation();
                 if (audio.duration) {
-                    // Lógica exclusiva para avanzar/retroceder canción
-                    const pct = Number(e.target.value) / 100;
-                    audio.currentTime = pct * audio.duration;
+                    audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
                 }
-            } 
-            // Verificación estricta por ID para SLIDER DE VOLUMEN
-            else if (e.target.id === 'vol-slider' || e.target.id === 'fsp-vol-slider') {
-                e.stopPropagation(); // Aislar el evento de volumen del resto del reproductor
-                // Lógica exclusiva para audio.volume
-                setVolumen(Number(e.target.value));
             }
         });
+
+        // 3. MANEJO EXCLUSIVO DE SLIDERS (INPUT)
+document.addEventListener('input', (e) => {
+    const targetId = e.target.id;
+    
+    // Lógica para PROGRESO
+    if (targetId === 'progress-bar' || targetId === 'fsp-progress-bar') {
+        e.stopPropagation();
+        if (audio.duration) {
+            audio.currentTime = (Number(e.target.value) / 100) * audio.duration;
+        }
+    }
+
+    // Lógica para VOLUMEN (Esto es lo que te falta)
+    if (targetId === 'vol-slider' || targetId === 'fsp-vol-slider') {
+        e.stopPropagation();
+        const vol = Number(e.target.value) / 100;
+        audio.volume = vol;
+        estado.volumen = vol; // Guardamos en tu objeto de estado
+        
+        // Si mueves el volumen y estaba muteado, desmuteamos
+        if (audio.muted) {
+            audio.muted = false;
+            estado.muted = false;
+            document.querySelectorAll('#vol-btn, #fsp-vol-btn').forEach(btn => btn.classList.remove('muted'));
+        }
+    }
+});
     }
 
     // ── BOOTSTRAP: restaurar solo en cold start (recarga completa) ────────
@@ -733,7 +685,7 @@
         }
 
         cargarEstadoGuardado();
-        audio.volume = estado.volumen;
+        audio.muted = estado.muted;
 
         if (!estado.lista.length) {
             syncUI();
@@ -785,7 +737,7 @@
         anterior,
         toggleShuffle,
         toggleRepeat,
-        setVolumen,
+        toggleMute,
         seekTo,
         adaptarCancion,
         syncUI,
@@ -868,20 +820,11 @@
             if (playerBar && !e.target.closest('button') && !e.target.closest('.gp-progress-row') && !e.target.closest('.gp-extras')) {
                 e.stopPropagation();
                 console.log('--- DEBUG REPRODUCTOR ---');
-                console.log('Clic detectado en playerBar (intento de abrir overlay)');
-                const fspOverlay = document.getElementById('fs-player-overlay');
-                console.log('¿Existe #fs-player-overlay en el DOM?:', fspOverlay);
-                const fullScreenIdOriginal = document.getElementById('full-screen-player');
-                console.log('¿Existe #full-screen-player en el DOM?:', fullScreenIdOriginal);
-
-                if (fspOverlay) {
-                    fspOverlay.style.display = 'flex';
-                    fspOverlay.classList.remove('fsp-closing');
-                    actualizarUI();
-                } else if (fullScreenIdOriginal) {
-                    console.warn('Parece que el ID en el HTML sigue siendo full-screen-player y no fs-player-overlay.');
-                    fullScreenIdOriginal.style.display = 'flex';
-                    fullScreenIdOriginal.classList.remove('fsp-closing');
+                const fsp = document.getElementById('full-screen-player');
+                
+                if (fsp) {
+                    fsp.style.display = 'flex';
+                    fsp.classList.remove('fsp-closing');
                     actualizarUI();
                 }
             }
@@ -892,8 +835,7 @@
         
         const audio = window.__soundlyAudioInstance;
         audio.addEventListener('timeupdate', () => {
-            const modalId = document.getElementById('fs-player-overlay') ? 'fs-player-overlay' : 'full-screen-player';
-            const fullScreenPlayer = document.getElementById(modalId);
+            const fullScreenPlayer = document.getElementById('full-screen-player');
             
             if (!fullScreenPlayer || fullScreenPlayer.style.display === 'none') return;
             
