@@ -57,9 +57,9 @@ window.initHome = async function initHome() {
     if (greetingEl) greetingEl.textContent = obtenerSaludo();
 
     // ── Dropdown de perfil (toggle al hacer clic en el chip) ──────────────
-    const profileChip   = document.getElementById('profile-chip');
-    const dropdownMenu  = document.getElementById('profile-dropdown-menu');
-    const chipArrow     = document.getElementById('profile-chip-arrow');
+    const profileChip = document.getElementById('profile-chip');
+    const dropdownMenu = document.getElementById('profile-dropdown-menu');
+    const chipArrow = document.getElementById('profile-chip-arrow');
 
     if (profileChip && dropdownMenu) {
         const toggleDropdown = (e) => {
@@ -93,7 +93,7 @@ window.initHome = async function initHome() {
 
     // ── 3. CARGAR CANCIONES DESDE EL BACKEND ─────────────────────────────
     let todasLasCanciones = [];
-    let recomendadas      = [];
+    let recomendadas = [];
 
     try {
         [todasLasCanciones, recomendadas] = await Promise.all([
@@ -103,7 +103,7 @@ window.initHome = async function initHome() {
     } catch (error) {
         console.error('[Home] Error al cargar canciones:', error);
         todasLasCanciones = [];
-        recomendadas      = [];
+        recomendadas = [];
     }
 
     // Si recomendadas está vacío, usamos las primeras 8 canciones
@@ -125,7 +125,7 @@ window.initHome = async function initHome() {
             'cards-recomendados',
             (cancion, idx) => window.SoundlyEvents.reproducirLista(shuffledRecomendadas, idx)
         );
-    }    
+    }
     // Eliminar bloque duplicado
 
     if (document.getElementById('cards-artistas')) {
@@ -133,7 +133,7 @@ window.initHome = async function initHome() {
             const artistas = await GestorArtistas.obtenerTodos();
             const shuffledArtistas = [...artistas].sort(() => Math.random() - 0.5);
             renderizarArtistas(shuffledArtistas, 5);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         }
     }
@@ -187,6 +187,24 @@ window.initHome = async function initHome() {
 
     // ── 7. MODAL CREAR PLAYLIST ───────────────────────────────────────────
     inicializarModalCrearPlaylist(usuario, signal);
+
+    // ── 8. CONFIGURACIÓN DE BOTONES LOGOUT ───────────────────────────────
+    const btnLogoutMenu = document.getElementById('btn-logout-menu');
+    const btnLogoutSidebar = document.getElementById('btn-logout');
+
+    const ejecutarLogout = (e) => {
+        e.preventDefault();
+        GestorUsuarios.cerrarSesion();
+        window.location.href = 'index.html';
+    };
+
+    if (btnLogoutMenu) {
+        btnLogoutMenu.addEventListener('click', ejecutarLogout, { signal });
+    }
+
+    if (btnLogoutSidebar) {
+        btnLogoutSidebar.addEventListener('click', ejecutarLogout, { signal });
+    }
 };
 
 // ─── AUTO-INIT: Solo cuando se accede directamente a home.html (no via SPA) ──
@@ -265,15 +283,15 @@ function renderizarAlbums(albums, limit = null) {
     }
 
     contenedor.innerHTML = '';
-    
+
     // Si se pasa un límite, cortamos el array
     const albumsAMostrar = limit ? albums.slice(0, limit) : albums;
-    
+
     albumsAMostrar.forEach((album) => {
         const card = document.createElement('div');
         card.className = 'song-card fade-in';
         card.style.cursor = 'pointer';
-        
+
         card.innerHTML = `
             <div class="card-image-wrapper">
                 <img src="${album.portada || 'https://placehold.co/150x150/1a1a2e/a78bfa?text=Album'}" 
@@ -293,7 +311,7 @@ function renderizarAlbums(albums, limit = null) {
                 <p class="card-artist">${album.artista || 'Varios Artistas'}</p>
             </div>
         `;
-        
+
         card.addEventListener('click', () => {
             if (typeof window.navegarA === 'function') {
                 window.navegarA('album.html?id=' + album.id);
@@ -301,7 +319,7 @@ function renderizarAlbums(albums, limit = null) {
                 window.location.href = 'album.html?id=' + album.id;
             }
         });
-        
+
         contenedor.appendChild(card);
     });
 }
@@ -372,15 +390,15 @@ async function actualizarBotonLike(cancionId, usuarioId) {
         const esFavorito = favoritos.some(f => String(f.id) === String(cancionId));
         btn.classList.toggle('liked', esFavorito);
         btn.textContent = esFavorito ? '♥' : '♡';
-    } catch(e) {
+    } catch (e) {
         console.error('[Home] Error al cargar estado de favorito:', e);
     }
 }
 
 function inicializarModalCrearPlaylist(usuario, signal) {
-    const modal       = document.getElementById('modal-crear-playlist');
-    const btnCrear    = document.querySelector('.btn-sidebar-create');
-    const btnGuardar  = document.getElementById('btn-guardar');
+    const modal = document.getElementById('modal-crear-playlist');
+    const btnCrear = document.querySelector('.btn-sidebar-create');
+    const btnGuardar = document.getElementById('btn-guardar');
     const btnCancelar = document.getElementById('btn-cancelar');
 
     if (!modal) return;
@@ -392,13 +410,13 @@ function inicializarModalCrearPlaylist(usuario, signal) {
         Vista.ocultarError?.('modal-error-message');
     };
 
-    btnCrear   ?.addEventListener('click', () => { modal.style.display = 'flex'; }, { signal });
+    btnCrear?.addEventListener('click', () => { modal.style.display = 'flex'; }, { signal });
     btnCancelar?.addEventListener('click', cerrarModal, { signal });
-    modal      .addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); }, { signal });
+    modal.addEventListener('click', (e) => { if (e.target === modal) cerrarModal(); }, { signal });
 
     btnGuardar?.addEventListener('click', async () => {
-        const input    = document.getElementById('input-nombre-playlist');
-        const nombre   = input?.value.trim();
+        const input = document.getElementById('input-nombre-playlist');
+        const nombre = input?.value.trim();
 
         if (!nombre) {
             Vista.mostrarError?.('modal-error-message', 'Por favor, escribí un nombre.');
@@ -426,9 +444,9 @@ function selectSong(idx) {
     if (canciones[idx]) window.SoundlyEvents?.reproducirLista(canciones, idx);
 }
 function togglePlay() { window.SoundlyEvents?.togglePlay(); }
-function nextSong()   { window.SoundlyEvents?.siguiente(); }
-function prevSong()   { window.SoundlyEvents?.anterior(); }
-function seekTo(e)    { window.dispatchEvent(new CustomEvent('soundly:seek', { detail: { event: e } })); }
+function nextSong() { window.SoundlyEvents?.siguiente(); }
+function prevSong() { window.SoundlyEvents?.anterior(); }
+function seekTo(e) { window.dispatchEvent(new CustomEvent('soundly:seek', { detail: { event: e } })); }
 function toggleMute() {
     const audio = window.SoundlyPlayer?.getAudio();
     if (!audio) return;
@@ -476,4 +494,8 @@ window.reproducirCancion = async function reproducirCancion(id) {
     } catch (e) {
         console.error('[reproducirCancion] Error al obtener la canción:', e);
     }
+
+    
 };
+
+

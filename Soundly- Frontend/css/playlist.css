@@ -1345,5 +1345,26 @@ body, html {
     font-variant-numeric: tabular-nums;
 }
 
+/* Estilo para cada item de tu lista de playlists */
+.sidebar-item, .playlist-link, .fav-item {
+    padding: 10px 15px;
+    margin: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.03); /* Fondo casi invisible */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #b3b3b3;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+/* Efecto al pasar el mouse (Modernización) */
+.sidebar-item:hover, .playlist-link:hover {
+    background: rgba(29, 185, 84, 0.15) !important; /* Verde muy suave */
+    border: 1px solid rgba(29, 185, 84, 0.3);
+    color: #ffffff;
+    transform: translateX(5px); /* Pequeño movimiento lateral */
+}
 
 
