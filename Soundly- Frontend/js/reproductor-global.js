@@ -456,24 +456,54 @@
         guardarEstado();
     }
 
-    function siguiente() {
+   function siguiente() {
         if (!estado.lista.length) return;
-        if (estado.shuffle) {
-            estado.idx = Math.floor(Math.random() * estado.lista.length);
+
+        // Lógica mejorada para Shuffle: evita que se repita la canción actual
+        if (estado.shuffle && estado.lista.length > 1) {
+            let nuevoIdx;
+            // Intentamos obtener un índice distinto al actual
+            do {
+                nuevoIdx = Math.floor(Math.random() * estado.lista.length);
+            } while (nuevoIdx === estado.idx);
+            
+            estado.idx = nuevoIdx;
         } else {
+            // Orden normal
             estado.idx = (estado.idx + 1) % estado.lista.length;
         }
+
         const c = estado.lista[estado.idx];
-        setTexto('np-title',  c.titulo);
+        
+        // Actualización de UI
+        setTexto('np-title', c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
-        if (npArt) { npArt.src = c.img; npArt.alt = c.titulo; }
+        if (npArt) { 
+            npArt.src = c.img; 
+            npArt.alt = c.titulo; 
+        }
+
+        // Carga de audio
         const cargado = cargarEnAudio(c);
-        if (!cargado) { actualizarUI(); return; }
+        if (!cargado) { 
+            actualizarUI(); 
+            return; 
+        }
+
+        // Reproducción
         if (estado.playing) {
             audio.play()
-                .then(() => { actualizarUI(); notificarCambio(); if (c.id) registrarReproduccion(c.id); })
-                .catch(err => { console.error('[SoundlyPlayer] siguiente error:', err); estado.playing = false; actualizarUI(); });
+                .then(() => { 
+                    actualizarUI(); 
+                    notificarCambio(); 
+                    if (c.id) registrarReproduccion(c.id); 
+                })
+                .catch(err => { 
+                    console.error('[SoundlyPlayer] siguiente error:', err); 
+                    estado.playing = false; 
+                    actualizarUI(); 
+                });
         } else {
             actualizarUI();
             notificarCambio();
