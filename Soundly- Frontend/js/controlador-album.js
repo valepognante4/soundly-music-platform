@@ -110,6 +110,9 @@
         <span class="number">${index + 1}</span>
         <i class="fas fa-play play-icon" aria-hidden="true"></i>
         </div>
+        <div class="row-thumb" role="cell">
+            <img src="${thumb}" alt="Portada" class="album-track-thumb">
+        </div>
         <div class="row-title" role="cell">
         <span class="song-name">${cancion.titulo ?? 'Sin título'}</span>
         <span class="song-artist">${artistName}</span>

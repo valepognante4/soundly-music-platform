@@ -289,7 +289,27 @@ body.home-layout > #mobile-bottom-nav {
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   6. RESPONSIVE MÓVIL — grid de 1 columna, 3 filas
+   7. MEJORAS EN VISTA ALBUM (Miniaturas en canciones)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Ajuste de columnas para incluir la miniatura en la vista álbum */
+body.home-layout #content:has(#album-name) .playlist-header-row,
+body.home-layout #content:has(#album-name) .playlist-row {
+    grid-template-columns: 50px 48px 2fr 1fr 100px 50px !important;
+}
+
+/* Estilo de la miniatura cuadrada y redondeada */
+body.home-layout #content:has(#album-name) .album-track-thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #1a1a2e;
+    display: block;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. RESPONSIVE MÓVIL — grid de 1 columna, 3 filas
       main (flex:1) | player (72px) | bottom-nav (60px)
    ══════════════════════════════════════════════════════════════════════════ */
 
