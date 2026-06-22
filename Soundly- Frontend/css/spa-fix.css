@@ -438,4 +438,115 @@ body.home-layout #content:has(#album-name) .album-track-thumb {
         padding: 0 !important;
         margin: 0 !important;
     }
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       9. CONVERSIÓN DE TABLAS A LIST VIEW (Mobile Responsive)
+       ══════════════════════════════════════════════════════════════════════════ */
+       
+    /* 1. Ocultar cabeceras de tabla (no se usan en List View móvil) */
+    body.home-layout #content .song-table-header,
+    body.home-layout #content .playlist-header-row {
+        display: none !important;
+    }
+
+    /* 2. Convertir las filas en contenedores Flex (List Item) */
+    body.home-layout #content .song-row,
+    body.home-layout #content .playlist-item,
+    body.home-layout #content .playlist-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding: 10px 16px !important; /* Solicitado por el usuario */
+        margin-bottom: 8px !important;
+        border-radius: 12px !important;
+        min-height: 64px !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 3. Limpiar la interfaz ocultando el ruido visual */
+    body.home-layout #content .row-num,
+    body.home-layout #content .pl-num,
+    body.home-layout #content .row-genre,
+    body.home-layout #content .pl-genre,
+    body.home-layout #content .row-duration,
+    body.home-layout #content .pl-dur,
+    body.home-layout #content .track-duration,
+    body.home-layout #content .track-number {
+        display: none !important;
+    }
+
+    /* 4. El texto (Título/Artista) toma TODO el espacio central */
+    /* Para .song-row (.row-info agrupa miniatura y texto, debe ser row) */
+    body.home-layout #content .row-info {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        gap: 12px !important;
+        padding: 0 !important;
+    }
+
+    body.home-layout #content .row-text {
+        flex: 1 !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        gap: 2px !important;
+    }
+
+    /* Para .playlist-item (.pl-info solo agrupa texto, debe ser column) */
+    body.home-layout #content .pl-info {
+        flex: 1 !important; 
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        gap: 2px !important;
+    }
+
+    /* Forzar truncado con ellipsis */
+    body.home-layout #content .pl-title,
+    body.home-layout #content .pl-artist,
+    body.home-layout #content .row-title,
+    body.home-layout #content .row-artist,
+    body.home-layout #content .song-name,
+    body.home-layout #content .song-artist {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
+    }
+
+    /* 5. Miniatura fija y clara a la izquierda */
+    body.home-layout #content .row-thumb,
+    body.home-layout #content .pl-thumb,
+    body.home-layout #content .album-track-thumb {
+        width: 48px !important;
+        height: 48px !important;
+        flex-shrink: 0 !important;
+        border-radius: 6px !important;
+        object-fit: cover !important;
+        display: block !important;
+    }
+
+    /* 6. Alinear el botón de acción a la derecha */
+    body.home-layout #content .row-actions,
+    body.home-layout #content .pl-play-btn,
+    body.home-layout #content .row-like-btn {
+        margin-left: auto !important; /* Empuja a la derecha */
+        opacity: 1 !important; /* Visible en móvil */
+        flex-shrink: 0 !important;
+        padding: 8px !important; /* Área táctil amplia */
+    }
+    
+    body.home-layout #content .pl-remove-btn {
+        display: none !important; /* Ocultar para limpiar la vista en móvil */
+    }
+
 }

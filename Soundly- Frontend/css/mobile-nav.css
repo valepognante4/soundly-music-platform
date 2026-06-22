@@ -509,3 +509,10 @@
 
     
 }
+
+/* Ocultar metadatos en móvil para ganar espacio vertical */
+@media (max-width: 768px) {
+    #album-meta-info {
+        display: none !important;
+    }
+}
