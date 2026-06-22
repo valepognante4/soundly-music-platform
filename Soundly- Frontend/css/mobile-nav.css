@@ -20,16 +20,17 @@
    1. VARIABLES LOCALES (extienden las de home.css y player-global.css)
    ══════════════════════════════════════════════════════════════════════════════ */
 :root {
-    --mbn-height:      60px;
-    --mbn-bg:          rgba(10, 10, 15, 0.92);
-    --mbn-border:      rgba(167, 139, 250, 0.15);
-    --mbn-blur:        20px;
-    --mbn-active:      #1DB954;          /* Verde Soundly para ítem activo      */
-    --mbn-inactive:    rgba(255, 255, 255, 0.38);
-    --mbn-active-bg:   rgba(29, 185, 84, 0.10);
-    --mbn-label-size:  0.62rem;
-    --mbn-icon-size:   22px;
-    --mbn-transition:  0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --mbn-height: 60px;
+    --mbn-bg: rgba(10, 10, 15, 0.92);
+    --mbn-border: rgba(167, 139, 250, 0.15);
+    --mbn-blur: 20px;
+    --mbn-active: #1DB954;
+    /* Verde Soundly para ítem activo      */
+    --mbn-inactive: rgba(255, 255, 255, 0.38);
+    --mbn-active-bg: rgba(29, 185, 84, 0.10);
+    --mbn-label-size: 0.62rem;
+    --mbn-icon-size: 22px;
+    --mbn-transition: 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -52,9 +53,13 @@
         display: none !important;
     }
 
-    /* ── Topbar: posición relativa para el dropdown ───────────────────────── */
+    /* ── Topbar: posición relativa para el dropdown y mostrar logo ────────── */
     .topbar {
         position: relative !important;
+    }
+    
+    .mobile-logo-topbar {
+        display: flex !important;
     }
 
     /* ── Profile chip: compacto en móvil ─────────────────────────────────── */
@@ -115,7 +120,8 @@
         justify-content: center;
         gap: 4px;
 
-        flex: 1;                            /* Distribuye el espacio por igual  */
+        flex: 1;
+        /* Distribuye el espacio por igual  */
         padding: 8px 4px 6px;
         border-radius: 0;
         text-decoration: none;
@@ -130,7 +136,7 @@
 
         /* Transición suave */
         transition: color var(--mbn-transition),
-                    background var(--mbn-transition);
+            background var(--mbn-transition);
 
         /* Sin outlines extraños */
         outline: none;
@@ -159,7 +165,7 @@
         height: var(--mbn-icon-size);
         flex-shrink: 0;
         transition: transform var(--mbn-transition),
-                    color var(--mbn-transition);
+            color var(--mbn-transition);
     }
 
     /* ── Label de texto ───────────────────────────────────────────────────── */
@@ -212,7 +218,7 @@
     }
 
     /* ── Separador vertical sutil entre ítems ─────────────────────────────── */
-    .mbn-item + .mbn-item {
+    .mbn-item+.mbn-item {
         border-left: 1px solid rgba(255, 255, 255, 0.05);
     }
 
@@ -220,16 +226,32 @@
        4. AJUSTE DE SCROLL DEL CONTENIDO — el contenido no queda tapado
        ══════════════════════════════════════════════════════════════════════════ */
 
-    /*
-     * En la SPA, #content está en un grid de 3 filas:
-     *   1fr (main) | 86px (player) | 60px (bottom-nav)
-     * Por lo tanto el scroll interno de #content ya está aislado por el grid
-     * y NO necesita padding-bottom extra.
-     *
-     * Sin embargo, compensamos el safe-area del iPhone al final de las vistas:
-     */
     body.home-layout #content.main-content {
-        padding-bottom: 0 !important;
+        height: auto !important; /* Permitimos que crezca según el contenido */
+        min-height: 100vh !important; /* Asegura que ocupe al menos la pantalla */
+        display: flex !important;
+        flex-direction: column !important;
+        overflow-y: visible !important; /* Dejamos que el body maneje el scroll */
+        padding-bottom: 120px !important; /* Espacio para el menú inferior */
+    }
+
+    #mobile-bottom-nav {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 60px !important;
+        z-index: 99999 !important; /* El valor más alto para que nada lo tape */
+        background: rgba(10, 10, 15, 0.95) !important;
+        border-top: 1px solid rgba(167, 139, 250, 0.2) !important;
+    }
+
+    /* Aseguramos que el contenido principal tenga espacio abajo para no tapar el menú */
+    #content.main-content {
+        padding-bottom: 80px !important;
+        height: 100vh !important;
+        overflow-y: auto !important;
     }
 
     /* ══════════════════════════════════════════════════════════════════════════
@@ -326,8 +348,11 @@
         flex-direction: column !important;
         align-items: center !important;
         padding: 16px !important;
-        gap: 12px !important;
+        gap: 8px !important;
         text-align: center !important;
+        width: 100% !important;
+        /* Asegura que no se salga */
+        box-sizing: border-box !important;
     }
 
     .hero-banner img,
@@ -390,9 +415,27 @@
     }
 
     /* ── Player view: compacto en móvil ───────────────────────────────────── */
+    /* ── Player view: forzar ancho total ───────────────────────────────────── */
+    body.home-layout #content:has(.content-layout) {
+        padding: 0 !important;
+        overflow-x: hidden !important;
+        /* Evita desbordes */
+    }
+
     .content-layout {
+        width: 100% !important;
+        display: flex !important;
         flex-direction: column !important;
-        padding: 16px !important;
+        padding: 8px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* IMPORTANTE: Esto obliga a que cualquier lista o fila dentro del player se estire */
+    .content-layout>* {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        flex: 1 !important;
     }
 
     /* ── Modales: ancho completo en móvil ─────────────────────────────────── */
@@ -400,6 +443,22 @@
         width: 90% !important;
         max-width: 340px !important;
         margin: 0 auto !important;
+    }
+
+    /* Ocultar elementos específicos que rompen el layout móvil */
+    #playlist-meta-info,
+    /* El que te aparece cortado */
+    .banner-text .playlist-type,
+    /* A veces el tag "PLAYLIST" ocupa mucho */
+    .banner-text .playlist-owner {
+        display: none !important;
+    }
+
+    /* Reducir el tamaño del título principal para que no se corte */
+    .banner-text h1 {
+        font-size: 1.5rem !important;
+        /* Ajusta según lo necesites */
+        line-height: 1.2 !important;
     }
 
 }
@@ -437,6 +496,7 @@
             opacity: 0;
             transform: translateY(100%);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -446,4 +506,6 @@
     #mobile-bottom-nav {
         animation: mbn-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
+
+    
 }

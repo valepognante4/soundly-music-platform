@@ -103,8 +103,13 @@
     </aside>
 
     <main class="main-content">
-        <div class="topbar">
-        <div style="display:flex;gap:10px;align-items:center;margin-left:auto;">
+        <div class="topbar" style="display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box;">
+            <!-- Logo para versión móvil (oculto en desktop) -->
+            <a href="index.html" class="mobile-logo-topbar" style="display: none; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="images/soundly-logo-2048px.png" alt="Soundly" style="width: 28px; height: 28px; border-radius: 50%;">
+                <span style="font-weight: 700; font-size: 1.2rem; color: #fff; font-family: 'DM Sans', sans-serif;">Soundly</span>
+            </a>
+            <div style="display:flex;gap:10px;align-items:center;margin-left:auto;">
                 <!-- Menú de perfil con dropdown — accesible desde móvil sin sidebar -->
                 <div class="user-chip" id="profile-chip" role="button" tabindex="0"
                      aria-haspopup="true" aria-expanded="false" aria-label="Menú de perfil"

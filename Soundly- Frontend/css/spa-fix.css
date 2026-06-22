@@ -45,7 +45,7 @@ body.home-layout {
    2. HIJOS DIRECTOS DEL SHELL — posición explícita en el grid
    ══════════════════════════════════════════════════════════════════════════ */
 
-body.home-layout > .sidebar {
+body.home-layout>.sidebar {
     grid-area: sidebar !important;
     grid-column: 1 !important;
     grid-row: 1 !important;
@@ -61,7 +61,7 @@ body.home-layout > .sidebar {
     z-index: 50;
 }
 
-body.home-layout > #content.main-content {
+body.home-layout>#content.main-content {
     grid-area: main !important;
     grid-column: 2 !important;
     grid-row: 1 !important;
@@ -77,7 +77,7 @@ body.home-layout > #content.main-content {
 
 
 
-body.home-layout > #global-player-bar {
+body.home-layout>#global-player-bar {
     grid-area: player !important;
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
@@ -94,15 +94,15 @@ body.home-layout > #global-player-bar {
     z-index: 200;
 }
 
-body.home-layout > #global-player-bar:not(.player-visible) {
+body.home-layout>#global-player-bar:not(.player-visible) {
     opacity: 0;
     pointer-events: none;
 }
 
 /* Overlays fuera del flujo del grid */
-body.home-layout > #full-screen-player,
-body.home-layout > #modal-crear-playlist,
-body.home-layout > #view-modals {
+body.home-layout>#full-screen-player,
+body.home-layout>#modal-crear-playlist,
+body.home-layout>#view-modals {
     position: fixed !important;
     grid-area: unset !important;
     grid-column: unset !important;
@@ -110,17 +110,17 @@ body.home-layout > #view-modals {
     pointer-events: none;
 }
 
-body.home-layout > #full-screen-player {
+body.home-layout>#full-screen-player {
     inset: 0;
     z-index: 10001;
 }
 
-body.home-layout > #modal-crear-playlist {
+body.home-layout>#modal-crear-playlist {
     inset: 0;
     z-index: 10000;
 }
 
-body.home-layout > #view-modals {
+body.home-layout>#view-modals {
     inset: 0;
     z-index: 9998;
     width: 0;
@@ -128,9 +128,9 @@ body.home-layout > #view-modals {
     overflow: visible;
 }
 
-body.home-layout > #view-modals > *,
-body.home-layout > #modal-crear-playlist[style*="flex"],
-body.home-layout > #modal-crear-playlist:not([style*="none"]) {
+body.home-layout>#view-modals>*,
+body.home-layout>#modal-crear-playlist[style*="flex"],
+body.home-layout>#modal-crear-playlist:not([style*="none"]) {
     pointer-events: auto;
 }
 
@@ -148,12 +148,12 @@ body.home-layout #content:has(#greeting) {
 body.home-layout #content:has(#search-input) {
     /* Fondo transparente con tu degradado global */
     background: radial-gradient(circle at top right, #1e3a2a, #050505 70%) !important;
-    
+
     /* Efecto Glassmorphism */
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    
+
     /* Espaciado y forma */
     padding: 24px 32px !important;
     border-radius: 12px;
@@ -205,7 +205,7 @@ body.home-layout #content:has(#playlist-name) .playlist-container {
 body.home-layout #content:has(.content-layout) {
     /* Gradiente radial: verde profundo (#1e3a2a) hacia negro (#050505) */
     background: radial-gradient(circle at top right, #1e3a2a, #050505 70%) !important;
-    
+
     /* Mantenemos el resto igual */
     padding: 36px !important;
     display: flex !important;
@@ -232,7 +232,7 @@ body.home-layout #content:has(.content-layout) .content-layout {
    4. CONTENIDO INTERNO — evitar desbordes horizontales
    ══════════════════════════════════════════════════════════════════════════ */
 
-body.home-layout #content > * {
+body.home-layout #content>* {
     max-width: 100%;
     box-sizing: border-box;
 }
@@ -250,29 +250,35 @@ body.home-layout #content .search-results {
    5. DEGRADADO VERDE PARA PLAYLIST Y FAVORITOS
    ══════════════════════════════════════════════════════════════════════════ */
 
-body.home-layout > #content.main-content {
+body.home-layout>#content.main-content {
     background-color: #000000;
     position: relative;
     z-index: 1;
+    /* Evita forzar heights fijos problemáticos en el contenedor del degradado */
 }
 
-body.home-layout > #content.main-content::before {
+body.home-layout>#content.main-content::before {
     content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    
-    /* Degradado de dos puntos: Lila a la izquierda, Verde a la derecha */
-    background: radial-gradient(circle at 10% 10%, rgba(180, 58, 255, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 90% 90%, rgba(29, 185, 84, 0.3) 0%, transparent 50%);
-    
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+
+    background-image: radial-gradient(circle at 0% 0%, rgba(180, 58, 255, 0.3) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(29, 185, 84, 0.3) 0%, transparent 60%);
+
     opacity: 0;
-    transition: opacity 0.8s ease-in-out; /* Transición más fluida */
-    z-index: -1;
+    transition: opacity 0.8s ease;
+
+    /* CAMBIA ESTO: de -1 a 0 */
+    z-index: 0;
+
     pointer-events: none;
 }
 
 /* Cuando se activa la clase */
-body.home-layout > #content.main-content.green-gradient-bg::before {
+body.home-layout>#content.main-content.green-gradient-bg::before {
     opacity: 1;
 }
 
@@ -280,7 +286,7 @@ body.home-layout > #content.main-content.green-gradient-bg::before {
    6. DESKTOP — posición del bottom nav (oculto, fuera del flujo del grid)
    ══════════════════════════════════════════════════════════════════════════ */
 
-body.home-layout > #mobile-bottom-nav {
+body.home-layout>#mobile-bottom-nav {
     display: none;
     grid-area: unset;
 }
@@ -315,58 +321,71 @@ body.home-layout #content:has(#album-name) .album-track-thumb {
 
 @media (max-width: 768px) {
 
-    /* ── Layout del shell: 1 col, 3 filas ──────────────────────────────── */
+    /* ── Layout del shell: 1 columna, 1 fila (solo main) ── */
     body.home-layout {
         grid-template-columns: 1fr !important;
-        grid-template-rows: 1fr 72px 60px !important;
-        grid-template-areas:
-            "main"
-            "player"
-            "bottom-nav" !important;
-        /* Compensar safe-area de iOS en la parte inferior */
-        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        grid-template-rows: 1fr !important;
+        grid-template-areas: "main" !important;
+        /* Limpiamos padding bottom del body, lo manejará el content */
+        padding-bottom: 0 !important;
     }
 
     /* ── Sidebar: oculto en móvil ──────────────────────────────────────── */
-    body.home-layout > .sidebar {
+    body.home-layout>.sidebar {
         display: none !important;
     }
 
-    /* ── Contenido principal: columna única ────────────────────────────── */
-    body.home-layout > #content.main-content {
-        grid-area: main !important;
+    /* ── Contenido principal: Scroll propio global ── */
+    body.home-layout>#content.main-content,
+    html body #content.main-content {
+        grid-area: main !important; 
         grid-column: 1 !important;
         grid-row: 1 !important;
-        /* Aseguramos que el padding-bottom no tape el contenido */
-        padding-bottom: 8px !important;
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        
+        /* Habilitar scroll para Inicio, Búsqueda, Favoritos, etc. */
+        overflow-y: auto !important; 
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box !important;
+        
+        /* Padding inferior para que el nav y player NO tapen contenido */
+        padding-bottom: 148px !important; 
     }
 
-    /* ── Reproductor global: fila 2 ───────────────────────────────────── */
-    body.home-layout > #global-player-bar {
-        grid-area: player !important;
-        grid-column: 1 !important;
-        grid-row: 2 !important;
+    /* ── Bottom nav: FIJO siempre en la base ── */
+    body.home-layout>#mobile-bottom-nav,
+    html body #mobile-bottom-nav {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        z-index: 99999 !important;
+        height: 60px !important;
+    }
+
+    /* ── Reproductor global: Fijo justo encima del nav ── */
+    body.home-layout>#global-player-bar,
+    html body #global-player-bar {
+        position: fixed !important;
+        bottom: 60px !important;
+        left: 0 !important;
+        width: 100% !important;
+        z-index: 99998 !important;
         height: 72px !important;
         min-height: 72px !important;
         max-height: 72px !important;
     }
 
-    /* ── Bottom nav: visible en móvil, fila 3 ────────────────────────── */
-    body.home-layout > #mobile-bottom-nav {
-        display: flex !important;
-        grid-area: bottom-nav !important;
-        grid-column: 1 !important;
-        grid-row: 3 !important;
-        /* position: relative ya que está en el grid */
-        position: relative !important;
-        bottom: auto !important;
-    }
-
     /* ── Overlays: siguen fixed ────────────────────────────────────────── */
-    body.home-layout > #full-screen-player,
-    body.home-layout > #modal-crear-playlist,
-    body.home-layout > #modal-confirmar-eliminar,
-    body.home-layout > #view-modals {
+    body.home-layout>#full-screen-player,
+    body.home-layout>#modal-crear-playlist,
+    body.home-layout>#modal-confirmar-eliminar,
+    body.home-layout>#view-modals {
         position: fixed !important;
     }
 
@@ -399,6 +418,24 @@ body.home-layout #content:has(#album-name) .album-track-thumb {
 
     /* Player */
     body.home-layout #content:has(.content-layout) {
-        padding: 16px !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* Contenedor interno con Scroll */
+    body.home-layout #content .content-layout {
+        flex-grow: 1 !important;
+        height: 100% !important; /* Se expande al 100% del padre */
+        width: 100% !important;
+        box-sizing: border-box !important;
+        
+        /* Habilita el scroll solo dentro de la lista/vista */
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        
+        /* Reseteamos márgenes/paddings problemáticos */
+        padding: 0 !important;
+        margin: 0 !important;
     }
 }
