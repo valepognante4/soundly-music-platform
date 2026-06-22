@@ -166,6 +166,21 @@ async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
             await abrirModalAgregarCancion(idPlaylist, playlist.canciones);
         }, { signal });
 
+        $_pl('btn-delete-playlist')?.addEventListener('click', async () => {
+            if (confirm('¿Estás seguro de que quieres eliminar esta playlist completa?')) {
+                try {
+                    await GestorPlaylists.eliminar(idPlaylist);
+                    mostrarToast('Playlist eliminada con éxito', 'success');
+                    setTimeout(() => {
+                        window.location.hash = '#/home';
+                    }, 1000);
+                } catch (error) {
+                    console.error('[Playlist] Error al eliminar playlist:', error);
+                    mostrarToast('No se pudo eliminar la playlist. Intentá de nuevo.', 'error');
+                }
+            }
+        }, { signal });
+
     } catch (error) {
         console.error('[Playlist] Error al cargar playlist:', error);
         mostrarErrorCarga('No se pudo cargar la playlist. Verificá que exista o intentá de nuevo.');
@@ -251,17 +266,19 @@ function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
                         title="Reproducir">
                     ${playIconHTML}
                 </button>
-                <button class="pl-remove-btn"
+                <button class="btn-delete-track"
                         id="remove-btn-${c.id}"
                         aria-label="Quitar ${escaparHtml(c.titulo)} de la playlist"
                         title="Quitar de la playlist">
-                    <i class="fas fa-times"></i>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
                 </button>
             </div>`;
 
         // Play al clic en la fila o botón play
         const accionPlay = (e) => {
-            if (e.target.closest('.pl-remove-btn')) return; // no propagar
+            if (e.target.closest('.btn-delete-track')) return; // no propagar
             window.SoundlyPlayer.reproducirLista(canciones, i);
         };
         item.addEventListener('click', accionPlay);
@@ -271,7 +288,7 @@ function renderizarCancionesDeLaPlaylist(canciones, playlistId) {
         });
 
         // Quitar canción
-        item.querySelector('.pl-remove-btn').addEventListener('click', async (e) => {
+        item.querySelector('.btn-delete-track').addEventListener('click', async (e) => {
             e.stopPropagation();
             await quitarCancionDePlaylist(playlistId, c.id, c.titulo);
         });

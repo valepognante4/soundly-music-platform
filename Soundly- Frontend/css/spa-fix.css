@@ -549,4 +549,67 @@ body.home-layout #content:has(#album-name) .album-track-thumb {
         display: none !important; /* Ocultar para limpiar la vista en móvil */
     }
 
+    /* --- BOTÓN ELIMINAR CANCIÓN (Glassmorphism) --- */
+    body.home-layout #content .btn-delete-track {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;     
+        height: 44px !important;
+        background: rgba(255, 255, 255, 0.05) !important; 
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 50% !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        padding: 0 !important; 
+        margin-left: auto !important; /* Push to right */
+    }
+
+    body.home-layout #content .btn-delete-track svg {
+        width: 20px !important;
+        height: 20px !important;
+        transition: color 0.3s ease !important;
+    }
+
+    body.home-layout #content .btn-delete-track:active,
+    body.home-layout #content .btn-delete-track:hover {
+        background: rgba(255, 59, 48, 0.15) !important; 
+        border-color: rgba(255, 59, 48, 0.3) !important;
+        color: #ff3b30 !important;
+    }
+
+    /* --- BOTÓN ELIMINAR PLAYLIST --- */
+    body.home-layout #content .header-actions {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        margin-top: 12px !important;
+    }
+
+    body.home-layout #content .btn-delete-playlist {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 44px !important; 
+        padding: 0 20px !important;
+        background: rgba(255, 59, 48, 0.1) !important; 
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 59, 48, 0.2) !important;
+        border-radius: 22px !important; 
+        color: #ff3b30 !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+    }
+
+    body.home-layout #content .btn-delete-playlist:active,
+    body.home-layout #content .btn-delete-playlist:hover {
+        background: rgba(255, 59, 48, 0.25) !important;
+        border-color: rgba(255, 59, 48, 0.4) !important;
+    }
 }

@@ -618,7 +618,7 @@ body, html {
 }
 
 /* Botón quitar canción (solo visible en hover) */
-.pl-remove-btn {
+.pl-remove-btn, .btn-delete-track {
     background: transparent;
     border: none;
     color: transparent;
@@ -630,17 +630,21 @@ body, html {
     justify-content: center;
     transition: all 0.15s;
     font-size: 13px;
-    position: absolute;
-    right: 60px;
-    top: 50%;
-    transform: translateY(-50%);
+    margin-left: 8px; /* Give some space from the play button or duration */
 }
 
-.playlist-item:hover .pl-remove-btn {
+.btn-delete-track svg {
+    width: 16px;
+    height: 16px;
+}
+
+.playlist-item:hover .pl-remove-btn,
+.playlist-item:hover .btn-delete-track {
     color: var(--muted);
 }
 
-.pl-remove-btn:hover {
+.pl-remove-btn:hover,
+.btn-delete-track:hover {
     color: #ff4757 !important;
     background: rgba(255, 71, 87, 0.1);
 }
