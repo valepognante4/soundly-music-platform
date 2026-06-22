@@ -20,11 +20,55 @@
             <span class="brand-title">Soundly</span>
         </a>
 
-        <nav>
+        <nav class="desktop-nav">
             <a href="login.html">Iniciar sesión</a>
             <a href="register.html" class="nav-btn-register">Registrarse</a>
         </nav>
+
+        <!-- Icono de Hamburguesa (Solo Móvil) -->
+        <button class="hamburger-menu" id="hamburger-menu" aria-label="Abrir menú">
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+
+        <!-- Menú Desplegable (Solo Móvil) -->
+        <div class="mobile-dropdown" id="mobile-dropdown">
+            <a href="login.html">Iniciar sesión</a>
+            <a href="register.html" class="nav-btn-register">Registrarse</a>
+        </div>
     </header>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const hamburgerMenu = document.getElementById('hamburger-menu');
+            const mobileDropdown = document.getElementById('mobile-dropdown');
+
+            if (hamburgerMenu && mobileDropdown) {
+                // Alternar menú al hacer clic en hamburguesa
+                hamburgerMenu.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    mobileDropdown.classList.toggle('active');
+                });
+
+                // Cerrar al hacer clic fuera del menú
+                document.addEventListener('click', (e) => {
+                    if (!mobileDropdown.contains(e.target) && !hamburgerMenu.contains(e.target)) {
+                        mobileDropdown.classList.remove('active');
+                    }
+                });
+
+                // Cerrar al hacer clic en algún enlace interno
+                mobileDropdown.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        mobileDropdown.classList.remove('active');
+                    });
+                });
+            }
+        });
+    </script>
 
     <hr>
 

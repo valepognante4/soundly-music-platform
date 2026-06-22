@@ -1376,3 +1376,69 @@ button[type="submit"]:hover {
     text-decoration: none;
     color: inherit; 
 }
+
+/* --- MOBILE HEADER & HAMBURGER MENU (LANDING PAGE) --- */
+.hamburger-menu {
+    display: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 1001; /* Sobre el menú desplegable */
+    outline: none;
+}
+
+.mobile-dropdown {
+    display: none;
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 200px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.mobile-dropdown.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.mobile-dropdown a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.mobile-dropdown .nav-btn-register {
+    text-align: center;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    header .desktop-nav {
+        display: none !important;
+    }
+    
+    header .hamburger-menu {
+        display: block !important;
+    }
+
+    header .mobile-dropdown {
+        display: flex;
+    }
+}

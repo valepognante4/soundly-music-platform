@@ -378,6 +378,10 @@
         padding: 0 12px 16px !important;
     }
 
+    .playlist-container, .main-content {
+        padding-bottom: 120px !important; /* Ajusta este valor hasta que veas toda la última canción */
+    }
+
     /* ── Fila de canción en playlist: sin columna de duración ─────────────── */
     .playlist-item .track-duration {
         display: none !important;
