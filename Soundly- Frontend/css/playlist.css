@@ -421,20 +421,30 @@ body, html {
     display: none !important;
 }
 
-.playlist-header-row {
-    display: grid;
-    /* 5 columnas iguales a las de .playlist-row */
-    grid-template-columns: 50px 2fr 1fr 100px 50px; 
-    align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 0.78rem;
-    font-weight: 600;
+/* Sincronizar la cabecera con el formato Grid de la lista de temas */
+body.home-layout #content .playlist-header-row {
+    display: grid !important;
+    /* Usamos exactamente las mismas columnas que tienen tus canciones abajo */
+    grid-template-columns: 50px 45px 1fr max-content 100px 50px !important;
+    align-items: center !important;
+    padding: 0 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    color: var(--muted, #b3b3b3);
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    margin-bottom: 10px;
-    width: 100%;
+    margin-bottom: 8px;
+}
+
+/* Forzar que cada texto se alinee a la izquierda dentro de su celda */
+body.home-layout #content .playlist-header-row span {
+    text-align: left !important;
+}
+
+/* El último elemento (donde iría el reloj o la duración) lo centramos bien */
+body.home-layout #content .playlist-header-row span:nth-child(5) {
+    text-align: center !important;
 }
 
 /* Alinear cabeceras de Género y Tiempo a la derecha */
@@ -450,8 +460,9 @@ body, html {
 /* ─── 6. FILAS DE CANCIONES (playlist-item y playlist-row) ─────────────────────────────── */
 .playlist-item, .playlist-row {
     display: grid;
-    /* Definimos 5 columnas: 1.Indice, 2.Título, 3.Género, 4.Duración, 5.Extra(botón) */
-    grid-template-columns: 50px 2fr 1fr 100px 50px; 
+    /* Definimos 6 columnas EXACTAMENTE IGUALES a la cabecera: 
+       1.Indice, 2.Miniatura, 3.Título, 4.Género, 5.Duración, 6.Botones */
+    grid-template-columns: 50px 40px 2fr 1fr 100px 80px; 
     align-items: center;
     padding: 8px 16px;
     border-radius: 10px;

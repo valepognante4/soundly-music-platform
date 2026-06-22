@@ -301,7 +301,29 @@ body.home-layout>#mobile-bottom-nav {
 /* Ajuste de columnas para incluir la miniatura en la vista álbum */
 body.home-layout #content:has(#album-name) .playlist-header-row,
 body.home-layout #content:has(#album-name) .playlist-row {
-    grid-template-columns: 50px 48px 2fr 1fr 100px 50px !important;
+    grid-template-columns: 50px 48px 2fr 1fr 100px 80px !important;
+}
+
+body.home-layout #content:has(#playlist-name) .playlist-header-row {
+    display: grid !important;
+    /* Cambiamos max-content por 120px fijos para el género */
+    grid-template-columns: 50px 40px 1fr 120px 100px 80px !important;
+    align-items: center !important;
+}
+
+body.home-layout #content:has(#playlist-name) .playlist-item {
+    display: grid !important;
+    grid-template-columns: 50px 40px 1fr 120px 100px 80px !important;
+    align-items: center !important;
+}
+
+/* 3. EL TRUCO MÁGICO: Evitamos que el título empuje al género si es muy largo */
+body.home-layout #content:has(#playlist-name) .playlist-item .row-title,
+body.home-layout #content:has(#playlist-name) .playlist-item .song-name {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
 }
 
 /* Estilo de la miniatura cuadrada y redondeada */
