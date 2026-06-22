@@ -41,6 +41,13 @@
 
     const STORAGE_KEY = 'soundly_player_state';
 
+    // ── GUARDIA: solo reproducir tras interacción explícita del usuario ──
+    // Evita el autoplay indeseado al cargar vistas o navegar entre secciones.
+    // Se pone en true únicamente cuando el usuario hace clic en un botón Play.
+    if (window.__soundlyUserHasInteracted === undefined) {
+        window.__soundlyUserHasInteracted = false;
+    }
+
     // ── ESTADO GLOBAL ─────────────────────────────────────────────────────
     if (!window.__soundlyEstado) {
         window.__soundlyEstado = {
@@ -356,14 +363,16 @@
     }
 
     function reproducir(cancion) {
+        // ── GUARDIA DE AUTOPLAY ────────────────────────────────────────────
+        // Solo reproducimos si el usuario hizo clic explícito. Esto impide que
+        // cargar una vista dispare el reproductor automáticamente.
+        window.__soundlyUserHasInteracted = true;
+
         const c = adaptarCancion(cancion);
         estado.lista = [c];
         estado.idx   = 0;
 
-        // ── Actualizar UI INMEDIATAMENTE con los datos de la canción ────────
-        // No esperar al .then() de audio.play() para que el footer siempre
-        // refleje la canción seleccionada, incluso si el audio tarda en cargar
-        // o falla por CORS / formato.
+        // Actualizar UI INMEDIATAMENTE para que el footer refleje la canción
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
@@ -372,7 +381,6 @@
 
         const cargado = cargarEnAudio(c);
         if (!cargado) {
-            // Sin src válido: mostramos la canción pero no reproducimos
             actualizarUI();
             return;
         }
@@ -385,7 +393,6 @@
             console.error('[SoundlyPlayer] Error al reproducir:', err);
             estado.playing = false;
             setLoadingState(false);
-            // Aun con error, dejamos la info de la canción visible en el footer
             actualizarUI();
             mostrarToastError('No se pudo reproducir la canción. Verificá tu conexión.');
         });
@@ -394,15 +401,16 @@
     function reproducirLista(listaCrudos, indice = 0) {
         if (!Array.isArray(listaCrudos) || listaCrudos.length === 0) return;
 
+        // ── GUARDIA DE AUTOPLAY ────────────────────────────────────────────
+        // Marcar que esta llamada viene de un clic explícito del usuario.
+        window.__soundlyUserHasInteracted = true;
+
         estado.lista = listaCrudos.map(adaptarCancion);
         estado.idx   = Math.max(0, Math.min(indice, estado.lista.length - 1));
         const c = estado.lista[estado.idx];
 
-        // ── Actualizar UI INMEDIATAMENTE ────────────────────────────────────
-        // El footer debe reflejar la canción seleccionada en el mismo tick del
-        // click, sin depender de que audio.play() resuelva exitosamente.
-        // Esto corrige el bug donde el reproductor se queda en el estado inicial
-        // ('Seleccioná una canción') cuando el audio falla por CORS u otro error.
+        // Actualizar UI INMEDIATAMENTE — el footer refleja la canción seleccionada
+        // en el mismo tick del clic, sin esperar a que audio.play() resuelva.
         setTexto('np-title',  c.titulo);
         setTexto('np-artist', c.artista);
         const npArt = document.getElementById('np-art');
@@ -412,7 +420,6 @@
 
         const cargado = cargarEnAudio(c);
         if (!cargado) {
-            // Sin src válido: mostramos la info pero no intentamos reproducir
             actualizarUI();
             return;
         }
@@ -426,7 +433,6 @@
             console.error('[SoundlyPlayer] Error al reproducir lista:', err);
             estado.playing = false;
             setLoadingState(false);
-            // La info de la canción ya está visible — solo reportamos el error de audio
             actualizarUI();
             mostrarToastError('No se pudo reproducir la canción. Verificá tu conexión.');
         });
@@ -733,16 +739,13 @@ document.addEventListener('input', (e) => {
             return;
         }
 
+        // Cargamos el audio para que la UI muestre la última canción,
+        // pero NUNCA hacemos autoplay en cold start sin interacción previa.
+        // El navegador lo bloquearía de todas formas y generaría errores.
         cargarEnAudio(c, estado.currentTime || 0);
-        if (estado.playing) {
-            audio.play().then(() => syncUI()).catch(err => {
-                console.warn('[SoundlyPlayer] Autoplay bloqueado tras recarga:', err);
-                estado.playing = false;
-                syncUI();
-            });
-        } else {
-            syncUI();
-        }
+        estado.playing = false; // siempre paused al recargar la página
+        syncUI();
+        console.info('[SoundlyPlayer] Bootstrap: canción restaurada en modo pausado (autoplay deshabilitado).');
     }
 
     // ── PERSISTENCIA ──────────────────────────────────────────────────────

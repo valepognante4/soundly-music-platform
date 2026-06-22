@@ -331,7 +331,26 @@ const GestorArtistas = {
     /** Obtiene el detalle de un artista con sus álbumes y canciones. GET /api/artistas/{id} */
     async obtenerDetalle(id) {
         return await apiFetch(`/artistas/${id}`).catch(() => null);
-    }
+    },
+
+    /**
+     * Busca artistas por nombre.
+     * GET /api/artistas/buscar?nombre=X
+     * Retorna un array vacío si el backend no responde (fail-safe).
+     * @param {string} nombre - Texto a buscar
+     * @returns {Promise<Array>}
+     */
+    async buscar(nombre) {
+        if (!nombre || !nombre.trim()) return [];
+        try {
+            const params = new URLSearchParams({ nombre: nombre.trim() });
+            const data = await apiFetch(`/artistas/buscar?${params}`);
+            return (Array.isArray(data) ? data : []).map(adaptarArtista);
+        } catch (error) {
+            console.warn('[GestorArtistas.buscar] Error al buscar artistas (no bloqueante):', error);
+            return [];
+        }
+    },
 };
 
 // ═════════════════════════════════════════════════════════════════════════════

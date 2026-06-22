@@ -356,6 +356,145 @@ const Vista = {
     },
 
     // ─────────────────────────────────────────────────────────────────────
+    // renderizarResultadosMixtos
+    // Resultados combinados de búsqueda: sección de Artistas + sección de Canciones.
+    // Distingue el tipo de objeto por presencia de campos internos:
+    //   - artista: tiene .foto (adaptarArtista lo mapea)
+    //   - cancion: tiene .src  (adaptarCancion lo mapea)
+    //
+    // @param {{ canciones: Array, artistas: Array }} resultados
+    // @param {string} contenedorId
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarResultadosMixtos({ canciones = [], artistas = [] }, contenedorId) {
+        const contenedor = this._getContainer(contenedorId);
+        if (!contenedor) return;
+
+        const totalResultados = canciones.length + artistas.length;
+
+        // Estado vacío cuando ambas búsquedas vuelven sin resultados
+        if (totalResultados === 0) {
+            contenedor.innerHTML = `
+                <div class="search-empty-state">
+                    <div class="search-empty-icon">🔍</div>
+                    <p class="empty-title">Sin resultados</p>
+                    <p class="empty-sub">Probá con otro nombre de canción o artista.</p>
+                </div>`;
+            return;
+        }
+
+        contenedor.innerHTML = '';
+
+        // ── Cabecera con conteo por tipo ──────────────────────────────────
+        const partes = [];
+        if (artistas.length)  partes.push(`${artistas.length} artista${artistas.length !== 1 ? 's' : ''}`);
+        if (canciones.length) partes.push(`${canciones.length} canción${canciones.length !== 1 ? 'es' : ''}`);
+        const header = document.createElement('div');
+        header.className = 'search-results-header';
+        header.innerHTML = `<h2>Resultados <span class="results-count">${partes.join(' · ')}</span></h2>`;
+        contenedor.appendChild(header);
+
+        // ── SECCIÓN ARTISTAS ──────────────────────────────────────────────
+        if (artistas.length > 0) {
+            const seccionArtistas = document.createElement('div');
+            seccionArtistas.className = 'search-section';
+            seccionArtistas.innerHTML = `<h3 class="search-section-title">Artistas</h3>`;
+
+            const gridArtistas = document.createElement('div');
+            gridArtistas.className = 'search-artists-grid';
+
+            artistas.forEach((a) => {
+                const card = document.createElement('div');
+                card.className = 'search-artist-card';
+                card.id = `resultado-artista-${a.id}`;
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('aria-label', `Ver perfil de ${a.nombre}`);
+                card.innerHTML = `
+                    <div class="search-artist-img-wrap">
+                        <img class="search-artist-img"
+                             src="${a.foto}"
+                             alt="${a.nombre}"
+                             onerror="this.src='https://placehold.co/96x96/1a1a2e/a78bfa?text=🎤'">
+                    </div>
+                    <div class="search-artist-info">
+                        <span class="search-artist-name">${a.nombre}</span>
+                        <span class="search-artist-tag">Artista${a.genero ? ` · ${a.genero}` : ''}</span>
+                    </div>
+                `;
+                const irAlArtista = () => {
+                    if (typeof window.navegarA === 'function') {
+                        window.navegarA(`artista.html?id=${a.id}`);
+                    } else {
+                        window.location.href = `artista.html?id=${a.id}`;
+                    }
+                };
+                card.addEventListener('click', irAlArtista);
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') irAlArtista();
+                });
+                gridArtistas.appendChild(card);
+            });
+
+            seccionArtistas.appendChild(gridArtistas);
+            contenedor.appendChild(seccionArtistas);
+        }
+
+        // ── SECCIÓN CANCIONES ─────────────────────────────────────────────
+        if (canciones.length > 0) {
+            const seccionCanciones = document.createElement('div');
+            seccionCanciones.className = 'search-section';
+            seccionCanciones.innerHTML = `<h3 class="search-section-title">Canciones</h3>`;
+
+            const gridCanciones = document.createElement('div');
+            gridCanciones.className = 'search-results-grid';
+
+            canciones.forEach((c, i) => {
+                const card = document.createElement('div');
+                card.className = 'search-card';
+                card.id = `resultado-${c.id}`;
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('aria-label', `Reproducir ${c.titulo} de ${c.artista}`);
+                card.innerHTML = `
+                    <div class="search-card-art-wrap">
+                        <img class="search-card-art"
+                             src="${c.img}"
+                             alt="Portada de ${c.titulo}"
+                             onerror="this.src='https://placehold.co/64x64/0d0d1a/a78bfa?text=♪'">
+                        <button class="search-card-play-btn"
+                                id="search-play-${c.id}"
+                                aria-label="Reproducir ${c.titulo}">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                                <polygon points="5,3 19,12 5,21"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="search-card-info">
+                        <span class="search-card-title">${c.titulo}</span>
+                        <span class="search-card-artist">${c.artista}</span>
+                    </div>
+                    <span class="search-card-dur">${this.fmt(c.duracion)}</span>
+                `;
+
+                const accionPlay = (e) => {
+                    e?.stopPropagation();
+                    window.SoundlyEvents?.reproducirLista(canciones, i);
+                };
+
+                card.querySelector('.search-card-play-btn').addEventListener('click', accionPlay);
+                card.addEventListener('click', accionPlay);
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') accionPlay();
+                });
+                gridCanciones.appendChild(card);
+            });
+
+            seccionCanciones.appendChild(gridCanciones);
+            contenedor.appendChild(seccionCanciones);
+        }
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
     // renderizarPlaylists
     // Lista de playlists del usuario con nombre, creador y cantidad de canciones.
     // ─────────────────────────────────────────────────────────────────────

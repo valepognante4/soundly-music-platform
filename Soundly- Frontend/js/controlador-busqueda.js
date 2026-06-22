@@ -91,12 +91,30 @@ const ControladorBusqueda = {
         }
 
         try {
-            // GestorCanciones.buscar() → GET /api/canciones/buscar?titulo=query
-            // El DynamicSourcingService del backend enriquece automáticamente con Deezer
-            const resultados = await GestorCanciones.buscar({ titulo: query });
-            Vista.renderizarResultadosBusqueda(resultados, 'search-results');
+            // ── BÚSQUEDA PARALELA: canciones + artistas ───────────────────────
+            // Promise.allSettled garantiza que si uno falla, el otro sigue.
+            // Canciones: el mismo query se envía en 'titulo' Y 'artista' para
+            // que el backend haga OR entre ambos campos automáticamente.
+            const [resCanciones, resArtistas] = await Promise.allSettled([
+                GestorCanciones.buscar({ titulo: query, artista: query }),
+                GestorArtistas.buscar(query),
+            ]);
+
+            const canciones = resCanciones.status === 'fulfilled' ? resCanciones.value : [];
+            const artistas  = resArtistas.status  === 'fulfilled' ? resArtistas.value  : [];
+
+            if (resCanciones.status === 'rejected') {
+                console.error('[Busqueda] Error en búsqueda de canciones:', resCanciones.reason);
+            }
+            if (resArtistas.status === 'rejected') {
+                console.warn('[Busqueda] Error en búsqueda de artistas (no bloqueante):', resArtistas.reason);
+            }
+
+            // Delegar el renderizado mixto a Vista
+            Vista.renderizarResultadosMixtos({ canciones, artistas }, 'search-results');
+
         } catch (error) {
-            console.error('[Busqueda] Error:', error);
+            console.error('[Busqueda] Error inesperado:', error);
             if (contenedor) {
                 contenedor.innerHTML = `
                     <div class="search-empty-state">

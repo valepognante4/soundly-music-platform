@@ -15,4 +15,10 @@ public interface IArtistaService {
     List<ArtistaDTO> listarTodos();
     int actualizarGenerosNulos();
     com.streaming.soundly.dto.ArtistaDetalleDTO obtenerDetalle(Long id);
+
+    /**
+     * Busca artistas cuyo nombre contenga el texto indicado (case-insensitive).
+     * Usado por GET /api/artistas/buscar?nombre=X
+     */
+    List<ArtistaDTO> buscarPorNombre(String nombre);
 }

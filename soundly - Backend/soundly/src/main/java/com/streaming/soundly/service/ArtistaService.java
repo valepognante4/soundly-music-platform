@@ -398,4 +398,22 @@ public class ArtistaService implements IArtistaService {
                 .orElseThrow(() -> new EntityNotFoundException("Artista no encontrado con el ID: " + id));
         return ArtistaMapper.toDetalleDTO(artista);
     }
+
+    /**
+     * Busca artistas cuyo nombre contenga el texto indicado (case-insensitive).
+     * Usa findByNombreContainingIgnoreCase() del repositorio, que ya tiene el índice correcto.
+     * @param nombre Texto parcial o completo a buscar
+     * @return Lista de ArtistaDTO (puede ser vacía, nunca null)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ArtistaDTO> buscarPorNombre(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            return List.of();
+        }
+        return artistaRepository.findByNombreContainingIgnoreCase(nombre.trim())
+                .stream()
+                .map(ArtistaMapper::toDTO)
+                .toList();
+    }
 }

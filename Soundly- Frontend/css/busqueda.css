@@ -455,3 +455,128 @@ h2 { font-size: 1.5rem; margin-bottom: 24px; }
         grid-template-columns: 1fr;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESULTADOS MIXTOS — Secciones separadas: Artistas + Canciones
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Contenedor de sección (agrupa título + grid) */
+.search-section {
+    margin-bottom: 32px;
+}
+
+/* Título de sección: "Artistas" / "Canciones" */
+.search-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin: 0 0 14px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── GRID DE ARTISTAS ─────────────────────────────────────────────── */
+.search-artists-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+/* Tarjeta individual de artista en resultados de búsqueda */
+.search-artist-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.18s ease, border-color 0.2s ease;
+    min-width: 200px;
+    flex: 1 1 200px;
+    max-width: 320px;
+    animation: fadeSlideIn 0.3s ease both;
+    outline: none;
+}
+
+.search-artist-card:hover {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: rgba(167, 139, 250, 0.3);
+    transform: translateY(-2px);
+}
+
+.search-artist-card:focus-visible {
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.6);
+}
+
+/* Foto circular del artista */
+.search-artist-img-wrap {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(167, 139, 250, 0.25);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    transition: border-color 0.2s ease;
+}
+
+.search-artist-card:hover .search-artist-img-wrap {
+    border-color: rgba(167, 139, 250, 0.6);
+}
+
+.search-artist-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.search-artist-card:hover .search-artist-img {
+    transform: scale(1.06);
+}
+
+/* Info textual del artista */
+.search-artist-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.search-artist-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #f3f4f6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-artist-tag {
+    font-size: 0.75rem;
+    color: #a78bfa;
+    font-weight: 500;
+}
+
+/* Animaciones escalonadas para artistas */
+.search-artists-grid .search-artist-card:nth-child(1) { animation-delay: 0.02s; }
+.search-artists-grid .search-artist-card:nth-child(2) { animation-delay: 0.04s; }
+.search-artists-grid .search-artist-card:nth-child(3) { animation-delay: 0.06s; }
+.search-artists-grid .search-artist-card:nth-child(4) { animation-delay: 0.08s; }
+.search-artists-grid .search-artist-card:nth-child(5) { animation-delay: 0.10s; }
+.search-artists-grid .search-artist-card:nth-child(6) { animation-delay: 0.12s; }
+
+/* ── RESPONSIVE: tarjetas de artista en móvil ─────────────────────── */
+@media (max-width: 768px) {
+    .search-artists-grid {
+        flex-direction: column;
+    }
+    .search-artist-card {
+        max-width: 100%;
+    }
+}
