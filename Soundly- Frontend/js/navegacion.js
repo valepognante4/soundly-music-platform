@@ -209,6 +209,12 @@ async function cargarVista(nombreVista) {
 
         _vistaActual = nombreVista;
 
+        if (_vistaActual === 'playlist' || _vistaActual === 'favoritos') {
+            contentEl.classList.add('green-gradient-bg');
+        } else {
+            contentEl.classList.remove('green-gradient-bg');
+        }
+
         const urlRef = Object.entries(ARCHIVO_VISTA).find(([, f]) => f === archivo);
         const urlParaSidebar = urlRef ? archivo : archivo;
         actualizarSidebarActivo(
@@ -231,6 +237,13 @@ async function cargarVista(nombreVista) {
         window.dispatchEvent(new CustomEvent('soundly:vista-cambiada', {
             detail: { vista: nombreVista, url: archivo },
         }));
+
+        // Limpiar estado de playlist si salimos de la vista de playlist
+        if (_vistaActual === 'playlist' && nombreVista !== 'playlist') {
+            if (typeof window.limpiarEstadoDOM === 'function') {
+                window.limpiarEstadoDOM();
+            }
+        }
 
     } catch (error) {
         console.error('[Navegacion] ❌ Error al cargar vista:', error);

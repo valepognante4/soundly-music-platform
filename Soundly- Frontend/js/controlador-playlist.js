@@ -27,7 +27,45 @@ let _playlistActual = null;
 let _todasLasCanciones = [];
 let _playlistAbortController = null;
 
-// ── INICIALIZACIÓN SPA ────────────────────────────────────────────────────────
+// ─── RESET DE ESTADO ATÓMICO ──────────────────────────────────────────────────────
+// Función OBLIGATORIA para limpiar completamente el DOM antes de cualquier renderizado
+window.limpiarEstadoDOM = function limpiarEstadoDOM() {
+    console.log("🔄 Reset de Estado Atómico ejecutándose...");
+    
+    // 1. LIMPIAR ID: Eliminar id="playlist-name" de CUALQUIER elemento en el DOM
+    // Esto ES CRUCIAL para romper el selector :has() en spa-fix.css
+    const elementosConIdPlaylist = document.querySelectorAll('[id="playlist-name"]');
+    elementosConIdPlaylist.forEach(el => {
+        el.removeAttribute('id');
+    });
+    
+    // 2. LIMPIAR CLASE: Remover .is-playlist-active del contenedor principal
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.classList.remove('is-playlist-active');
+    }
+    
+    // 3. LIMPIAR ESTILOS: Forzar reset de display en elementos clave para recalcular layout
+    const elementosReset = [
+        '.action-buttons', 
+        '.hero-banner', 
+        '.playlist-container'
+    ];
+    
+    elementosReset.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+            // Forzar display: none para ocultar temporalmente
+            el.style.display = 'none';
+            // Forzar reflow (recálculo de layout) del navegador
+            void el.offsetWidth;
+            // Limpiar a valor por defecto (vacío) para que el CSS se encargue
+            el.style.display = '';
+        }
+    });
+}
+
+// ─── INICIALIZACIÓN SPA ────────────────────────────────────────────────────────
 
 window.initPlaylist = async function initPlaylist() {
     if (_playlistAbortController) _playlistAbortController.abort();
@@ -76,44 +114,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ═════════════════════════════════════════════════════════════════════════════
 
 async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
+    // ✅ PASO 1: Reset de Estado Atómico - INICIO ABSOLUTO
+    limpiarEstadoDOM();
+    
     mostrarCargando();
 
-    // Mostrar todos los elementos de la vista de detalle
-    const actionBar = document.querySelector('.action-buttons');
-    if (actionBar) actionBar.classList.remove('hidden');
-
-    const header = document.querySelector('.playlist-header-row');
-    if (header) header.classList.remove('hidden');
-
-    const playlistContainer = document.querySelector('.playlist-container');
-    if (playlistContainer) playlistContainer.classList.remove('hidden');
-
-    const btnPlayAll = document.querySelector('.btn-play-big');
-    if (btnPlayAll) btnPlayAll.classList.remove('hidden');
-
-    const btnAddCircle = document.querySelector('.btn-add-circle');
-    if (btnAddCircle) btnAddCircle.classList.remove('hidden');
-
-    const btnEditName = document.getElementById('btn-edit-name');
-    if (btnEditName) btnEditName.classList.remove('hidden');
-
-    const statCanciones = document.getElementById('stat-canciones');
-    if (statCanciones) statCanciones.classList.remove('hidden');
-
-    const statDuracion = document.getElementById('stat-duracion');
-    if (statDuracion) statDuracion.classList.remove('hidden');
-
-    const bannerType = document.querySelector('.banner-type');
-    if (bannerType) bannerType.style.display = 'block';
-
     try {
+        // ✅ PASO 2: Cargar datos primero
         const playlist = await GestorPlaylists.obtenerDetalle(idPlaylist);
         if (!playlist) throw new Error('Playlist no encontrada');
-
         _playlistActual = playlist;
 
-        // Actualizar header del banner
-        actualizarBanner(playlist, usuario);
+        // ✅ PASO 3: Inyectar todo el contenido primero
+        // Actualizar header del banner (pero NO poner el ID todavía!)
+        actualizarBanner(playlist, usuario, false); // false = no activar ID aún
 
         // Renderizar canciones
         renderizarCancionesDeLaPlaylist(playlist.canciones, idPlaylist);
@@ -121,9 +135,24 @@ async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
         // Actualizar estadísticas
         actualizarEstadisticas(playlist.canciones);
 
+        // ✅ PASO 4: APLICAR ESTILOS Y ACTIVAR ID - LO ÚLTIMO!
+        // Esto evita parpadeos y estados intermedios
+        requestAnimationFrame(() => {
+            // 4.1 Poner el ID playlist-name (activa el selector CSS :has())
+            const nombreEl = document.querySelector('.playlist-title-container h1');
+            if (nombreEl) {
+                nombreEl.id = 'playlist-name';
+            }
+            
+            // 4.2 Activar la clase .is-playlist-active
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.classList.add('is-playlist-active');
+            }
+        });
+
         // Botón Play All
         $_pl('btn-play-all')?.addEventListener('click', () => {
-            console.log('Reproduciendo lista de playlist:', playlist.canciones);
             if (playlist.canciones?.length > 0) {
                 window.SoundlyPlayer.reproducirLista(playlist.canciones);
             }
@@ -143,9 +172,15 @@ async function cargarDetallePlaylst(idPlaylist, usuario, signal) {
     }
 }
 
-function actualizarBanner(playlist, usuario) {
-    const nombreEl = $_pl('playlist-name');
-    if (nombreEl) nombreEl.textContent = playlist.nombre || 'Mi Playlist';
+// Actualizar banner con opción de no activar ID aún
+function actualizarBanner(playlist, usuario, activarId = true) {
+    const nombreEl = document.querySelector('.playlist-title-container h1');
+    if (nombreEl) {
+        if (activarId) {
+            nombreEl.id = 'playlist-name';
+        }
+        nombreEl.textContent = playlist.nombre || 'Mi Playlist';
+    }
 
     const creadorEl = $_pl('nombre-usuario-display');
     if (creadorEl) {
@@ -276,48 +311,15 @@ function resaltarCancionActiva(idxActivo) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 async function cargarListaPlaylists(usuario) {
-    // Ocultar TODOS los elementos específicos de la vista de detalle
-    const actionBar = document.querySelector('.action-buttons');
-    if (actionBar) actionBar.classList.add('hidden');
-
-    const header = document.querySelector('.playlist-header-row');
-    if (header) header.classList.add('hidden');
-
-    const playlistContainer = document.querySelector('.playlist-container');
-    if (playlistContainer) playlistContainer.classList.add('hidden');
-
-    const btnPlayAll = document.querySelector('.btn-play-big');
-    if (btnPlayAll) btnPlayAll.classList.add('hidden');
-
-    const btnAddCircle = document.querySelector('.btn-add-circle');
-    if (btnAddCircle) btnAddCircle.classList.add('hidden');
-
-    const btnEditName = document.getElementById('btn-edit-name');
-    if (btnEditName) btnEditName.classList.add('hidden');
-
-    const statCanciones = document.getElementById('stat-canciones');
-    if (statCanciones) statCanciones.classList.add('hidden');
-
-    const statDuracion = document.getElementById('stat-duracion');
-    if (statDuracion) statDuracion.classList.add('hidden');
-
-    const bannerType = document.querySelector('.banner-type');
-    if (bannerType) bannerType.style.display = 'none';
-
-    // Actualizar el banner para la vista general
-    const bannerTitleContainer = document.querySelector('.playlist-title-container');
-    if (bannerTitleContainer) bannerTitleContainer.innerHTML = '<h1 id="playlist-name">Tus Playlists</h1>';
-
+    // ✅ PASO 1: Reset de Estado Atómico - INICIO ABSOLUTO
+    limpiarEstadoDOM();
+    
     const creadorEl = $_pl('nombre-usuario-display');
-    if (creadorEl) creadorEl.textContent = usuario?.apodo || usuario?.nombreUsuario || '';
-
-    // Ahora, necesitamos que el contenedor de la lista de playlists se muestre
-    const contenedor = $_pl('playlist-list');
-    if (contenedor) {
-        // Primero quitamos la clase hidden por si acaso
-        contenedor.classList.remove('hidden');
+    if (creadorEl) {
+        creadorEl.textContent = usuario?.apodo || usuario?.nombreUsuario || '';
     }
 
+    const contenedor = $_pl('playlist-list');
     mostrarCargando();
 
     try {
@@ -334,42 +336,31 @@ async function cargarListaPlaylists(usuario) {
             return;
         }
 
+        // ✅ PASO 2: Inyectar nuevo contenido
         Vista.renderizarPlaylists(playlists, 'playlist-list', (p) => {
             const url = `playlist.html?id=${p.id}`;
             if (typeof window.navegarA === 'function') window.navegarA(url);
             else window.location.href = url;
         });
 
-        // Event delegation para botón de eliminar playlist
+        // Event delegation para botón de eliminar
         contenedor.addEventListener('click', async (e) => {
             const deleteBtn = e.target.closest('.btn-delete-playlist');
             if (!deleteBtn) return;
-
             e.stopPropagation();
             const playlistId = deleteBtn.dataset.id;
 
-            // Confirmación antes de eliminar
             mostrarModalConfirmacion(
                 '¿Estás seguro de que quieres eliminar esta playlist? Esta acción no se puede deshacer.',
                 async () => {
                     try {
                         await GestorPlaylists.eliminar(playlistId);
-                        
-                        // Limpiar estado global si la playlist eliminada estaba en reproducción
-                        if (window.SoundlyPlayer) {
-                            // Por ahora, no tenemos playlistId en el estado, pero podemos eliminar el estado guardado
-                            if (sessionStorage.getItem('soundly_player_state')) {
-                                sessionStorage.removeItem('soundly_player_state');
-                            }
-                        }
-
-                        // Recargar la lista de playlists
+                        if (window.SoundlyPlayer) sessionStorage.removeItem('soundly_player_state');
                         await cargarListaPlaylists(usuario);
-
                         mostrarToast('Playlist eliminada correctamente.', 'success');
                     } catch (error) {
-                        console.error('[Playlist] Error al eliminar playlist:', error);
-                        mostrarToast('Error al eliminar la playlist. Intentá de nuevo.', 'error');
+                        console.error('[Playlist] Error al eliminar:', error);
+                        mostrarToast('Error al eliminar la playlist.', 'error');
                     }
                 }
             );

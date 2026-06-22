@@ -1367,4 +1367,35 @@ body, html {
     transform: translateX(5px); /* Pequeño movimiento lateral */
 }
 
+/* Ocultamos los elementos de control por defecto */
+.action-buttons,
+.playlist-header-row,
+.btn-play-big,
+.btn-add-circle,
+#btn-edit-name,
+#stat-canciones,
+#stat-duracion {
+    display: none !important;
+}
+
+/* Solo se muestran si el padre tiene esta clase */
+.main-content.is-playlist-active .action-buttons,
+.main-content.is-playlist-active .playlist-header-row,
+.main-content.is-playlist-active .btn-play-big,
+.main-content.is-playlist-active .btn-add-circle,
+.main-content.is-playlist-active #btn-edit-name,
+.main-content.is-playlist-active #stat-canciones,
+.main-content.is-playlist-active #stat-duracion {
+    display: flex !important; /* O el valor que corresponda a tu diseño */
+}
+
+/* Ajuste para el banner type */
+.main-content.is-playlist-active .banner-type {
+    display: block !important;
+}
+
+.hidden {
+    display: none !important;
+}
+
 
