@@ -304,26 +304,31 @@ body.home-layout #content:has(#album-name) .playlist-row {
     grid-template-columns: 50px 48px 2fr 1fr 100px 80px !important;
 }
 
-body.home-layout #content:has(#playlist-name) .playlist-header-row {
-    display: grid !important;
-    /* Cambiamos max-content por 120px fijos para el género */
-    grid-template-columns: 50px 40px 1fr 120px 100px 80px !important;
-    align-items: center !important;
-}
+/* ── Reglas de GRID solo para ESCRITORIO (≥ 769px) ──────────────────────────
+   IMPORTANTE: Estas reglas deben estar dentro de @media (min-width: 769px)
+   para que NO interfieran con las media queries móviles de la sección 10.   */
+@media (min-width: 769px) {
+    body.home-layout #content:has(#playlist-name) .playlist-header-row {
+        display: grid !important;
+        /* Columnas fijas para el género */
+        grid-template-columns: 50px 40px 1fr 120px 100px 80px !important;
+        align-items: center !important;
+    }
 
-body.home-layout #content:has(#playlist-name) .playlist-item {
-    display: grid !important;
-    grid-template-columns: 50px 40px 1fr 120px 100px 80px !important;
-    align-items: center !important;
-}
+    body.home-layout #content:has(#playlist-name) .playlist-item {
+        display: grid !important;
+        grid-template-columns: 50px 40px 1fr 120px 100px 80px !important;
+        align-items: center !important;
+    }
 
-/* 3. EL TRUCO MÁGICO: Evitamos que el título empuje al género si es muy largo */
-body.home-layout #content:has(#playlist-name) .playlist-item .row-title,
-body.home-layout #content:has(#playlist-name) .playlist-item .song-name {
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 100% !important;
+    /* Evitamos que el título empuje al género si es muy largo */
+    body.home-layout #content:has(#playlist-name) .playlist-item .row-title,
+    body.home-layout #content:has(#playlist-name) .playlist-item .song-name {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+    }
 }
 
 /* Estilo de la miniatura cuadrada y redondeada */
@@ -667,6 +672,212 @@ body.home-layout #content:has(#album-name) .album-track-thumb {
     }
 }
 
+/* ==========================================================================
+   10. PARCHE QUIRÚRGICO — PLAYLIST / FAVORITOS MÓVIL (max-width: 768px)
+   Anula con máxima especificidad las reglas de escritorio de sección 7
+   (que tienen display:grid !important) y las de playlist.css/.is-playlist-active.
+   NO toca ni un pixel del diseño de escritorio.
+   ========================================================================== */
+@media (max-width: 768px) {
+
+    /* ── A. OCULTACIÓN DEFINITIVA DE CABECERAS ────────────────────────────────
+       Usamos TRIPLE contexto (body + #content + vista específica) para
+       superar la especificidad de las reglas desktop de sección 7.
+       Cubrimos TODAS las variantes de nombre de clase que puede tener el
+       contenedor-cabecera: .playlist-header-row, .song-table-header,
+       y el primer div hijo del .playlist-container que no sea un item real.  */
+
+    /* Vista Playlist — selector de máxima especificidad */
+    body.home-layout #content:has(#playlist-name) .playlist-header-row,
+    body.home-layout #content:has(#playlist-name) .song-table-header,
+    body.home-layout #content:has(#playlist-name) .playlist-container > .playlist-header-row,
+    body.home-layout #content:has(#playlist-name) .playlist-container > [class*="header-row"],
+    body.home-layout #content:has(#playlist-name) .playlist-container > [class*="table-header"] {
+        display: none !important;
+        visibility: hidden !important; /* Doble barrera: cancela cualquier override de display */
+        height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        pointer-events: none !important;
+    }
+
+    /* Vista Favoritos — misma especificidad, distinto contexto */
+    body.home-layout #content:has(#fav-meta-info) .song-table-header,
+    body.home-layout #content:has(#fav-meta-info) .playlist-header-row,
+    body.home-layout #content:has(#fav-meta-info) .song-table > .song-table-header,
+    body.home-layout #content:has(#fav-meta-info) [class*="table-header"],
+    body.home-layout #content:has(#fav-meta-info) [class*="header-row"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        pointer-events: none !important;
+    }
+
+    /* Sobreescritura EXPLÍCITA de la regla display:grid de sección 7 (línea 307).
+       Esa regla no tiene media query, por lo que se aplica en móvil.
+       Este selector replica su especificidad exacta + está dentro de @media → gana. */
+    body.home-layout #content:has(#playlist-name) .playlist-header-row {
+        display: none !important;
+    }
+
+    /* ── B. CONTENEDORES — quitar padding gigante de escritorio ──────────────
+       Las reglas desktop definen 40px; aquí las bajamos a 16px.             */
+    body.home-layout #content:has(#playlist-name) .playlist-container,
+    body.home-layout #content:has(#fav-meta-info) .playlist-container,
+    body.home-layout #content:has(#fav-meta-info) .song-table {
+        padding: 0 16px 40px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important; /* barrera anti-desborde */
+    }
+
+    /* ── C. CONVERSIÓN DE FILAS A LIST VIEW FLEXBOX ──────────────────────────
+       Anulamos el display:grid de N columnas y lo reemplazamos con flex row.
+       Se cubren TODOS los selectores de fila que usa el JS al renderizar.   */
+    body.home-layout #content:has(#playlist-name) .playlist-item,
+    body.home-layout #content:has(#playlist-name) .playlist-row,
+    body.home-layout #content:has(#fav-meta-info) .song-row,
+    body.home-layout #content:has(#fav-meta-info) .playlist-item,
+    /* Selectores globales de respaldo (para items inyectados sin contexto :has) */
+    body.home-layout #content .playlist-item,
+    body.home-layout #content .playlist-row,
+    body.home-layout #content .song-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 10px 12px !important;
+        gap: 12px !important;
+        border-radius: 10px !important;
+        overflow: hidden !important; /* evita que hijos desborden la fila */
+        /* Anulamos grid-template-columns explícitamente */
+        grid-template-columns: unset !important;
+    }
+
+    /* ── D. CONTROL DE ELLIPSIS — min-width:0 en contenedores de texto ───────
+       Sin min-width:0 un flex-item nunca se encoge y desborda la pantalla.  */
+    body.home-layout #content .row-info,
+    body.home-layout #content .pl-info {
+        flex: 1 !important;
+        min-width: 0 !important;        /* CRÍTICO para text-overflow:ellipsis */
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 0 !important;
+    }
+
+    /* Sub-contenedor de texto (título + artista) */
+    body.home-layout #content .row-text,
+    body.home-layout #content .pl-text-wrapper,
+    body.home-layout #content .pl-info > div {
+        flex: 1 !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        overflow: hidden !important;
+    }
+
+    /* Textos: truncado elegante con puntos suspensivos */
+    body.home-layout #content .pl-title,
+    body.home-layout #content .pl-artist,
+    body.home-layout #content .row-title,
+    body.home-layout #content .row-artist,
+    body.home-layout #content .song-name,
+    body.home-layout #content .song-artist {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* ── E. COMPONENTES OCULTOS EN MÓVIL ────────────────────────────────────
+       Número de pista, género y duración: no caben en pantalla chica.       */
+    body.home-layout #content .row-num,
+    body.home-layout #content .pl-num,
+    body.home-layout #content .row-genre,
+    body.home-layout #content .pl-genre,
+    body.home-layout #content .row-duration,
+    body.home-layout #content .pl-dur {
+        display: none !important;
+    }
+
+    /* ── F. MINIATURA: fija a la izquierda, no se comprime jamás ────────────  */
+    body.home-layout #content .row-thumb,
+    body.home-layout #content .pl-thumb,
+    body.home-layout #content .album-track-thumb {
+        width: 46px !important;
+        height: 46px !important;
+        flex-shrink: 0 !important;
+        border-radius: 6px !important;
+        object-fit: cover !important;
+        display: block !important;
+    }
+
+    /* ── G. BOTONES DE ACCIÓN: soldados al extremo derecho ──────────────────
+       margin-left:auto + flex-shrink:0 = siempre al extremo derecho,
+       siempre visibles en táctil (opacity:1 anula el 0 del desktop hover).  */
+    body.home-layout #content .row-actions,
+    body.home-layout #content .row-like-btn,
+    body.home-layout #content .btn-delete-track {
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+        opacity: 1 !important;          /* visible sin hover en táctil */
+    }
+
+    /* Botón eliminar track: estilo Glassmorphism táctil */
+    body.home-layout #content .btn-delete-track {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 50% !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    body.home-layout #content .btn-delete-track svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    body.home-layout #content .btn-delete-track:active,
+    body.home-layout #content .btn-delete-track:hover {
+        background: rgba(255, 59, 48, 0.15) !important;
+        border-color: rgba(255, 59, 48, 0.3) !important;
+        color: #ff3b30 !important;
+    }
+
+    /* ── H. PREVENCIÓN GLOBAL DE DESBORDE ────────────────────────────────────
+       Capa de seguridad final aplicada solo a las vistas de lista.          */
+    body.home-layout #content:has(#playlist-name) *,
+    body.home-layout #content:has(#fav-meta-info) * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+}
 /* Ocultar FAB en escritorio */
 .fab-create {
     display: none;

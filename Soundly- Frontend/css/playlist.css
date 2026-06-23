@@ -1414,3 +1414,254 @@ body.home-layout #content .playlist-header-row span:nth-child(5) {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE MÓVIL — playlist.css
+   Aplica ÚNICAMENTE en pantallas ≤ 768px.
+   El diseño de escritorio NO se altera en ningún punto de este bloque.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* ─── 1. LAYOUT RAÍZ ─────────────────────────────────────────────────────
+       En móvil el sidebar se oculta (lo gestiona mobile-nav.css); el main
+       ocupa el 100% del ancho de la pantalla.                                */
+    .app-wrapper {
+        grid-template-columns: 1fr !important; /* Anula la columna sidebar */
+        height: auto !important;               /* Altura automática en móvil */
+    }
+
+    /* El contenido principal llena todo el viewport */
+    .main-content {
+        width: 100% !important;
+        overflow-x: hidden !important; /* Barrera anti-desborde horizontal */
+        padding-bottom: 100px !important; /* Espacio para el player fijo */
+    }
+
+    /* ─── 2. HERO BANNER ─────────────────────────────────────────────────────
+       El banner colapsa verticalmente: icono arriba + texto abajo.          */
+    .hero-banner {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 16px !important;
+        padding: 24px 16px 20px !important;
+        min-height: auto !important;
+    }
+
+    /* Icono de la playlist: más pequeño en móvil */
+    .banner-icon {
+        width: 120px !important;
+        height: 120px !important;
+        font-size: 48px !important;
+    }
+
+    /* Título h1 de la playlist: tamaño más compacto */
+    .banner-text h1 {
+        font-size: clamp(22px, 7vw, 36px) !important;
+    }
+
+    /* El botón "Eliminar Playlist" que flota en .header-actions del banner */
+    .hero-banner .header-actions {
+        display: none !important; /* Se oculta en móvil para no saturar */
+    }
+
+    /* ─── 3. BARRA DE ACCIONES ───────────────────────────────────────────────
+       Reducimos el padding y el gap para que quede compacta.                */
+    .action-buttons {
+        padding: 12px 16px !important;
+        gap: 12px !important;
+        flex-wrap: wrap !important; /* Evita desborde si hay muchos badges */
+    }
+
+    /* ─── 4. OCULTACIÓN ABSOLUTA DE CABECERAS DE TABLA ──────────────────────
+       Elimina CUALQUIER variante de cabecera de columnas en móvil.
+       Se cubren TODOS los selectores posibles con !important para garantizar
+       la prioridad frente a reglas como .main-content.is-playlist-active.   */
+
+    /* Cabecera de playlist.html */
+    .playlist-header-row,
+    /* Cabecera de favoritos.html (también cargada vía SPA en este contexto) */
+    .song-table-header,
+    /* Selector genérico por si el JS inyecta otra clase de cabecera */
+    [class*="table-header"],
+    [class*="header-row"] {
+        display: none !important;
+    }
+
+    /* ─── 5. CONTENEDOR DE CANCIONES ─────────────────────────────────────────
+       Quitamos el padding lateral heredado del contenedor para que las filas
+       ocupen el ancho completo sin desbordarse.                              */
+    .playlist-container {
+        padding: 0 !important;
+    }
+
+    .song-table {
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* ─── 6. CONVERSIÓN A LIST VIEW FLEXBOX — playlist-item / playlist-row ──
+       Anulamos el grid de N columnas y pasamos a flex horizontal alineado.  */
+    .playlist-item,
+    .playlist-row {
+        /* Anulamos el grid de 6 columnas */
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        /* Ancho completo del dispositivo */
+        width: 100% !important;
+        box-sizing: border-box !important;
+        /* Padding lateral reducido: espacio sin desperdiciar pantalla */
+        padding: 8px 16px !important;
+        gap: 10px !important;
+        /* Sin redondeo exagerado para look más compacto tipo lista */
+        border-radius: 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+        /* Evita que el propio contenedor desborde */
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    /* ─── 7. CONVERSIÓN A LIST VIEW FLEXBOX — song-row (favoritos) ──────────
+       Misma conversión para la variante usada en favoritos.html             */
+    .song-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 8px 16px !important;
+        gap: 10px !important;
+        border-radius: 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+        overflow: hidden !important;
+    }
+
+    /* ─── 8. NÚMERO DE PISTA ─────────────────────────────────────────────────
+       Se oculta en móvil para ganar espacio visual.                         */
+    .pl-num,
+    .song-row .row-num {
+        display: none !important;
+    }
+
+    /* ─── 9. MINIATURA / CARÁTULA ────────────────────────────────────────────
+       Queda soldada a la izquierda con flex-shrink:0 para que nunca se
+       comprima ni empuje a los demás elementos.                              */
+    .pl-thumb,
+    .song-row .row-thumb {
+        flex-shrink: 0 !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 6px !important;
+        object-fit: cover !important;
+    }
+
+    /* ─── 10. CONTENEDOR DE INFORMACIÓN (título + artista) ──────────────────
+       min-width:0 es CRÍTICO: sin él el flex-item nunca se encoge y desborda.
+       flex:1 le da todo el espacio disponible entre la miniatura y el botón. */
+    .pl-info,
+    .song-row .row-info {
+        flex: 1 !important;
+        min-width: 0 !important;         /* Permite que el texto se recorte */
+        overflow: hidden !important;
+        padding-right: 0 !important;
+    }
+
+    /* ─── 11. PREVENCIÓN DE DESBORDE DE TEXTO — ELLIPSIS ────────────────────
+       Título y artista colapsan con "…" en lugar de empujar la pantalla.    */
+    .pl-title,
+    .song-row .row-title {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        min-width: 0 !important;
+        display: block !important;       /* Necesario para text-overflow */
+        font-size: 0.9rem !important;
+    }
+
+    .pl-artist,
+    .song-row .row-artist {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        min-width: 0 !important;
+        display: block !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* ─── 12. COLUMNAS QUE SE OCULTAN EN MÓVIL ──────────────────────────────
+       Género y duración no caben en pantalla chica; se eliminan para dar
+       todo el ancho al título y artista.                                     */
+    .pl-genre,
+    .song-row .row-genre {
+        display: none !important;
+    }
+
+    .pl-dur,
+    .song-row .row-duration {
+        display: none !important;
+    }
+
+    /* ─── 13. CONTROL DE COMPONENTES EXTREMOS — BOTONES DE ACCIÓN ───────────
+       El botón de corazón/favorito y el de eliminar se anclan al extremo
+       derecho con margin-left:auto + flex-shrink:0.                          */
+    .song-row .row-actions,
+    .pl-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        margin-left: auto !important;   /* Empuja todo al extremo derecho */
+        flex-shrink: 0 !important;      /* No se achica jamás */
+    }
+
+    /* Botón corazón: siempre visible en móvil (no solo en hover) */
+    .row-like-btn {
+        opacity: 1 !important;          /* Anula el opacity:0 del desktop */
+        flex-shrink: 0 !important;
+        margin-left: auto !important;   /* Ancla al extremo derecho */
+    }
+
+    /* Botón quitar / delete: siempre visible en móvil */
+    .pl-remove-btn,
+    .btn-delete-track {
+        color: var(--muted) !important; /* Anula el color:transparent del desktop */
+        opacity: 1 !important;
+        flex-shrink: 0 !important;
+        margin-left: auto !important;
+    }
+
+    /* Botón play individual de la fila: se oculta en móvil para no saturar */
+    .pl-play-btn {
+        display: none !important;
+    }
+
+    /* ─── 14. BODY DEL SONG-TABLE ────────────────────────────────────────────
+       Aseguramos que el contenedor de canciones también sea flex column y
+       no genere desborde propio.                                             */
+    .song-table-body {
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* ─── 15. BADGES DE ESTADÍSTICAS ────────────────────────────────────────
+       Los reducimos para que quepan en la barra de acciones.                */
+    .stat-badge {
+        font-size: 0.78rem !important;
+        padding: 4px 10px !important;
+    }
+
+    /* ─── 16. PLAYLIST-ITEM CON IMAGEN DENTRO DE row-thumb img ─────────────
+       Cubre el caso donde .playlist-row usa una img anidada.               */
+    .playlist-row .row-thumb img {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 6px !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* ─── 17. PREVENCIÓN GLOBAL DE DESBORDE HORIZONTAL ──────────────────────
+       Capa de seguridad final: ningún hijo puede superar el ancho del main. */
+    .main-content * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+} /* fin @media (max-width: 768px) */
