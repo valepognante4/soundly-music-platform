@@ -513,8 +513,6 @@ function inicializarListenerMeGusta() {
         // Navegar primero a la vista de favoritos
         await navegarA('favoritos.html');
         
-        // Y reproducir la primera canción
-        await reproducirPrimeraFavorita();
     });
 }
 

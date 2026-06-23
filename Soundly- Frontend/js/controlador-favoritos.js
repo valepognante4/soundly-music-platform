@@ -100,15 +100,15 @@
             const playlistLabel = document.createElement('span');
             playlistLabel.style.cssText = 'display:block;font-size:0.875rem;font-weight:500;color:var(--color-text-muted,#9ca3af);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;';
             playlistLabel.textContent = 'Playlist';
-            
+
             // Actualizar título y metadatos
             const h1 = bannerText.querySelector('h1');
             const metaInfoEl = document.getElementById('fav-meta-info');
-            
+
             if (h1 && !bannerText.firstChild?.textContent?.includes('Playlist')) {
                 bannerText.insertBefore(playlistLabel, h1);
             }
-            
+
             if (metaInfoEl) {
                 const nombreUsuario = usuario.apodo || usuario.nombreUsuario || 'Usuario';
                 metaInfoEl.textContent = `${nombreUsuario} • ${favoritos.length} canción${favoritos.length !== 1 ? 'es' : ''}`;
@@ -146,15 +146,15 @@
         favoritos.forEach((cancion, idx) => {
             const row = document.createElement('div');
             row.className = 'song-row';
-            row.dataset.id  = cancion.id;
+            row.dataset.id = cancion.id;
             row.dataset.idx = idx;
 
-            const thumb   = cancion.img || cancion.imagenUrl || FALLBACK_IMG;
-            const titulo  = cancion.titulo   || 'Sin título';
+            const thumb = cancion.img || cancion.imagenUrl || FALLBACK_IMG;
+            const titulo = cancion.titulo || 'Sin título';
             const artista = cancion.artista || 'Desconocido';
-            const genero  = cancion.genero   || '—';
-            const dur     = _formatDuracion(cancion.duracion);
-            const songId  = cancion.id || '';
+            const genero = cancion.genero || '—';
+            const dur = _formatDuracion(cancion.duracion);
+            const songId = cancion.id || '';
 
             row.innerHTML = `
                 <div class="row-num">${idx + 1}</div>
@@ -180,10 +180,12 @@
 
             // Clic en el corazón (también manejado por delegación, pero lo mantenemos aquí para mayor control)
             const btnLike = row.querySelector('.row-like-btn');
-            btnLike.addEventListener('click', (e) => {
+            btnLike.addEventListener('click', async (e) => {
                 e.preventDefault();
-                e.stopPropagation();
-                toggleFavorito(cancion);
+                e.stopPropagation(); // Evita por completo que el click "suba" a la fila y active el reproductor
+
+                btnLike.style.pointerEvents = 'none'; // Desactiva clicks temporales para que no se pisen las recargas
+                await toggleFavorito(cancion);
             });
 
             fragment.appendChild(row);
