@@ -29,4 +29,12 @@ public interface CancionRepository extends JpaRepository<Cancion, Long> {
     // 5. Carga masiva de todos los external_ids existentes en la tabla (para importación bulk)
     @Query("SELECT c.externalId FROM Cancion c WHERE c.externalId IN :externalIds")
     List<Long> findExternalIdsByExternalIdIn(@Param("externalIds") List<Long> externalIds);
+
+    // 6. Búsqueda por nombre de género (case-insensitive) con JOIN FETCH del artista
+    @Query("SELECT c FROM Cancion c JOIN FETCH c.artista a JOIN a.genero g WHERE LOWER(g.nombre) LIKE LOWER(CONCAT('%', :genero, '%'))")
+    List<Cancion> findByGeneroNombreContainingIgnoreCase(@Param("genero") String genero);
+
+    // 7. Búsqueda por ID de género con JOIN FETCH del artista
+    @Query("SELECT c FROM Cancion c JOIN FETCH c.artista a JOIN a.genero g WHERE g.id = :generoId")
+    List<Cancion> findByGeneroId(@Param("generoId") Long generoId);
 }

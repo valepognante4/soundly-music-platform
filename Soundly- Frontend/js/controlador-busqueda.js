@@ -13,6 +13,7 @@ const ControladorBusqueda = {
         query:         '',
         debounceTimer: null,
         initialized:   false,  // guarda contra doble init
+        generoActivo:  null,   // { id: number|null, nombre: string|null }
     },
 
     init() {
@@ -42,9 +43,15 @@ const ControladorBusqueda = {
             if (clearBtn) clearBtn.style.display = valor ? 'block' : 'none';
 
             if (!valor) {
-                // Sin texto → volvemos a mostrar categorías
-                if (resultados) { resultados.innerHTML = ''; resultados.hidden = true; }
-                if (categorias) categorias.hidden = false;
+                // Sin texto: si hay género activo, mostrar resultados de género
+                if (ControladorBusqueda.state.generoActivo?.id) {
+                    if (resultados) resultados.hidden = false;
+                    if (categorias) categorias.hidden = true;
+                } else {
+                    // Sin texto ni género → volvemos a mostrar categorías
+                    if (resultados) { resultados.innerHTML = ''; resultados.hidden = true; }
+                    if (categorias) categorias.hidden = false;
+                }
                 return;
             }
 
@@ -61,8 +68,17 @@ const ControladorBusqueda = {
         clearBtn?.addEventListener('click', () => {
             input.value = '';
             clearBtn.style.display = 'none';
-            if (resultados) { resultados.innerHTML = ''; resultados.hidden = true; }
-            if (categorias) categorias.hidden = false;
+            ControladorBusqueda.state.query = '';
+            // Si hay género activo, mantener sus resultados; si no, mostrar categorías
+            if (ControladorBusqueda.state.generoActivo?.id) {
+                ControladorBusqueda.filtrarPorGenero(
+                    ControladorBusqueda.state.generoActivo.id,
+                    ControladorBusqueda.state.generoActivo.nombre
+                );
+            } else {
+                if (resultados) { resultados.innerHTML = ''; resultados.hidden = true; }
+                if (categorias) categorias.hidden = false;
+            }
             input.focus();
         });
 
@@ -73,6 +89,96 @@ const ControladorBusqueda = {
                 ControladorBusqueda.realizarBusqueda(e.target.value.trim());
             }
         });
+
+        // CU-GENERO: Cargar géneros en el selector al inicializar
+        ControladorBusqueda.cargarFiltroGeneros();
+    },
+
+    /**
+     * CU-GENERO: Carga los géneros del backend y puebla el <select id="genre-filter">.
+     * Se llama una sola vez al init() y usa Vista.renderizarFiltroGenero().
+     */
+    async cargarFiltroGeneros() {
+        try {
+            const generos = await GestorGeneros.obtenerTodos();
+            Vista.renderizarFiltroGenero(generos, 'genre-filter', (generoId, nombreGenero) => {
+                ControladorBusqueda.state.generoActivo = { id: generoId, nombre: nombreGenero };
+                if (generoId) {
+                    // Hay género seleccionado: filtrar y mostrar resultados
+                    ControladorBusqueda.filtrarPorGenero(generoId, nombreGenero);
+                } else {
+                    // "Todos los géneros": limpiar resultados de género
+                    const resultados = document.getElementById('search-results');
+                    const categorias = document.getElementById('categories-section');
+                    // Si tampoco hay texto en el input, volver a las categorías
+                    if (!ControladorBusqueda.state.query) {
+                        if (resultados) { resultados.innerHTML = ''; resultados.hidden = true; }
+                        if (categorias) categorias.hidden = false;
+                    } else {
+                        // Hay texto: relanzar la búsqueda por texto
+                        ControladorBusqueda.realizarBusqueda(ControladorBusqueda.state.query);
+                    }
+                }
+            });
+        } catch (err) {
+            console.warn('[Busqueda] No se pudieron cargar los géneros:', err);
+        }
+    },
+
+    /**
+     * CU-GENERO: Busca y renderiza canciones por género seleccionado.
+     * @param {number} generoId    - ID del género
+     * @param {string} nombreGenero - Nombre del género (para el encabezado)
+     */
+    async filtrarPorGenero(generoId, nombreGenero) {
+        const contenedor = document.getElementById('search-results');
+        const categorias = document.getElementById('categories-section');
+
+        if (categorias) categorias.hidden = true;
+        if (contenedor) {
+            contenedor.hidden = false;
+            contenedor.innerHTML = `
+                <div class="search-loading-state">
+                    <div class="search-spinner"></div>
+                    <p>Cargando canciones de <strong>${nombreGenero || 'este género'}</strong>…</p>
+                </div>`;
+        }
+
+        try {
+            const canciones = await GestorCanciones.buscarPorGenero({ id: generoId });
+
+            if (!canciones || canciones.length === 0) {
+                if (contenedor) {
+                    contenedor.innerHTML = `
+                        <div class="search-empty-state">
+                            <div class="search-empty-icon">🎵</div>
+                            <p class="empty-title">Sin canciones en este género</p>
+                            <p class="empty-sub">Todavía no hay canciones de <strong>${nombreGenero}</strong> en el catálogo.</p>
+                        </div>`;
+                }
+                return;
+            }
+
+            // Reutilizar Vista.renderizarResultadosMixtos con canciones solamente
+            Vista.renderizarResultadosMixtos({ canciones, artistas: [] }, 'search-results');
+
+            // Personalizar el encabezado para reflejar el género filtrado
+            const header = contenedor?.querySelector('.search-results-header h2');
+            if (header) {
+                header.innerHTML = `Género: <span class="results-count">${nombreGenero} · ${canciones.length} canción${canciones.length !== 1 ? 'es' : ''}</span>`;
+            }
+
+        } catch (error) {
+            console.error('[Busqueda] Error al filtrar por género:', error);
+            if (contenedor) {
+                contenedor.innerHTML = `
+                    <div class="search-empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <p class="empty-title">No se pudo cargar</p>
+                        <p class="empty-sub">Revisá tu conexión o intentá de nuevo.</p>
+                    </div>`;
+            }
+        }
     },
 
     async realizarBusqueda(query) {

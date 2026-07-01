@@ -310,6 +310,24 @@ const GestorCanciones = {
     async toggleFavorito(cancionId, userId) {
         return apiFetch(`/canciones/${cancionId}/favorito/usuario/${userId}`, { method: 'POST' });
     },
+
+    /**
+     * CU-GENERO: Filtra canciones por género musical.
+     * Acepta nombre parcial o ID exacto del género.
+     * GET /api/canciones/por-genero?nombre=Rock  (búsqueda parcial)
+     * GET /api/canciones/por-genero?id=3          (búsqueda exacta)
+     *
+     * @param {{ nombre?: string, id?: number }} filtro
+     * @returns {Promise<Array>} lista de canciones adaptadas
+     */
+    async buscarPorGenero(filtro = {}) {
+        const params = new URLSearchParams();
+        if (filtro.id)     params.set('id',     filtro.id);
+        if (filtro.nombre) params.set('nombre', filtro.nombre);
+        const query = params.toString() ? `?${params}` : '';
+        const data = await apiFetch(`/canciones/por-genero${query}`).catch(() => []);
+        return (Array.isArray(data) ? data : []).map(adaptarCancion);
+    },
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -350,6 +368,22 @@ const GestorArtistas = {
             console.warn('[GestorArtistas.buscar] Error al buscar artistas (no bloqueante):', error);
             return [];
         }
+    },
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GestorGeneros — Géneros musicales
+// ═════════════════════════════════════════════════════════════════════════════
+const GestorGeneros = {
+    /**
+     * Obtiene todos los géneros disponibles en la BD.
+     * GET /api/generos
+     * Consumido por el selector de géneros de busqueda.html.
+     * @returns {Promise<Array<{id: number, nombre: string}>>}
+     */
+    async obtenerTodos() {
+        const data = await apiFetch('/generos').catch(() => []);
+        return Array.isArray(data) ? data : [];
     },
 };
 

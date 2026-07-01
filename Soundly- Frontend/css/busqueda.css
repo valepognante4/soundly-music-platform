@@ -580,3 +580,85 @@ h2 { font-size: 1.5rem; margin-bottom: 24px; }
         max-width: 100%;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CU-GENERO: FILTRO DE GÉNERO
+   Selector desplegable que aparece debajo de la barra de búsqueda.
+   ═══════════════════════════════════════════════════════════════════════ */
+.genre-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.genre-filter-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.genre-filter-label svg {
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.genre-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 500px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    padding: 8px 36px 8px 16px;
+    cursor: pointer;
+    min-width: 180px;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+    /* Flecha personalizada usando SVG inline */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b3b3b3' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+}
+
+.genre-select:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.genre-select:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(30, 215, 96, 0.18);
+}
+
+/* Opciones dentro del select (solo Firefox/Chrome soportan algo de estilo) */
+.genre-select option {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+/* Responsive: en móvil el select ocupa el ancho completo */
+@media (max-width: 600px) {
+    .genre-filter-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .genre-select {
+        width: 100%;
+        max-width: 380px;
+    }
+}

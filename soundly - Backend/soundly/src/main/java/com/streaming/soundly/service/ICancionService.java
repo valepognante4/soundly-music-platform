@@ -5,6 +5,14 @@ import java.util.List;
 
 public interface ICancionService {
     List<CancionDTO> buscarConFiltros(String titulo, String artista, String genero);
+
+    /**
+     * CU-GENERO: Filtra canciones por nombre o ID de género.
+     * @param nombreGenero nombre parcial del género (puede ser null si se usa ID)
+     * @param generoId     ID exacto del género (puede ser null si se usa nombre)
+     * @return lista de CancionDTO cuyo artista pertenece al género indicado
+     */
+    List<CancionDTO> buscarPorGenero(String nombreGenero, Long generoId);
     void incrementarReproduccion(Long id);
     boolean alternarFavorito(Long cancionId, Long usuarioId);
     List<CancionDTO> obtenerCancionesDestacadas();

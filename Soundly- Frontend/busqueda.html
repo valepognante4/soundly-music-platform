@@ -115,6 +115,23 @@
                            aria-label="Buscar canciones, artistas o géneros">
                     <button id="search-clear-btn" class="clear-btn" hidden aria-label="Limpiar búsqueda">×</button>
                 </div>
+
+                <!-- CU-GENERO: Selector de filtro por género (cargado dinámicamente) -->
+                <div class="genre-filter-container" id="genre-filter-wrapper">
+                    <label for="genre-filter" class="genre-filter-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             width="16" height="16" aria-hidden="true">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                        </svg>
+                        Filtrar por género
+                    </label>
+                    <select id="genre-filter"
+                            aria-label="Filtrar canciones por género musical"
+                            class="genre-select">
+                        <!-- Vista.renderizarFiltroGenero() lo puebla dinámicamente -->
+                        <option value="">Todos los géneros</option>
+                    </select>
+                </div>
             </section>
 
             <!-- Categorías: Solo se ven si no se está buscando -->

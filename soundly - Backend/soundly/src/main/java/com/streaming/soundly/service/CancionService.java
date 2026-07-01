@@ -11,6 +11,7 @@ import com.streaming.soundly.model.Cancion;
 import com.streaming.soundly.model.Usuario;
 import com.streaming.soundly.repository.AlbumRepository;
 import com.streaming.soundly.repository.CancionRepository;
+import com.streaming.soundly.repository.GeneroRepository;
 import com.streaming.soundly.repository.UsuarioRepository;
 import com.streaming.soundly.service.ICancionService;
 import jakarta.persistence.EntityNotFoundException;
@@ -30,17 +31,20 @@ public class CancionService implements ICancionService {
     private final AlbumRepository albumRepository;
     private final MusicApiClient musicApiClient;
     private final IArtistaService artistaService;
+    private final GeneroRepository generoRepository;
 
     public CancionService(CancionRepository cancionRepository,
                           UsuarioRepository usuarioRepository,
                           AlbumRepository albumRepository,
                           MusicApiClient musicApiClient,
-                          IArtistaService artistaService) {
+                          IArtistaService artistaService,
+                          GeneroRepository generoRepository) {
         this.cancionRepository = cancionRepository;
         this.usuarioRepository = usuarioRepository;
         this.albumRepository = albumRepository;
         this.musicApiClient = musicApiClient;
         this.artistaService = artistaService;
+        this.generoRepository = generoRepository;
     }
 
     @Override
@@ -142,6 +146,31 @@ public class CancionService implements ICancionService {
                             .nombreArtista(nombreArtista)
                             .build();
                 })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * CU-GENERO: Filtra canciones por género.
+     * Prioridad: generoId > nombreGenero.
+     * Delega al query con JOIN FETCH para evitar LazyInitializationException.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<CancionDTO> buscarPorGenero(String nombreGenero, Long generoId) {
+        List<Cancion> canciones;
+
+        if (generoId != null) {
+            // Búsqueda exacta por ID (la más eficiente)
+            canciones = cancionRepository.findByGeneroId(generoId);
+        } else if (nombreGenero != null && !nombreGenero.isBlank()) {
+            // Búsqueda parcial case-insensitive por nombre
+            canciones = cancionRepository.findByGeneroNombreContainingIgnoreCase(nombreGenero.trim());
+        } else {
+            return List.of();
+        }
+
+        return canciones.stream()
+                .map(CancionMapper::toDTO)
                 .collect(Collectors.toList());
     }
 

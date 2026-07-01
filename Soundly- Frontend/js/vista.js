@@ -593,4 +593,48 @@ const Vista = {
             contenedor.appendChild(div);
         });
     },
-};
+
+    // ─────────────────────────────────────────────────────────────────────
+    // renderizarFiltroGenero
+    // CU-GENERO: Puebla un <select> con los géneros recibidos del backend.
+    //
+    // @param {Array<{id: number, nombre: string}>} generos   - Lista de géneros
+    // @param {string}   selectId    - ID del elemento <select> en el DOM
+    // @param {Function} onSeleccion - Callback(generoId, nombreGenero)
+    //                                 generoId = null si se eligió "Todos"
+    // ─────────────────────────────────────────────────────────────────────
+    renderizarFiltroGenero(generos, selectId, onSeleccion) {
+        const select = this._getContainer(selectId);
+        if (!select) return;
+
+        // Limpiar opciones previas excepto la primera (opción neutra)
+        select.innerHTML = '';
+
+        // Opción por defecto
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = 'Todos los géneros';
+        select.appendChild(defaultOpt);
+
+        // Opciones dinámicas
+        generos.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.nombre;
+            select.appendChild(opt);
+        });
+
+        // Listener: solo se registra una vez usando clonación para evitar duplicados
+        const nuevoSelect = select.cloneNode(true);
+        select.parentNode.replaceChild(nuevoSelect, select);
+        nuevoSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (typeof onSeleccion === 'function') {
+                onSeleccion(
+                    val ? Number(val) : null,          // generoId (número o null)
+                    val ? e.target.options[e.target.selectedIndex].text : null  // nombre
+                );
+            }
+        });
+    },
+};

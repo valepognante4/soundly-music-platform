@@ -99,4 +99,24 @@ public class CancionController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(cancionesAgregadas);
     }
+
+    /**
+     * CU-GENERO: Filtra el catálogo de canciones por género musical.
+     * Acepta el nombre del género (búsqueda parcial) o su ID exacto.
+     *
+     * Uso desde el frontend:
+     *   GET /api/canciones/por-genero?nombre=Rock
+     *   GET /api/canciones/por-genero?id=3
+     *
+     * Retorna la misma estructura CancionDTO que el resto de endpoints.
+     */
+    @GetMapping("/por-genero")
+    public ResponseEntity<List<CancionDTO>> obtenerPorGenero(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Long id) {
+
+        List<CancionDTO> canciones = cancionService.buscarPorGenero(nombre, id);
+        return ResponseEntity.ok(canciones);
+    }
 }
+
