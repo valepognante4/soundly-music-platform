@@ -312,21 +312,26 @@ const GestorCanciones = {
     },
 
     /**
-     * CU-GENERO: Filtra canciones por género musical.
+     * CU-GENERO (ampliado): Filtra canciones y artistas por género musical.
+     * El backend ahora devuelve GeneroResultadoDTO { canciones, artistas }.
      * Acepta nombre parcial o ID exacto del género.
-     * GET /api/canciones/por-genero?nombre=Rock  (búsqueda parcial)
-     * GET /api/canciones/por-genero?id=3          (búsqueda exacta)
+     * GET /api/canciones/por-genero?nombre=Rock
+     * GET /api/canciones/por-genero?id=3
      *
      * @param {{ nombre?: string, id?: number }} filtro
-     * @returns {Promise<Array>} lista de canciones adaptadas
+     * @returns {Promise<{ canciones: Array, artistas: Array }>}
      */
     async buscarPorGenero(filtro = {}) {
         const params = new URLSearchParams();
         if (filtro.id)     params.set('id',     filtro.id);
         if (filtro.nombre) params.set('nombre', filtro.nombre);
         const query = params.toString() ? `?${params}` : '';
-        const data = await apiFetch(`/canciones/por-genero${query}`).catch(() => []);
-        return (Array.isArray(data) ? data : []).map(adaptarCancion);
+        const data = await apiFetch(`/canciones/por-genero${query}`).catch(() => ({ canciones: [], artistas: [] }));
+        // El backend devuelve { canciones: [...], artistas: [...] }
+        return {
+            canciones: (Array.isArray(data?.canciones) ? data.canciones : []).map(adaptarCancion),
+            artistas:  (Array.isArray(data?.artistas)  ? data.artistas  : []).map(adaptarArtista),
+        };
     },
 };
 

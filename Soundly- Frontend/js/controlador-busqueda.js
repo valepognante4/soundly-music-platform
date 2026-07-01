@@ -133,8 +133,12 @@ const ControladorBusqueda = {
     },
 
     /**
-     * CU-GENERO: Busca y renderiza canciones por género seleccionado.
-     * @param {number} generoId    - ID del género
+     * CU-GENERO (ampliado): Busca y renderiza canciones + artistas del género seleccionado.
+     * El backend devuelve { canciones, artistas } en una sola llamada.
+     * Los artistas se muestran en una sección arriba de las canciones mediante
+     * Vista.renderizarResultadosMixtos (el mismo renderer que usa el buscador de texto).
+     *
+     * @param {number} generoId     - ID del género
      * @param {string} nombreGenero - Nombre del género (para el encabezado)
      */
     async filtrarPorGenero(generoId, nombreGenero) {
@@ -152,27 +156,36 @@ const ControladorBusqueda = {
         }
 
         try {
-            const canciones = await GestorCanciones.buscarPorGenero({ id: generoId });
+            // buscarPorGenero ahora devuelve { canciones, artistas }
+            const resultado = await GestorCanciones.buscarPorGenero({ id: generoId });
+            const canciones = resultado.canciones || [];
+            const artistas  = resultado.artistas  || [];
 
-            if (!canciones || canciones.length === 0) {
+            if (canciones.length === 0 && artistas.length === 0) {
                 if (contenedor) {
                     contenedor.innerHTML = `
                         <div class="search-empty-state">
                             <div class="search-empty-icon">🎵</div>
-                            <p class="empty-title">Sin canciones en este género</p>
+                            <p class="empty-title">Sin resultados en este género</p>
                             <p class="empty-sub">Todavía no hay canciones de <strong>${nombreGenero}</strong> en el catálogo.</p>
                         </div>`;
                 }
                 return;
             }
 
-            // Reutilizar Vista.renderizarResultadosMixtos con canciones solamente
-            Vista.renderizarResultadosMixtos({ canciones, artistas: [] }, 'search-results');
+            // Reutilizar Vista.renderizarResultadosMixtos:
+            // - Si hay artistas, los muestra en sección superior con sus tarjetas
+            // - Si no hay artistas, solo se renderiza la sección de canciones (diseño intacto)
+            Vista.renderizarResultadosMixtos({ canciones, artistas }, 'search-results');
 
             // Personalizar el encabezado para reflejar el género filtrado
+            const partesCanciones = `${canciones.length} canción${canciones.length !== 1 ? 'es' : ''}`;
+            const partesArtistas  = artistas.length > 0
+                ? `${artistas.length} artista${artistas.length !== 1 ? 's' : ''} · `
+                : '';
             const header = contenedor?.querySelector('.search-results-header h2');
             if (header) {
-                header.innerHTML = `Género: <span class="results-count">${nombreGenero} · ${canciones.length} canción${canciones.length !== 1 ? 'es' : ''}</span>`;
+                header.innerHTML = `Género: <span class="results-count">${nombreGenero} · ${partesArtistas}${partesCanciones}</span>`;
             }
 
         } catch (error) {

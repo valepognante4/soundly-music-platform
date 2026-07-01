@@ -1,6 +1,7 @@
 package com.streaming.soundly.service;
 
 import com.streaming.soundly.dto.CancionDTO;
+import com.streaming.soundly.dto.GeneroResultadoDTO;
 import java.util.List;
 
 public interface ICancionService {
@@ -13,6 +14,15 @@ public interface ICancionService {
      * @return lista de CancionDTO cuyo artista pertenece al género indicado
      */
     List<CancionDTO> buscarPorGenero(String nombreGenero, Long generoId);
+
+    /**
+     * CU-GENERO (ampliado): Retorna canciones + artistas únicos asociados al género.
+     * Permite al frontend renderizar ambas secciones en una sola llamada.
+     * @param nombreGenero nombre parcial del género (puede ser null si se usa ID)
+     * @param generoId     ID exacto del género (puede ser null si se usa nombre)
+     * @return GeneroResultadoDTO con listas de canciones y artistas
+     */
+    GeneroResultadoDTO buscarPorGeneroConArtistas(String nombreGenero, Long generoId);
     void incrementarReproduccion(Long id);
     boolean alternarFavorito(Long cancionId, Long usuarioId);
     List<CancionDTO> obtenerCancionesDestacadas();

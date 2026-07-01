@@ -1,15 +1,19 @@
 package com.streaming.soundly.service;
 
+import com.streaming.soundly.dto.ArtistaDTO;
 import com.streaming.soundly.dto.CancionDTO;
+import com.streaming.soundly.dto.GeneroResultadoDTO;
 import com.streaming.soundly.external.client.MusicApiClient;
 import com.streaming.soundly.external.dto.ExternalCancionDTO;
 import com.streaming.soundly.external.dto.ExternalTrackListDTO;
+import com.streaming.soundly.mapper.ArtistaMapper;
 import com.streaming.soundly.mapper.CancionMapper;
 import com.streaming.soundly.model.Album;
 import com.streaming.soundly.model.Artista;
 import com.streaming.soundly.model.Cancion;
 import com.streaming.soundly.model.Usuario;
 import com.streaming.soundly.repository.AlbumRepository;
+import com.streaming.soundly.repository.ArtistaRepository;
 import com.streaming.soundly.repository.CancionRepository;
 import com.streaming.soundly.repository.GeneroRepository;
 import com.streaming.soundly.repository.UsuarioRepository;
@@ -32,19 +36,22 @@ public class CancionService implements ICancionService {
     private final MusicApiClient musicApiClient;
     private final IArtistaService artistaService;
     private final GeneroRepository generoRepository;
+    private final ArtistaRepository artistaRepository;
 
     public CancionService(CancionRepository cancionRepository,
                           UsuarioRepository usuarioRepository,
                           AlbumRepository albumRepository,
                           MusicApiClient musicApiClient,
                           IArtistaService artistaService,
-                          GeneroRepository generoRepository) {
+                          GeneroRepository generoRepository,
+                          ArtistaRepository artistaRepository) {
         this.cancionRepository = cancionRepository;
         this.usuarioRepository = usuarioRepository;
         this.albumRepository = albumRepository;
         this.musicApiClient = musicApiClient;
         this.artistaService = artistaService;
         this.generoRepository = generoRepository;
+        this.artistaRepository = artistaRepository;
     }
 
     @Override
@@ -209,6 +216,53 @@ public class CancionService implements ICancionService {
         return canciones.stream()
                 .map(CancionMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * CU-GENERO (ampliado): Devuelve un GeneroResultadoDTO con:
+     *   - canciones cuyo artista pertenece al género
+     *   - artistas únicos del género (para mostrar arriba de las canciones)
+     *
+     * Prioridad de filtro: generoId > nombreGenero.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public GeneroResultadoDTO buscarPorGeneroConArtistas(String nombreGenero, Long generoId) {
+        List<CancionDTO> canciones = buscarPorGenero(nombreGenero, generoId);
+
+        List<ArtistaDTO> artistas;
+        if (generoId != null) {
+            artistas = artistaRepository.findByGeneroId(generoId)
+                    .stream()
+                    .map(ArtistaMapper::toDTO)
+                    .collect(Collectors.toList());
+        } else if (nombreGenero != null && !nombreGenero.isBlank()) {
+            // Derivar los artistas únicos desde las canciones ya filtradas para evitar
+            // una query extra cuando solo se tiene el nombre (búsqueda parcial).
+            artistas = canciones.stream()
+                    .map(c -> {
+                        ArtistaDTO dto = new ArtistaDTO();
+                        dto.setNombre(c.getNombreArtista());
+                        dto.setGenero(c.getGenero());
+                        return dto;
+                    })
+                    .filter(a -> a.getNombre() != null)
+                    .collect(Collectors.collectingAndThen(
+                            Collectors.toMap(
+                                    ArtistaDTO::getNombre,
+                                    a -> a,
+                                    (existing, replacement) -> existing,
+                                    java.util.LinkedHashMap::new),
+                            map -> new java.util.ArrayList<>(map.values())
+                    ));
+        } else {
+            artistas = List.of();
+        }
+
+        return GeneroResultadoDTO.builder()
+                .canciones(canciones)
+                .artistas(artistas)
+                .build();
     }
 
     @Override

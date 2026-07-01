@@ -1,6 +1,7 @@
 package com.streaming.soundly.controller;
 
 import com.streaming.soundly.dto.CancionDTO;
+import com.streaming.soundly.dto.GeneroResultadoDTO;
 import com.streaming.soundly.service.CancionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -107,22 +108,22 @@ public class CancionController {
     }
 
     /**
-     * CU-GENERO: Filtra el catálogo de canciones por género musical.
+     * CU-GENERO (ampliado): Filtra el catálogo por género musical y devuelve
+     * un objeto compuesto con canciones Y artistas únicos del género.
      * Acepta el nombre del género (búsqueda parcial) o su ID exacto.
      *
      * Uso desde el frontend:
      *   GET /api/canciones/por-genero?nombre=Rock
      *   GET /api/canciones/por-genero?id=3
      *
-     * Retorna la misma estructura CancionDTO que el resto de endpoints.
+     * Retorna GeneroResultadoDTO { canciones: [...], artistas: [...] }
      */
     @GetMapping("/por-genero")
-    public ResponseEntity<List<CancionDTO>> obtenerPorGenero(
+    public ResponseEntity<GeneroResultadoDTO> obtenerPorGenero(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) Long id) {
 
-        List<CancionDTO> canciones = cancionService.buscarPorGenero(nombre, id);
-        return ResponseEntity.ok(canciones);
+        GeneroResultadoDTO resultado = cancionService.buscarPorGeneroConArtistas(nombre, id);
+        return ResponseEntity.ok(resultado);
     }
 }
-
