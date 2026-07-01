@@ -55,6 +55,13 @@ const ControladorBusqueda = {
                 return;
             }
 
+            // Hay texto → resetear el filtro de género para evitar superposición de filtros
+            if (ControladorBusqueda.state.generoActivo?.id) {
+                ControladorBusqueda.state.generoActivo = { id: null, nombre: null };
+                const selectGenero = document.getElementById('genre-filter');
+                if (selectGenero) selectGenero.value = '';   // vuelve a "Todos los géneros"
+            }
+
             // Hay texto → ocultamos categorías y mostramos contenedor de resultados
             if (categorias) categorias.hidden = true;
             if (resultados) resultados.hidden = false;
@@ -197,13 +204,24 @@ const ControladorBusqueda = {
         }
 
         try {
+            // Incluir el género activo si el usuario lo tiene seleccionado
+            const generoActivo = ControladorBusqueda.state.generoActivo;
+            const filtrosCanciones = { titulo: query, artista: query };
+            if (generoActivo?.id) {
+                // Pasamos el ID de género como string; el backend lo parsea a Long
+                filtrosCanciones.genero = String(generoActivo.id);
+            }
+
             // ── BÚSQUEDA PARALELA: canciones + artistas ───────────────────────
             // Promise.allSettled garantiza que si uno falla, el otro sigue.
             // Canciones: el mismo query se envía en 'titulo' Y 'artista' para
             // que el backend haga OR entre ambos campos automáticamente.
+            // Si hay género activo, se añade como tercer parámetro de filtrado.
             const [resCanciones, resArtistas] = await Promise.allSettled([
-                GestorCanciones.buscar({ titulo: query, artista: query }),
-                GestorArtistas.buscar(query),
+                GestorCanciones.buscar(filtrosCanciones),
+                // Solo buscamos artistas si NO hay género activo
+                // (el filtro de género no aplica a la sección de artistas)
+                generoActivo?.id ? Promise.resolve([]) : GestorArtistas.buscar(query),
             ]);
 
             const canciones = resCanciones.status === 'fulfilled' ? resCanciones.value : [];
@@ -218,6 +236,14 @@ const ControladorBusqueda = {
 
             // Delegar el renderizado mixto a Vista
             Vista.renderizarResultadosMixtos({ canciones, artistas }, 'search-results');
+
+            // Si hay género activo, personalizar el encabezado con info del género
+            if (generoActivo?.id && generoActivo?.nombre) {
+                const header = contenedor?.querySelector('.search-results-header h2');
+                if (header) {
+                    header.innerHTML = `"${query}" en <span class="results-count">${generoActivo.nombre}</span>`;
+                }
+            }
 
         } catch (error) {
             console.error('[Busqueda] Error inesperado:', error);

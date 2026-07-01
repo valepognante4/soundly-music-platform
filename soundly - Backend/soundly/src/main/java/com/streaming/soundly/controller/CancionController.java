@@ -51,17 +51,23 @@ public class CancionController {
             @RequestParam(required = false) String titulo,
             @RequestParam(required = false) String artista,
             @RequestParam(required = false) String genero) {
-        
-        // Si hay título, aplicamos el Sourcing Dinámico
-        if (titulo != null && !titulo.trim().isEmpty()) {
+
+        boolean hayTitulo = titulo != null && !titulo.trim().isEmpty();
+        boolean hayGenero = genero != null && !genero.trim().isEmpty();
+
+        // Si hay título pero NO hay filtro de género, aplicamos el Sourcing Dinámico
+        // (busca en BD local + importa desde Deezer si no hay resultados)
+        if (hayTitulo && !hayGenero) {
             List<CancionDTO> resultados = dynamicSourcingService.buscarYSourcerDinamico(titulo);
             return ResponseEntity.ok(resultados);
         }
 
-        // Búsqueda local por defecto
+        // En cualquier otro caso (solo género, título+género, o sin parámetros)
+        // delegamos a buscarConFiltros que maneja todas las combinaciones
         List<CancionDTO> resultados = cancionService.buscarConFiltros(titulo, artista, genero);
         return ResponseEntity.ok(resultados);
     }
+
 
     @PostMapping("/{id}/reproducir")
     public ResponseEntity<Void> reproducirCancion(@PathVariable Long id) {

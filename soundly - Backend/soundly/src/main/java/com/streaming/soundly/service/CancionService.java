@@ -105,23 +105,59 @@ public class CancionService implements ICancionService {
     @Override
     @Transactional(readOnly = true)
     public List<CancionDTO> buscarConFiltros(String titulo, String artista, String genero) {
-        // 1. Consultar base de datos local
+
+        // Parsear el género: puede llegar como ID numérico o como nombre de texto
+        Long generoId = null;
+        String generoNombre = null;
+        if (genero != null && !genero.isBlank()) {
+            try {
+                generoId = Long.parseLong(genero.trim());
+            } catch (NumberFormatException e) {
+                generoNombre = genero.trim();
+            }
+        }
+
+        boolean hayTexto  = (titulo  != null && !titulo.trim().isEmpty());
+        boolean hayArtista = (artista != null && !artista.trim().isEmpty());
+        boolean hayGenero = (generoId != null || (generoNombre != null && !generoNombre.isBlank()));
+
         List<Cancion> canciones;
-        if (titulo != null && !titulo.trim().isEmpty()) {
+
+        // ── CASO 1: hay texto (título) + género ───────────────────────────────
+        if (hayTexto && hayGenero) {
+            if (generoId != null) {
+                canciones = cancionRepository.findByTituloContainingAndGeneroId(titulo.trim(), generoId);
+            } else {
+                // Fallback: filtrar por género nombre y luego por título en memoria
+                canciones = cancionRepository.findByGeneroNombreContainingIgnoreCase(generoNombre)
+                        .stream()
+                        .filter(c -> c.getTitulo().toLowerCase().contains(titulo.trim().toLowerCase()))
+                        .collect(Collectors.toList());
+            }
+            return canciones.stream().map(CancionMapper::toDTO).collect(Collectors.toList());
+        }
+
+        // ── CASO 2: solo género (sin texto) ──────────────────────────────────
+        if (hayGenero) {
+            return buscarPorGenero(generoNombre, generoId);
+        }
+
+        // ── CASO 3: solo texto (comportamiento original intacto) ──────────────
+        if (hayTexto) {
             canciones = cancionRepository.findByTituloContainingIgnoreCase(titulo.trim());
         } else {
             canciones = cancionRepository.findAllWithArtista();
         }
 
-        // 2. Fall-through: si la BD local devuelve resultados, los retornamos directamente
+        // Fall-through: si la BD local devuelve resultados, los retornamos directamente
         if (canciones != null && !canciones.isEmpty()) {
             return canciones.stream()
                     .map(CancionMapper::toDTO)
                     .collect(Collectors.toList());
         }
 
-        // 3. La BD local está vacía → llamamos a Deezer con el query
-        String query = titulo != null && !titulo.trim().isEmpty() ? titulo.trim() : artista;
+        // La BD local está vacía → llamamos a Deezer con el query
+        String query = hayTexto ? titulo.trim() : (hayArtista ? artista.trim() : null);
         if (query == null || query.trim().isEmpty()) {
             return List.of();
         }
@@ -132,7 +168,7 @@ public class CancionService implements ICancionService {
             return List.of();
         }
 
-        // 4. Mapear ExternalCancionDTO → CancionDTO para no romper el frontend
+        // Mapear ExternalCancionDTO → CancionDTO para no romper el frontend
         return externalResult.getData().stream()
                 .map(ext -> {
                     String nombreArtista = (ext.getArtist() != null) ? ext.getArtist().getName() : "Artista Desconocido";
@@ -148,6 +184,7 @@ public class CancionService implements ICancionService {
                 })
                 .collect(Collectors.toList());
     }
+
 
     /**
      * CU-GENERO: Filtra canciones por género.

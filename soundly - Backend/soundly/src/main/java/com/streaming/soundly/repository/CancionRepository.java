@@ -37,4 +37,19 @@ public interface CancionRepository extends JpaRepository<Cancion, Long> {
     // 7. Búsqueda por ID de género con JOIN FETCH del artista
     @Query("SELECT c FROM Cancion c JOIN FETCH c.artista a JOIN a.genero g WHERE g.id = :generoId")
     List<Cancion> findByGeneroId(@Param("generoId") Long generoId);
+
+    // 8. Búsqueda combinada: título (parcial) + género (ID exacto)
+    // Permite filtrar simultáneamente por texto libre Y por género seleccionado
+    @Query("SELECT c FROM Cancion c JOIN FETCH c.artista a JOIN a.genero g " +
+           "WHERE LOWER(c.titulo) LIKE LOWER(CONCAT('%', :titulo, '%')) " +
+           "AND g.id = :generoId")
+    List<Cancion> findByTituloContainingAndGeneroId(@Param("titulo") String titulo,
+                                                     @Param("generoId") Long generoId);
+
+    // 9. Búsqueda combinada: nombre artista (parcial) + género (ID exacto)
+    @Query("SELECT c FROM Cancion c JOIN FETCH c.artista a JOIN a.genero g " +
+           "WHERE LOWER(a.nombre) LIKE LOWER(CONCAT('%', :artista, '%')) " +
+           "AND g.id = :generoId")
+    List<Cancion> findByArtistaContainingAndGeneroId(@Param("artista") String artista,
+                                                      @Param("generoId") Long generoId);
 }
