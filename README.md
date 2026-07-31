@@ -18,6 +18,8 @@ El servidor está diseñado para ofrecer alto rendimiento, seguridad y una gesti
 * **Envío de Correos:** Spring Boot Mail (para notificaciones, confirmaciones y recuperación de contraseñas vía SMTP).
 * **Validación de Datos:** Spring Boot Validation.
 * **Herramientas y Productividad:** Lombok (reducción de código repetitivo) y Spring Boot DevTools.
+### 🌐 Integración de API Externa
+* **Deezer API:** Utilizada para la búsqueda y obtención de pistas musicales, permitiendo enriquecer el catálogo y la experiencia de reproducción dentro de la plataforma.
 
 ### 🎨 Frontend (Interfaz de Usuario)
 Desarrollado sin frameworks pesados, implementando una arquitectura SPA estructurada bajo un patrón MVC modular:
